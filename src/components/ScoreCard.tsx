@@ -11,6 +11,8 @@ import { CloseIcon, InfoIcon } from "./icons";
 
 type ScoreCardProps = {
   dice: Dice;
+  turn: number;
+  total: number;
   scores: Partial<Record<CategoryId, number>>;
   evaluations: CategoryEvaluation[];
   selected: CategoryId | null;
@@ -34,6 +36,8 @@ const decimal = new Intl.NumberFormat("fr-FR", {
 
 export function ScoreCard({
   dice,
+  turn,
+  total,
   scores,
   evaluations,
   selected,
@@ -64,6 +68,9 @@ export function ScoreCard({
           <p className="eyebrow">FEUILLE DE JEU</p>
           <h2 id={titleId}>Choisis une case</h2>
         </div>
+        <span className="mobile-score-meta" aria-label={`Tour ${turn} sur 15, score ${total} points`}>
+          T{turn}/15 · <strong>{total}</strong> PTS
+        </span>
         <span
           className="exact-badge"
           data-error={Boolean(calculationError)}
@@ -75,10 +82,16 @@ export function ScoreCard({
 
       <div className="score-heads" aria-hidden="true">
         <div className="score-table-head">
-          <span>COMBINAISON</span><span>PTS</span><span>RÉUSSITE</span><span />
+          <span><span className="table-heading-full">COMBINAISON</span><span className="table-heading-compact">CASE</span></span>
+          <span>PTS</span>
+          <span><span className="table-heading-full">RÉUSSITE</span><span className="table-heading-compact">PROBA</span></span>
+          <span />
         </div>
         <div className="score-table-head score-table-head-secondary">
-          <span>COMBINAISON</span><span>PTS</span><span>RÉUSSITE</span><span />
+          <span><span className="table-heading-full">COMBINAISON</span><span className="table-heading-compact">CASE</span></span>
+          <span>PTS</span>
+          <span><span className="table-heading-full">RÉUSSITE</span><span className="table-heading-compact">PROBA</span></span>
+          <span />
         </div>
       </div>
 
@@ -108,7 +121,14 @@ export function ScoreCard({
               >
                 <span className="category-index">{categoryMark(category.id, index)}</span>
                 <span className="category-name">
-                  {category.shortLabel}
+                  <span className="category-label-full">{category.shortLabel}</span>
+                  <span className="category-label-compact">
+                    {category.id === "smallStraight"
+                      ? "P. suite"
+                      : category.id === "largeStraight"
+                        ? "G. suite"
+                        : category.shortLabel}
+                  </span>
                   {isSelected
                     ? <small className="recommended-label selected-label">CHOISI</small>
                     : isRecommended ? <small className="recommended-label">TOP</small> : null}

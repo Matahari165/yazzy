@@ -9,7 +9,7 @@ export function AppHeader({ onNewGame }: { onNewGame: () => void }) {
       </a>
       <div className="topbar-meta">
         <span className="mode-pill">SOLO · EXACT</span>
-        <button type="button" className="new-game" onClick={onNewGame}>
+        <button type="button" className="new-game" aria-label="Recommencer la partie" onClick={onNewGame}>
           <RefreshIcon />
           <span>REJOUER</span>
         </button>

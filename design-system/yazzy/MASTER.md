@@ -41,7 +41,7 @@ Le corail identifie le joueur et l'action. Le menthe identifie les probabilités
 
 ### Téléphone
 
-Une borne verticale : en-tête et feuille complète. Un pupitre fixe conserve les cinq dés, l'action principale et le dernier conseil à portée du pouce. Les explications viennent ensuite dans le défilement. Largeur minimale : 375 px sans défilement horizontal.
+Pendant une partie, l’écran ne garde que la feuille et le pupitre de jeu. La feuille utilise deux colonnes de huit cases en portrait ; le tour, le score et l’action « recommencer » sont condensés dans son en-tête. Le pupitre fixe conserve les cinq dés et les actions à portée du pouce. L’ensemble tient sans défilement dès 320 × 568 px. Les explications de case s’ouvrent au-dessus du pupitre dans une fenêtre interne.
 
 ### Mac
 
@@ -49,7 +49,7 @@ La borne reste à gauche et le labo pédagogique à droite. La feuille est répa
 
 ### Paysage compact
 
-Borne à gauche, coach à droite. La formule et le bonus peuvent passer sous la zone visible, mais aucune action n'est cachée par un élément fixe.
+Sur téléphone, la feuille passe à quatre colonnes de quatre cases et le pupitre aligne les dés, le lancer et l’inscription. Sur tablette et Mac, la borne reste à gauche et le coach à droite. Aucune action n’est cachée par un élément fixe.
 
 ## Interaction et accessibilité
 

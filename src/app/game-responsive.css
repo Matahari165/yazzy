@@ -88,7 +88,7 @@
   .score-heading h2 { font-size: 18px; }
   .exact-badge { min-height: 27px; padding: 5px 7px; font-size: 9px; }
   .score-table-head { grid-template-columns: minmax(0, 1fr) 49px 87px 42px; }
-  .score-table-head span:first-child { padding-left: 8px; }
+  .score-table-head > span:first-child { padding-left: 8px; }
   .score-row { grid-template-columns: minmax(0, 1fr) 42px; min-height: 44px; }
   .score-choice { min-height: 44px; grid-template-columns: 39px minmax(68px, 1fr) 49px 87px; }
   .category-index { border-right-width: 1px; }
@@ -287,6 +287,397 @@
   .table-surface { margin-top: 15px; }
   .lesson-panel { display: grid; position: static; grid-template-columns: 1fr; }
   .math-note, .bonus-card { display: none; }
+}
+
+/* Pendant une partie sur iPhone, la feuille et les dés tiennent dans un écran. */
+@media (max-width: 720px), (max-width: 940px) and (orientation: landscape) and (max-height: 560px) {
+  html:has(.app-shell[data-game-active="true"]),
+  body:has(.app-shell[data-game-active="true"]) {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .app-shell[data-game-active="true"] {
+    --compact-row-height: clamp(44px, calc(12.5dvh - 37.5px), 72px);
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    padding: max(4px, env(safe-area-inset-top)) 4px calc(118px + env(safe-area-inset-bottom));
+  }
+
+  .app-shell[data-game-active="true"] .game-layout {
+    display: block;
+    height: 100%;
+  }
+
+  .app-shell[data-game-active="true"] .game-cabinet {
+    width: 100%;
+    padding: 4px;
+    border-width: 2px;
+    border-radius: 14px;
+    box-shadow: 0 4px 0 #b75f4d;
+  }
+
+  .app-shell[data-game-active="true"] .game-cabinet::before,
+  .app-shell[data-game-active="true"] .game-cabinet::after { display: none; }
+
+  .app-shell[data-game-active="true"] .topbar {
+    position: absolute;
+    z-index: 20;
+    top: 8px;
+    right: 8px;
+    min-height: 44px;
+    margin: 0;
+  }
+
+  .app-shell[data-game-active="true"] .brand,
+  .app-shell[data-game-active="true"] .mode-pill { display: none; }
+  .app-shell[data-game-active="true"] .topbar-meta { display: block; }
+  .app-shell[data-game-active="true"] .new-game { width: 44px; padding: 0; }
+  .app-shell[data-game-active="true"] .new-game span { display: none; }
+
+  .app-shell[data-game-active="true"] .game-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .app-shell[data-game-active="true"] .score-card {
+    border-width: 2px;
+    border-radius: 9px;
+    box-shadow: 0 3px 0 #1d2021;
+  }
+
+  .app-shell[data-game-active="true"] .score-heading {
+    min-height: 44px;
+    gap: 5px;
+    padding: 4px 52px 4px 8px;
+    border-bottom-width: 2px;
+  }
+
+  .app-shell[data-game-active="true"] .score-heading .eyebrow,
+  .app-shell[data-game-active="true"] .exact-badge { display: none; }
+  .app-shell[data-game-active="true"] .score-heading h2 { font-size: 14px; }
+  .app-shell[data-game-active="true"] .mobile-score-meta {
+    display: block;
+    margin-left: auto;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .app-shell[data-game-active="true"] .mobile-score-meta strong { font-size: 12px; }
+
+  .app-shell[data-game-active="true"] .score-heads {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+    background: var(--charcoal);
+  }
+
+  .app-shell[data-game-active="true"] .score-table-head,
+  .app-shell[data-game-active="true"] .score-table-head-secondary {
+    min-height: 20px;
+    display: grid;
+    grid-template-columns: minmax(34px, 1fr) 26px 36px 44px;
+    border-bottom: 0;
+    font-size: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  .app-shell[data-game-active="true"] .score-table-head > span:first-child {
+    padding-left: 5px;
+  }
+  .app-shell[data-game-active="true"] .table-heading-full { display: none; }
+  .app-shell[data-game-active="true"] .table-heading-compact { display: inline; }
+
+  .app-shell[data-game-active="true"] .score-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(8, var(--compact-row-height));
+    grid-auto-flow: column;
+    gap: 2px;
+    background: var(--charcoal);
+  }
+
+  .app-shell[data-game-active="true"] .score-columns::after {
+    content: "BONUS +50";
+    grid-column: 2;
+    grid-row: 8;
+    display: grid;
+    place-items: center;
+    color: #75541f;
+    background: var(--yellow);
+    font-family: var(--font-display);
+    font-size: 7px;
+    font-weight: 950;
+    letter-spacing: 0.04em;
+  }
+
+  .app-shell[data-game-active="true"] .score-row {
+    min-height: var(--compact-row-height);
+    grid-template-columns: minmax(0, 1fr) 44px;
+    border-bottom: 0;
+  }
+  .app-shell[data-game-active="true"] .score-row:nth-child(-n + 8) { grid-column: 1; }
+  .app-shell[data-game-active="true"] .score-row:nth-child(1),
+  .app-shell[data-game-active="true"] .score-row:nth-child(9) { grid-row: 1; }
+  .app-shell[data-game-active="true"] .score-row:nth-child(2),
+  .app-shell[data-game-active="true"] .score-row:nth-child(10) { grid-row: 2; }
+  .app-shell[data-game-active="true"] .score-row:nth-child(3),
+  .app-shell[data-game-active="true"] .score-row:nth-child(11) { grid-row: 3; }
+  .app-shell[data-game-active="true"] .score-row:nth-child(4),
+  .app-shell[data-game-active="true"] .score-row:nth-child(12) { grid-row: 4; }
+  .app-shell[data-game-active="true"] .score-row:nth-child(5),
+  .app-shell[data-game-active="true"] .score-row:nth-child(13) { grid-row: 5; }
+  .app-shell[data-game-active="true"] .score-row:nth-child(6),
+  .app-shell[data-game-active="true"] .score-row:nth-child(14) { grid-row: 6; }
+  .app-shell[data-game-active="true"] .score-row:nth-child(7),
+  .app-shell[data-game-active="true"] .score-row:nth-child(15) { grid-row: 7; }
+  .app-shell[data-game-active="true"] .score-row:nth-child(8) { grid-row: 8; }
+  .app-shell[data-game-active="true"] .score-row:nth-child(n + 9) { grid-column: 2; }
+
+  .app-shell[data-game-active="true"] .score-choice {
+    min-height: var(--compact-row-height);
+    grid-template-columns: minmax(34px, 1fr) 26px 36px;
+  }
+  .app-shell[data-game-active="true"] .category-index { display: none; }
+  .app-shell[data-game-active="true"] .category-name {
+    display: grid;
+    align-content: center;
+    gap: 2px;
+    padding: 0 4px;
+    font-size: 9px;
+    line-height: 1;
+  }
+  .app-shell[data-game-active="true"] .category-label-full { display: none; }
+  .app-shell[data-game-active="true"] .category-label-compact { display: inline; }
+  .app-shell[data-game-active="true"] .recommended-label {
+    position: static;
+    width: max-content;
+    padding: 1px 2px;
+    font-size: 5px;
+    line-height: 1;
+  }
+  .app-shell[data-game-active="true"] .current-score { border-left-width: 1px; font-size: 11px; }
+  .app-shell[data-game-active="true"] .category-metrics,
+  .app-shell[data-game-active="true"] .recorded-score,
+  .app-shell[data-game-active="true"] .probability-skeleton,
+  .app-shell[data-game-active="true"] .empty-metric { border-left-width: 1px; }
+  .app-shell[data-game-active="true"] .category-metrics strong,
+  .app-shell[data-game-active="true"] .recorded-score { font-size: 9px; }
+  .app-shell[data-game-active="true"] .category-metrics small { display: none; }
+  .app-shell[data-game-active="true"] .category-details { min-width: 44px; }
+  .app-shell[data-game-active="true"] .category-details summary { min-width: 44px; min-height: var(--compact-row-height); }
+  .app-shell[data-game-active="true"] .category-details summary svg { width: 15px; height: 15px; }
+  .app-shell[data-game-active="true"] .score-row[data-selected="true"] { outline-width: 2px; outline-offset: -2px; }
+  .app-shell[data-game-active="true"] .score-row[data-recommended="true"] .category-name {
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+  }
+
+  .app-shell[data-game-active="true"] .table-surface,
+  .app-shell[data-game-active="true"] .lesson-panel { display: none; }
+
+  .app-shell[data-game-active="true"] .category-popover {
+    top: auto;
+    right: 8px;
+    bottom: calc(126px + env(safe-area-inset-bottom));
+    left: 8px;
+    width: auto;
+    max-height: calc(100dvh - 142px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+  }
+
+  .app-shell[data-game-active="true"] .mobile-play-dock {
+    position: fixed;
+    z-index: 30;
+    right: 50%;
+    bottom: calc(4px + env(safe-area-inset-bottom));
+    display: grid;
+    overflow: hidden;
+    color: var(--cream);
+    background: var(--charcoal);
+    border: 2px solid #171a1b;
+    border-radius: 13px;
+    box-shadow: 0 4px 0 rgb(171 83 65 / 78%);
+    transform: translateX(50%);
+  }
+
+  .app-shell[data-game-active="true"] .mobile-feedback {
+    min-height: 36px;
+    display: block;
+    padding: 5px 8px;
+    color: var(--charcoal);
+    background: var(--yellow);
+    border-bottom: 2px solid #171a1b;
+  }
+  .app-shell[data-game-active="true"] .mobile-feedback svg,
+  .app-shell[data-game-active="true"] .mobile-feedback strong { display: none; }
+  .app-shell[data-game-active="true"] .mobile-feedback span { display: block; }
+  .app-shell[data-game-active="true"] .mobile-feedback small {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 12px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+  }
+  .app-shell[data-game-active="true"] .mobile-play-dock:has(.mobile-feedback) .mobile-dock-hint { display: none; }
+
+  .app-shell[data-game-active="true"] .mobile-dock-main {
+    display: grid;
+    align-items: center;
+    padding: 6px;
+  }
+  .app-shell[data-game-active="true"] .mobile-dice-row { display: grid; justify-content: center; }
+  .app-shell[data-game-active="true"] .mobile-dice-row .die,
+  .app-shell[data-game-active="true"] .mobile-dice-row .die-placeholder {
+    width: 100%;
+    max-width: none;
+    min-width: 44px;
+    min-height: 44px;
+    border-width: 2px;
+    border-radius: 7px;
+    box-shadow: inset 0 -3px 0 var(--cream-deep), 0 3px 0 #151819;
+  }
+  .app-shell[data-game-active="true"] .mobile-dice-row .die { padding: 12%; }
+  .app-shell[data-game-active="true"] .mobile-dice-row .die-state,
+  .app-shell[data-game-active="true"] .mobile-dice-row .die kbd { display: none; }
+
+  .app-shell[data-game-active="true"] .mobile-dock-actions { display: grid; align-items: center; }
+  .app-shell[data-game-active="true"] .mobile-roll-button {
+    min-height: 44px;
+    padding: 5px 8px;
+    border-width: 2px;
+    border-radius: 8px;
+    box-shadow: 0 4px 0 var(--coral-dark);
+  }
+  .app-shell[data-game-active="true"] .mobile-roll-button span { font-size: 18px; }
+  .app-shell[data-game-active="true"] .mobile-roll-button small { margin-top: 2px; font-size: 7px; }
+  .app-shell[data-game-active="true"] .mobile-dock-actions .roll-meter { justify-content: end; }
+  .app-shell[data-game-active="true"] .mobile-dock-actions .roll-meter span {
+    width: 22px;
+    height: 22px;
+    border-width: 1px;
+    box-shadow: 0 2px 0 #141718;
+    font-size: 8px;
+  }
+
+  .app-shell[data-game-active="true"] .mobile-score-button,
+  .app-shell[data-game-active="true"] .mobile-dock-hint { margin: 0; }
+  .app-shell[data-game-active="true"] .mobile-score-button {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--charcoal);
+    background: var(--mint);
+    border: 2px solid #171a1b;
+    border-radius: 8px;
+    box-shadow: 0 3px 0 var(--mint-deep);
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 950;
+  }
+  .app-shell[data-game-active="true"] .mobile-score-button small { font-size: 7px; }
+  .app-shell[data-game-active="true"] .mobile-dock-hint {
+    color: #c8cdce;
+    font-size: 8px;
+    font-weight: 800;
+    text-align: center;
+  }
+  .app-shell[data-game-active="true"] .mobile-recommendation-link {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: var(--cream);
+    text-decoration: none;
+  }
+  .app-shell[data-game-active="true"] .mobile-recommendation-link strong { color: var(--mint); font-size: 7px; }
+}
+
+@media (max-width: 720px) {
+  .app-shell[data-game-active="true"] .mobile-play-dock { width: min(calc(100% - 8px), 430px); }
+  .app-shell[data-game-active="true"] .mobile-dock-main { grid-template-columns: 1fr; gap: 6px; }
+  .app-shell[data-game-active="true"] .mobile-dice-row {
+    grid-template-columns: repeat(5, minmax(44px, 48px));
+    gap: 6px;
+  }
+  .app-shell[data-game-active="true"] .mobile-dock-actions {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+  }
+  .app-shell[data-game-active="true"] .mobile-score-button,
+  .app-shell[data-game-active="true"] .mobile-dock-hint { grid-column: 1 / -1; }
+  .app-shell[data-game-active="true"] .category-popover {
+    bottom: calc(176px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 720px) and (max-height: 620px) {
+  .app-shell[data-game-active="true"] .mobile-feedback,
+  .app-shell[data-game-active="true"] .mobile-dock-hint { display: none; }
+  .app-shell[data-game-active="true"] .mobile-dock-main:has(.mobile-score-button) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .app-shell[data-game-active="true"] .mobile-dock-main:has(.mobile-score-button) .mobile-dice-row {
+    grid-column: 1 / -1;
+  }
+  .app-shell[data-game-active="true"] .mobile-dock-main:has(.mobile-score-button) .mobile-dock-actions {
+    grid-column: 1;
+    grid-template-columns: 1fr;
+  }
+  .app-shell[data-game-active="true"] .mobile-dock-main:has(.mobile-score-button) .roll-meter { display: none; }
+  .app-shell[data-game-active="true"] .mobile-dock-main:has(.mobile-score-button) .mobile-score-button {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 940px) and (orientation: landscape) and (max-height: 560px) {
+  .app-shell[data-game-active="true"] {
+    --compact-row-height: 44px;
+    padding-bottom: calc(62px + env(safe-area-inset-bottom));
+  }
+  .app-shell[data-game-active="true"] .score-heads { display: none; }
+  .app-shell[data-game-active="true"] .score-columns {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(4, 44px);
+    grid-auto-flow: column;
+  }
+  .app-shell[data-game-active="true"] .score-row { grid-column: auto !important; grid-row: auto !important; }
+  .app-shell[data-game-active="true"] .score-columns::after { grid-column: auto; grid-row: auto; }
+  .app-shell[data-game-active="true"] .mobile-play-dock { width: min(calc(100% - 8px), 920px); }
+  .app-shell[data-game-active="true"] .mobile-feedback { display: none; }
+  .app-shell[data-game-active="true"] .mobile-dock-main {
+    grid-template-columns: minmax(240px, 1fr) minmax(120px, 150px) minmax(150px, 0.75fr);
+    gap: 8px;
+  }
+  .app-shell[data-game-active="true"] .mobile-dice-row {
+    grid-template-columns: repeat(5, 44px);
+    gap: 5px;
+  }
+  .app-shell[data-game-active="true"] .mobile-dock-actions { grid-template-columns: 1fr; }
+  .app-shell[data-game-active="true"] .mobile-dock-actions .roll-meter { display: none; }
+  .app-shell[data-game-active="true"] .mobile-score-button,
+  .app-shell[data-game-active="true"] .mobile-dock-hint {
+    grid-column: 3;
+    min-height: 44px;
+    display: flex;
+  }
+  .app-shell[data-game-active="true"] .category-popover {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

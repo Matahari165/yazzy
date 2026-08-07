@@ -344,6 +344,9 @@ h2 { margin-bottom: 0; line-height: 1.1; }
 
 .score-heading .eyebrow { color: #755d38; }
 .score-heading h2 { font-size: 22px; letter-spacing: -0.04em; }
+.mobile-score-meta,
+.category-label-compact,
+.table-heading-compact { display: none; }
 .exact-badge { border-width: 0; box-shadow: inset 0 -3px 0 var(--mint-deep); }
 .exact-badge[data-error="true"] { background: var(--yellow); box-shadow: inset 0 -3px 0 var(--yellow-deep); }
 
@@ -364,9 +367,9 @@ h2 { margin-bottom: 0; line-height: 1.1; }
 .score-heads { display: grid; }
 .score-table-head-secondary { display: none; }
 
-.score-table-head span:first-child { padding-left: 13px; text-align: left; }
-.score-table-head span:nth-child(2) { align-self: stretch; display: grid; place-items: center; background: var(--coral); }
-.score-table-head span:nth-child(3) { align-self: stretch; display: grid; place-items: center; background: var(--mint); }
+.score-table-head > span:first-child { padding-left: 13px; text-align: left; }
+.score-table-head > span:nth-child(2) { align-self: stretch; display: grid; place-items: center; background: var(--coral); }
+.score-table-head > span:nth-child(3) { align-self: stretch; display: grid; place-items: center; background: var(--mint); }
 
 .score-columns { display: grid; }
 

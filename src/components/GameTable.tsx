@@ -145,10 +145,10 @@ export function GameTable({
 
       <section className="mobile-play-dock" aria-label="Commandes de jeu" aria-busy={isRolling || isCalculating} data-tone={coachTone}>
         {coachMessage && !selectedCategory ? (
-          <a className="mobile-feedback" href="#coach-panel">
+          <div className="mobile-feedback" role="status">
             <SparkIcon />
-            <span><strong>CONSEIL · VOIR POURQUOI →</strong><small>{coachMessage}</small></span>
-          </a>
+            <span><strong>BILAN DU COUP</strong><small>{coachMessage}</small></span>
+          </div>
         ) : null}
         <div className="mobile-dock-main">
           <DiceTray

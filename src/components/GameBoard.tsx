@@ -159,7 +159,7 @@ export function GameBoard() {
   const bestRecorded = bestRecordedScore(game.scores);
 
   return (
-    <main id="main-content" className="app-shell">
+    <main id="main-content" className="app-shell" data-game-active={!isFinished}>
       <div className="game-layout">
         <section className="game-cabinet" aria-labelledby="game-title">
           <AppHeader onNewGame={handleReset} />
@@ -176,6 +176,8 @@ export function GameBoard() {
             <>
               <ScoreCard
                 dice={game.dice}
+                turn={game.turn}
+                total={total}
                 scores={game.scores}
                 evaluations={evaluations}
                 selected={selectedCategory}
