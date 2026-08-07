@@ -1,0 +1,42 @@
+import type { DieValue } from "@/domain/yatzy";
+
+const PIPS: Record<DieValue, number[]> = {
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8],
+};
+
+type DiceProps = {
+  value: DieValue;
+  held: boolean;
+  disabled: boolean;
+  rolling: boolean;
+  index: number;
+  onToggle: () => void;
+};
+
+export function Dice({ value, held, disabled, rolling, index, onToggle }: DiceProps) {
+  return (
+    <button
+      type="button"
+      className="die"
+      data-held={held}
+      data-rolling={rolling && !held}
+      aria-pressed={held}
+      aria-label={`Dé ${index + 1} : ${value}${held ? ", gardé" : ", à relancer"}`}
+      disabled={disabled || rolling}
+      onClick={onToggle}
+    >
+      <span className="die-face" aria-hidden="true">
+        {Array.from({ length: 9 }, (_, pip) => (
+          <span className="pip" data-visible={PIPS[value].includes(pip)} key={pip} />
+        ))}
+      </span>
+      <span className="die-state">{held ? "Gardé" : "Relancer"}</span>
+      <kbd>{index + 1}</kbd>
+    </button>
+  );
+}
