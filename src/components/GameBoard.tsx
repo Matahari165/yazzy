@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { bestCombinationLabel, CATEGORY_IDS, scoreDice, totalScore, upperSubtotal, type CategoryId } from "@/domain/yatzy";
+import { useFinishedFocus } from "@/hooks/useFinishedFocus";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useProbabilityEngine } from "@/hooks/useProbabilityEngine";
 import { useYazzyGame } from "@/hooks/useYazzyGame";
@@ -10,7 +11,7 @@ import { AppHeader, FinishedCard, GameStatus } from "./GameChrome";
 import { GameTable } from "./GameTable";
 import { ResetGameDialog } from "./ResetGameDialog";
 import { ScoreCard } from "./ScoreCard";
-import { gameTitle, holdFeedback, scoreFeedback } from "./gamePresentation";
+import { bestRecordedScore, gameTitle, holdFeedback, recommendationMessage, scoreFeedback } from "./gamePresentation";
 
 export function GameBoard() {
   const { game, roll, toggleHeld, score, reset, isFinished, hasLoaded } = useYazzyGame();
@@ -20,6 +21,7 @@ export function GameBoard() {
   const [isRolling, setIsRolling] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const rollTimeoutRef = useRef<number | null>(null);
+  const feedbackRequestRef = useRef(0);
   const openCategories = useMemo(
     () => CATEGORY_IDS.filter((category) => !(category in game.scores)),
     [game.scores],
@@ -38,14 +40,22 @@ export function GameBoard() {
   const targetEvaluation = evaluations.find((item) => item.category === selectedCategory) ?? bestEvaluation;
   const heldCount = game.held.filter(Boolean).length;
   const rollHighlight = bestCombinationLabel(game.dice);
+  useFinishedFocus(isFinished);
 
   const handleRoll = () => {
-    if (isRolling || rollTimeoutRef.current !== null) return;
+    if (
+      isRolling ||
+      isCalculating ||
+      rollTimeoutRef.current !== null ||
+      game.rollNumber >= 3 ||
+      (game.rollNumber > 0 && heldCount === 5)
+    ) return;
     if (game.rollNumber > 0 && targetEvaluation) {
+      const feedbackRequest = ++feedbackRequestRef.current;
       const heldIndexes = game.held.flatMap((held, index) => (held ? [index] : []));
       const target = targetEvaluation.category;
       void analyzeHold(target, heldIndexes).then((analysis) => {
-        if (!analysis) return;
+        if (!analysis || feedbackRequest !== feedbackRequestRef.current) return;
         const gap = analysis.bestExpectedScore - analysis.chosenExpectedScore;
         const nextFeedback = holdFeedback(target, gap, analysis.bestHoldLabel);
         setFeedback(nextFeedback.message);
@@ -57,6 +67,7 @@ export function GameBoard() {
     }
     setIsRolling(true);
     navigator.vibrate?.(10);
+    const rollDelay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 320;
     rollTimeoutRef.current = window.setTimeout(() => {
       roll();
       setIsRolling(false);
@@ -65,7 +76,7 @@ export function GameBoard() {
   };
 
   const handleScore = () => {
-    if (!selectedCategory || isRolling) return;
+    if (!selectedCategory || isRolling || isCalculating) return;
     const points = scoreDice(selectedCategory, game.dice);
     const best = evaluations.reduce(
       (current, item) => (item.expectedScore > current.expectedScore ? item : current),
@@ -83,6 +94,7 @@ export function GameBoard() {
   };
 
   const performReset = () => {
+    feedbackRequestRef.current += 1;
     if (rollTimeoutRef.current !== null) {
       window.clearTimeout(rollTimeoutRef.current);
       rollTimeoutRef.current = null;
@@ -93,6 +105,11 @@ export function GameBoard() {
     setFeedback(null);
     setCoachTone("neutral");
     setIsResetDialogOpen(false);
+    window.requestAnimationFrame(() => {
+      const title = document.getElementById("game-title");
+      title?.scrollIntoView({ block: "start" });
+      title?.focus({ preventScroll: true });
+    });
   };
 
   const handleReset = () => {
@@ -113,7 +130,7 @@ export function GameBoard() {
 
   useGameKeyboard({
     disabled: isRolling || isResetDialogOpen,
-    canRoll: game.rollNumber < 3 && !isFinished,
+    canRoll: game.rollNumber < 3 && heldCount < 5 && !isCalculating && !isFinished,
     onRoll: handleRoll,
     onToggleDie: toggleHeld,
   });
@@ -128,7 +145,9 @@ export function GameBoard() {
   const total = totalScore(game.scores);
   const upper = upperSubtotal(game.scores);
   const completedCategories = Object.keys(game.scores).length;
-  const title = gameTitle(game.rollNumber, selectedCategory);
+  const title = isFinished ? "Partie terminée." : gameTitle(game.rollNumber, selectedCategory);
+  const currentRecommendation = recommendationMessage(targetEvaluation, remainingRolls);
+  const bestRecorded = bestRecordedScore(game.scores);
 
   return (
     <main id="main-content" className="app-shell">
@@ -138,14 +157,19 @@ export function GameBoard() {
           <GameStatus title={title} turn={game.turn} total={total} completedCategories={completedCategories} />
 
           {isFinished ? (
-            <FinishedCard total={total} onReplay={performReset} />
+            <FinishedCard
+              total={total}
+              bestCategory={bestRecorded}
+              bonusAchieved={upper >= 63}
+              onReplay={performReset}
+            />
           ) : (
             <>
               <ScoreCard
                 scores={game.scores}
                 evaluations={evaluations}
                 selected={selectedCategory}
-                canSelect={game.rollNumber > 0 && !isRolling}
+                canSelect={game.rollNumber > 0 && !isRolling && !isCalculating}
                 isCalculating={isCalculating}
                 recommended={bestEvaluation?.category}
                 titleId="arcade-score-title"
@@ -162,6 +186,9 @@ export function GameBoard() {
                 rollHighlight={rollHighlight}
                 coachMessage={feedback}
                 coachTone={coachTone}
+                recommendationMessage={currentRecommendation}
+                recommendedCategory={bestEvaluation?.category ?? null}
+                isCalculating={isCalculating}
                 onToggleDie={toggleHeld}
                 onRoll={handleRoll}
                 onScore={handleScore}
@@ -176,6 +203,9 @@ export function GameBoard() {
           targetEvaluation={targetEvaluation}
           feedback={feedback}
           upper={upper}
+          remainingRolls={remainingRolls}
+          isTargetSelected={selectedCategory !== null}
+          isFinished={isFinished}
         />
       </div>
       <ResetGameDialog

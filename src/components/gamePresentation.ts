@@ -1,4 +1,5 @@
-import { CATEGORY_BY_ID, type CategoryId } from "../domain/yatzy";
+import { formatDiceCounts, type CategoryEvaluation } from "../domain/probability";
+import { CATEGORIES, CATEGORY_BY_ID, type CategoryId } from "../domain/yatzy";
 
 const decimal = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
 
@@ -41,4 +42,23 @@ export function gameTitle(rollNumber: number, selectedCategory: CategoryId | nul
   if (rollNumber === 0) return "À toi de lancer.";
   if (rollNumber === 3) return "Choisis ta case.";
   return selectedCategory ? `Construis ${CATEGORY_BY_ID[selectedCategory].label}.` : "Construis ton coup.";
+}
+
+export function recommendationMessage(
+  evaluation: CategoryEvaluation | undefined,
+  remainingRolls: number,
+): string | null {
+  if (!evaluation) return null;
+  const label = CATEGORY_BY_ID[evaluation.category].shortLabel;
+  return remainingRolls > 0
+    ? `Maintenant : ${label} · garde ${formatDiceCounts(evaluation.bestHoldForExpectedScore)}`
+    : `Meilleure case : ${label} · ${evaluation.currentScore} pts`;
+}
+
+export function bestRecordedScore(scores: Partial<Record<CategoryId, number>>) {
+  return CATEGORIES.reduce<{ label: string; score: number } | null>((best, category) => {
+    const recorded = scores[category.id];
+    if (recorded === undefined || (best && recorded <= best.score)) return best;
+    return { label: category.label, score: recorded };
+  }, null);
 }

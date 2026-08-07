@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { scoreFeedback } from "./gamePresentation";
+import { evaluateCategory } from "../domain/probability";
+import { bestRecordedScore, recommendationMessage, scoreFeedback } from "./gamePresentation";
 
 describe("scoreFeedback", () => {
   it("confirms an optimal score choice", () => {
@@ -22,5 +23,20 @@ describe("scoreFeedback", () => {
 
     expect(feedback.tone).toBe("tip");
     expect(feedback.message).toContain("viser Six");
+  });
+});
+
+describe("présentation du conseil", () => {
+  it("distingue une relance du choix final", () => {
+    const evaluation = evaluateCategory("yatzy", [6, 6, 6, 6, 2], 1);
+    expect(recommendationMessage(evaluation, 1)).toContain("garde 6–6–6–6");
+    expect(recommendationMessage(evaluation, 0)).toBe("Meilleure case : Yatzy · 0 pts");
+  });
+
+  it("identifie la meilleure case déjà inscrite", () => {
+    expect(bestRecordedScore({ ones: 3, chance: 21, yatzy: 0 })).toEqual({
+      label: "Chance",
+      score: 21,
+    });
   });
 });

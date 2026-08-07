@@ -36,12 +36,3 @@ export function CloseIcon(props: IconProps) {
     </svg>
   );
 }
-
-export function ScoreSheetIcon(props: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" {...props}>
-      <rect x="4" y="3" width="16" height="18" rx="2.5" />
-      <path d="M8 8h8M8 12h3M14 12h2M8 16h3M14 16h2" />
-    </svg>
-  );
-}

@@ -58,15 +58,15 @@ export function ScoreCard({
           <p className="eyebrow">FEUILLE DE JEU</p>
           <h2 id={titleId}>Choisis une case</h2>
         </div>
-        <span className="exact-badge">100% EXACT</span>
+        <span className="exact-badge" title="Calcul exhaustif de toutes les issues possibles">100% EXACT</span>
       </div>
 
       <div className="score-heads" aria-hidden="true">
         <div className="score-table-head">
-          <span>COMBINAISON</span><span>PTS</span><span>PROBA</span><span />
+          <span>COMBINAISON</span><span>PTS</span><span>RÉUSSITE</span><span />
         </div>
         <div className="score-table-head score-table-head-secondary">
-          <span>COMBINAISON</span><span>PTS</span><span>PROBA</span><span />
+          <span>COMBINAISON</span><span>PTS</span><span>RÉUSSITE</span><span />
         </div>
       </div>
 
@@ -79,6 +79,7 @@ export function ScoreCard({
           const isRecommended = recommended === category.id && !isFilled;
           return (
             <div
+              id={`score-${category.id}`}
               className="score-row"
               data-filled={isFilled}
               data-selected={isSelected}
@@ -96,7 +97,7 @@ export function ScoreCard({
                 <span className="category-index">{categoryMark(category.id, index)}</span>
                 <span className="category-name">
                   {category.shortLabel}
-                  {isRecommended ? <small className="recommended-label">Conseillé</small> : null}
+                  {isRecommended ? <small className="recommended-label">TOP</small> : null}
                 </span>
                 <strong className="current-score">
                   {isFilled ? score : evaluation ? evaluation.currentScore : "—"}
@@ -140,6 +141,12 @@ export function ScoreCard({
                     </button>
                   </div>
                   <p>{category.scoring}</p>
+                  <p className="probability-definition">
+                    <strong>Probabilité affichée.</strong>{" "}
+                    {category.id === "chance"
+                      ? "Chance réussit toujours : Yazzy affiche donc directement le meilleur score moyen possible."
+                      : "La chance d’inscrire plus de 0 point d’ici la fin du tour, en choisissant à chaque lancer la meilleure conservation pour réussir cette case."}
+                  </p>
                   {evaluation ? (
                     <>
                       <dl className="math-breakdown">
@@ -147,10 +154,13 @@ export function ScoreCard({
                           <><dt>Probabilité de marquer</dt><dd>{percent.format(evaluation.successProbability)}</dd></>
                         ) : null}
                         <dt>Score moyen attendu</dt><dd>{decimal.format(evaluation.expectedScore)} pts</dd>
-                        <dt>Meilleurs dés à garder</dt><dd>{formatDiceCounts(evaluation.bestHoldForExpectedScore)}</dd>
+                        {category.id !== "chance" ? (
+                          <><dt>Pour maximiser la réussite</dt><dd>{formatDiceCounts(evaluation.bestHoldForSuccess)}</dd></>
+                        ) : null}
+                        <dt>Pour maximiser les points</dt><dd>{formatDiceCounts(evaluation.bestHoldForExpectedScore)}</dd>
                       </dl>
                       <p className="calculation-explainer">
-                        Yazzy teste toutes les conservations possibles, puis additionne chaque résultat pondéré par sa probabilité.
+                        Yazzy teste toutes les conservations possibles. La stratégie qui maximise la réussite peut différer de celle qui maximise les points moyens ; le coach choisit les points moyens.
                       </p>
                     </>
                   ) : null}

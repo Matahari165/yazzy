@@ -30,7 +30,7 @@ export function GameStatus({ turn, total, completedCategories, title }: GameStat
     <div className="game-status">
       <div>
         <p className="eyebrow">TOUR {Math.min(turn, 15)} / 15</p>
-        <h1 id="game-title">{title}</h1>
+        <h1 id="game-title" tabIndex={-1}>{title}</h1>
       </div>
       <div className="score-summary" aria-label={`Score actuel ${total}`}>
         <span>SCORE</span>
@@ -57,13 +57,26 @@ export function BonusCard({ upper }: { upper: number }) {
   );
 }
 
-export function FinishedCard({ total, onReplay }: { total: number; onReplay: () => void }) {
+type FinishedCardProps = {
+  total: number;
+  bestCategory: { label: string; score: number } | null;
+  bonusAchieved: boolean;
+  onReplay: () => void;
+};
+
+export function FinishedCard({ total, bestCategory, bonusAchieved, onReplay }: FinishedCardProps) {
   return (
-    <section className="finished-card">
+    <section id="finished-card" className="finished-card" tabIndex={-1} aria-labelledby="finished-title">
       <p className="eyebrow">Partie terminée</p>
-      <h2>{total} points</h2>
-      <p>Ton premier bilan pédagogique sera ajouté dans la prochaine étape.</p>
-      <button type="button" className="primary-button" onClick={onReplay}>Rejouer</button>
+      <h2 id="finished-title">{total} points</h2>
+      <p className="finished-lead">Ta feuille est complète. Voici ce qui a le plus compté.</p>
+      <dl className="finished-stats">
+        <div><dt>Meilleure case</dt><dd>{bestCategory ? `${bestCategory.label} · ${bestCategory.score} pts` : "—"}</dd></div>
+        <div><dt>Bonus supérieur</dt><dd>{bonusAchieved ? "+50 obtenu" : "Non obtenu"}</dd></div>
+      </dl>
+      <button type="button" className="primary-button" onClick={onReplay}>
+        <span>REJOUER</span><small>nouvelle partie</small>
+      </button>
     </section>
   );
 }
