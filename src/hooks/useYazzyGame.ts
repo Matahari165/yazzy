@@ -126,10 +126,9 @@ export function useYazzyGame() {
   }, []);
 
   const score = useCallback((category: CategoryId) => {
-    let scoredPoints = 0;
     setGame((current) => {
       if (current.rollNumber === 0 || category in current.scores) return current;
-      scoredPoints = scoreDice(category, current.dice);
+      const scoredPoints = scoreDice(category, current.dice);
       return {
         dice: [],
         held: [false, false, false, false, false],
@@ -138,7 +137,6 @@ export function useYazzyGame() {
         scores: { ...current.scores, [category]: scoredPoints },
       };
     });
-    return scoredPoints;
   }, []);
 
   const reset = useCallback(() => setGame(freshGame()), []);

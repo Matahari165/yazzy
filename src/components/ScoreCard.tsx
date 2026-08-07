@@ -1,6 +1,8 @@
 import { formatDiceCounts, type CategoryEvaluation } from "@/domain/probability";
 import {
   CATEGORIES,
+  scoreDice,
+  type Dice,
   type DieValue,
   type CategoryId,
 } from "@/domain/yatzy";
@@ -8,11 +10,13 @@ import { DieGlyph } from "./Dice";
 import { CloseIcon, InfoIcon } from "./icons";
 
 type ScoreCardProps = {
+  dice: Dice;
   scores: Partial<Record<CategoryId, number>>;
   evaluations: CategoryEvaluation[];
   selected: CategoryId | null;
   canSelect: boolean;
   isCalculating: boolean;
+  calculationError: string | null;
   recommended?: CategoryId;
   titleId?: string;
   className?: string;
@@ -29,11 +33,13 @@ const decimal = new Intl.NumberFormat("fr-FR", {
 });
 
 export function ScoreCard({
+  dice,
   scores,
   evaluations,
   selected,
   canSelect,
   isCalculating,
+  calculationError,
   recommended,
   titleId = "score-title",
   className = "",
@@ -52,13 +58,19 @@ export function ScoreCard({
   };
 
   return (
-    <section className={`score-card ${className}`.trim()} aria-labelledby={titleId}>
+    <section className={`score-card ${className}`.trim()} aria-labelledby={titleId} aria-busy={isCalculating}>
       <div className="score-heading">
         <div>
           <p className="eyebrow">FEUILLE DE JEU</p>
           <h2 id={titleId}>Choisis une case</h2>
         </div>
-        <span className="exact-badge" title="Calcul exhaustif de toutes les issues possibles">100% EXACT</span>
+        <span
+          className="exact-badge"
+          data-error={Boolean(calculationError)}
+          title={calculationError ?? "Calcul exhaustif de toutes les issues possibles"}
+        >
+          {calculationError ? "CALCUL PAUSÉ" : "CALCUL EXACT"}
+        </span>
       </div>
 
       <div className="score-heads" aria-hidden="true">
@@ -97,10 +109,18 @@ export function ScoreCard({
                 <span className="category-index">{categoryMark(category.id, index)}</span>
                 <span className="category-name">
                   {category.shortLabel}
-                  {isRecommended ? <small className="recommended-label">TOP</small> : null}
+                  {isSelected
+                    ? <small className="recommended-label selected-label">CHOISI</small>
+                    : isRecommended ? <small className="recommended-label">TOP</small> : null}
                 </span>
                 <strong className="current-score">
-                  {isFilled ? score : evaluation ? evaluation.currentScore : "—"}
+                  {isFilled
+                    ? score
+                    : evaluation
+                      ? evaluation.currentScore
+                      : canSelect
+                        ? scoreDice(category.id, dice)
+                        : "—"}
                 </strong>
                 {isFilled ? (
                   <span className="recorded-score">OK</span>
@@ -165,6 +185,7 @@ export function ScoreCard({
                     </>
                   ) : null}
                   <code>P = max<sub>garde</sub> Σ P(issue) × P(suite)</code>
+                  <p className="formula-caption"><strong>max<sub>garde</sub></strong> signifie que Yazzy refait la somme pour chaque choix de dés gardés, puis conserve le meilleur résultat.</p>
                 </div>
               </details>
             </div>

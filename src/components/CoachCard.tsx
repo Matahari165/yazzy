@@ -5,12 +5,11 @@ type CoachCardProps = {
   message: string;
   detail?: string;
   loading?: boolean;
-  tone?: "neutral" | "success" | "tip";
 };
 
-export function CoachCard({ title, message, detail, loading, tone = "neutral" }: CoachCardProps) {
+export function CoachCard({ title, message, detail, loading }: CoachCardProps) {
   return (
-    <section className="coach-card" data-tone={tone} aria-live="polite" aria-busy={loading}>
+    <section className="coach-card" aria-live="polite" aria-busy={loading}>
       <div className="coach-icon"><SparkIcon /></div>
       <div>
         <p className="eyebrow">COACH PROBABILISTE</p>

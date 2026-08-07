@@ -29,6 +29,7 @@ export function ResetGameDialog({ open, onCancel, onConfirm }: ResetGameDialogPr
       ref={dialogRef}
       className="reset-dialog"
       aria-labelledby="reset-dialog-title"
+      aria-describedby="reset-dialog-description"
       onCancel={(event) => {
         event.preventDefault();
         onCancel();
@@ -41,7 +42,7 @@ export function ResetGameDialog({ open, onCancel, onConfirm }: ResetGameDialogPr
         <span className="reset-dialog-icon" aria-hidden="true"><RefreshIcon /></span>
         <p className="eyebrow">NOUVELLE PARTIE</p>
         <h2 id="reset-dialog-title">Effacer ce score ?</h2>
-        <p>La partie actuelle sera remplacée. Cette action ne peut pas être annulée.</p>
+        <p id="reset-dialog-description">La partie actuelle sera remplacée. Cette action ne peut pas être annulée.</p>
         <div className="reset-dialog-actions">
           <button ref={cancelRef} type="button" className="dialog-cancel" onClick={onCancel}>Continuer la partie</button>
           <button type="button" className="dialog-confirm" onClick={onConfirm}>Recommencer</button>

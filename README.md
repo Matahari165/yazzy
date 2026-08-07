@@ -7,7 +7,7 @@ Yazzy est une application web de Yatzy nordique qui explique les probabilités e
 - partie solo jouable ;
 - scores des 15 cases nordiques ;
 - probabilités et espérances exactes pour le tour ;
-- premier retour du coach après une relance ou un score ;
+- retour du coach après chaque relance ou inscription de score ;
 - sauvegarde locale ;
 - interface arcade responsive, conçue pour téléphone, tablette et Mac ;
 - lancer animé, reconnaissance des combinaisons et recommandation visuelle ;

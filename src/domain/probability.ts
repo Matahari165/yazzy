@@ -21,8 +21,13 @@ type Outcome = { counts: DiceCounts; probability: number };
 type SolvedState = Omit<CategoryEvaluation, "category" | "currentScore" | "precision">;
 
 const factorial = [1, 1, 2, 6, 24, 120];
+const comparisonTolerance = 1e-12;
 const outcomeCache = new Map<number, Outcome[]>();
 const solveCache = new Map<string, SolvedState>();
+
+function clampProbability(value: number): number {
+  return Math.min(1, Math.max(0, value));
+}
 
 function enumerateCountVectors(total: number, face = 0, current = [0, 0, 0, 0, 0, 0]): DiceCounts[] {
   if (face === 5) {
@@ -119,20 +124,20 @@ function solve(category: CategoryId, counts: DiceCounts, remainingRolls: number)
       expected += outcome.probability * child.expectedScore;
     }
 
-    if (success > bestSuccess + Number.EPSILON ||
-        (Math.abs(success - bestSuccess) < Number.EPSILON && countHeld(hold) > countHeld(bestSuccessHold))) {
+    if (success > bestSuccess + comparisonTolerance ||
+        (Math.abs(success - bestSuccess) <= comparisonTolerance && countHeld(hold) > countHeld(bestSuccessHold))) {
       bestSuccess = success;
       bestSuccessHold = hold;
     }
-    if (expected > bestExpected + Number.EPSILON ||
-        (Math.abs(expected - bestExpected) < Number.EPSILON && countHeld(hold) > countHeld(bestExpectedHold))) {
+    if (expected > bestExpected + comparisonTolerance ||
+        (Math.abs(expected - bestExpected) <= comparisonTolerance && countHeld(hold) > countHeld(bestExpectedHold))) {
       bestExpected = expected;
       bestExpectedHold = hold;
     }
   }
 
   const result = {
-    successProbability: bestSuccess,
+    successProbability: clampProbability(bestSuccess),
     expectedScore: bestExpected,
     bestHoldForSuccess: bestSuccessHold,
     bestHoldForExpectedScore: bestExpectedHold,
@@ -174,10 +179,17 @@ export function evaluateHoldChoice(
     successProbability += outcome.probability * child.successProbability;
     expectedScore += outcome.probability * child.expectedScore;
   }
-  return { successProbability, expectedScore };
+  return { successProbability: clampProbability(successProbability), expectedScore };
 }
 
 export function formatDiceCounts(counts: DiceCounts): string {
   const dice = countsToDice(counts);
   return dice.length ? dice.join("–") : "aucun dé";
+}
+
+export function formatHoldAction(counts: DiceCounts): string {
+  const dice = countsToDice(counts);
+  if (dice.length === 0) return "Relance tout";
+  if (dice.length === 5) return "Garde les cinq dés";
+  return `Garde ${dice.join("–")}`;
 }

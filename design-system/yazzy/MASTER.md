@@ -57,7 +57,7 @@ Borne à gauche, coach à droite. La formule et le bonus peuvent passer sous la 
 - zones tactiles de 44 px minimum sur téléphone ;
 - état gardé indiqué par la couleur, le déplacement et le texte ;
 - focus clavier blanc, très visible ;
-- touches `1` à `5` pour garder les dés et `R` pour lancer ;
+- raccourcis avec Option pour éviter les conflits d’accessibilité : `⌥1` à `⌥5` pour garder les dés, `⌥R` pour lancer et `⌥S` pour inscrire ;
 - animations de 150 à 320 ms, supprimées avec `prefers-reduced-motion` ;
 - détails mathématiques ouverts avec un vrai bouton sémantique ;
 - aucun emoji utilisé comme icône.

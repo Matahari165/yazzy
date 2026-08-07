@@ -1,10 +1,11 @@
-import { formatDiceCounts, type CategoryEvaluation } from "@/domain/probability";
+import { formatHoldAction, type CategoryEvaluation } from "@/domain/probability";
 import { CATEGORY_BY_ID } from "@/domain/yatzy";
 import { CoachCard } from "./CoachCard";
 import { BonusCard, MathNote } from "./GameChrome";
 
 type CoachPanelProps = {
   isCalculating: boolean;
+  calculationError: string | null;
   tone: "neutral" | "success" | "tip";
   targetEvaluation?: CategoryEvaluation;
   feedback: string | null;
@@ -18,6 +19,7 @@ const decimal = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
 
 export function CoachPanel({
   isCalculating,
+  calculationError,
   tone,
   targetEvaluation,
   feedback,
@@ -35,6 +37,9 @@ export function CoachPanel({
   if (isFinished) {
     coachTitle = "Feuille complète";
     coachMessage = "Le bilan final est affiché dans la borne. Ton dernier choix reste expliqué juste au-dessus.";
+  } else if (calculationError) {
+    coachTitle = "Conseil indisponible";
+    coachMessage = calculationError;
   } else if (isCalculating) {
     coachTitle = "Je calcule les possibilités…";
   } else if (targetEvaluation && targetLabel) {
@@ -47,7 +52,7 @@ export function CoachPanel({
       coachTitle = isTargetSelected
         ? `Pour viser ${targetLabel}`
         : `Meilleur rendement ce tour : ${targetLabel}`;
-      coachMessage = `Garde ${formatDiceCounts(targetEvaluation.bestHoldForExpectedScore)} pour viser ${decimal.format(targetEvaluation.expectedScore)} points de moyenne.`;
+      coachMessage = `${formatHoldAction(targetEvaluation.bestHoldForExpectedScore)} pour viser ${decimal.format(targetEvaluation.expectedScore)} points de moyenne.`;
     }
   }
 
@@ -66,11 +71,12 @@ export function CoachPanel({
       ) : null}
       <CoachCard
         loading={isCalculating}
-        tone={tone}
         title={coachTitle}
         message={coachMessage}
         detail={isFinished
           ? "Rejouer crée une nouvelle feuille avec le même moteur de probabilités exactes."
+          : calculationError
+            ? "Tu peux continuer à lancer les dés et inscrire tes scores normalement."
           : "Le coach optimise le score moyen du tour en cours. Le bonus et les tours suivants ne sont pas encore intégrés."}
       />
       <MathNote />

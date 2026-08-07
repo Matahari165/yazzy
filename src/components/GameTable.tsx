@@ -11,6 +11,7 @@ type GameTableProps = {
   selectedPoints: number;
   isRolling: boolean;
   isCalculating: boolean;
+  calculationError: string | null;
   rollHighlight: string | null;
   coachMessage: string | null;
   recommendationMessage: string | null;
@@ -64,10 +65,14 @@ function RollButton({ heldCount, rollNumber, isRolling, isCalculating, onRoll, c
       type="button"
       className={`primary-button ${className}`.trim()}
       disabled={isRolling || isCalculating}
+      aria-keyshortcuts="Alt+R"
       onClick={onRoll}
     >
       <span>{isRolling ? "ROULE…" : isCalculating ? "CALCUL…" : rollNumber === 0 ? "LANCER" : "RELANCER"}</span>
-      <small>{isCalculating ? "choix optimal" : rollNumber === 0 ? "les 5 dés" : `${5 - heldCount} dé${5 - heldCount > 1 ? "s" : ""}`}</small>
+      <small>
+        {isCalculating ? "choix optimal" : rollNumber === 0 ? "les 5 dés" : `${5 - heldCount} dé${5 - heldCount > 1 ? "s" : ""}`}
+        <kbd aria-hidden="true">⌥R</kbd>
+      </small>
     </button>
   );
 }
@@ -75,7 +80,7 @@ function RollButton({ heldCount, rollNumber, isRolling, isCalculating, onRoll, c
 function RollMeter({ rollNumber }: { rollNumber: number }) {
   const rollsLeft = Math.max(0, 3 - rollNumber);
   return (
-    <div className="roll-meter" aria-label={`${rollsLeft} lancers restants`}>
+    <div className="roll-meter" aria-label={`${rollsLeft} lancer${rollsLeft > 1 ? "s" : ""} restant${rollsLeft > 1 ? "s" : ""}`}>
       {[1, 2, 3].map((step) => (
         <span key={step} data-used={step <= rollNumber}>{step}</span>
       ))}
@@ -92,6 +97,7 @@ export function GameTable({
   selectedPoints,
   isRolling,
   isCalculating,
+  calculationError,
   rollHighlight,
   coachMessage,
   recommendationMessage,
@@ -103,7 +109,7 @@ export function GameTable({
 }: GameTableProps) {
   return (
     <>
-      <div className="table-surface" data-rolling={isRolling} aria-busy={isRolling}>
+      <div className="table-surface" data-rolling={isRolling} aria-busy={isRolling || isCalculating}>
         <div className="roll-status" aria-live="polite">
           <strong>{isRolling ? "ÇA ROULE…" : rollNumber === 0 ? "PRÊT ?" : `${heldCount} GARDÉ${heldCount > 1 ? "S" : ""}`}</strong>
           <span>{rollNumber === 0 ? "Lance les cinq dés" : rollNumber >= 3 ? "Aucun lancer restant · choisis une case" : "Clique les dés à conserver"}</span>
@@ -124,8 +130,8 @@ export function GameTable({
           <RollButton heldCount={heldCount} rollNumber={rollNumber} isRolling={isRolling} isCalculating={isCalculating} onRoll={onRoll} />
           <RollMeter rollNumber={rollNumber} />
           {selectedCategory ? (
-            <button type="button" className="score-button" disabled={isRolling || isCalculating} onClick={onScore}>
-              INSCRIRE <strong>{selectedPoints}</strong>
+            <button type="button" className="score-button" disabled={isRolling || isCalculating} aria-keyshortcuts="Alt+S" onClick={onScore}>
+              <span>INSCRIRE <strong>{selectedPoints}</strong><kbd aria-hidden="true">⌥S</kbd></span>
             </button>
           ) : (
             <p className="action-hint">
@@ -137,7 +143,7 @@ export function GameTable({
         </div>
       </div>
 
-      <section className="mobile-play-dock" aria-label="Commandes de jeu" data-tone={coachTone}>
+      <section className="mobile-play-dock" aria-label="Commandes de jeu" aria-busy={isRolling || isCalculating} data-tone={coachTone}>
         {coachMessage && !selectedCategory ? (
           <a className="mobile-feedback" href="#coach-panel">
             <SparkIcon />
@@ -165,7 +171,7 @@ export function GameTable({
             <RollMeter rollNumber={rollNumber} />
           </div>
           {selectedCategory ? (
-            <button type="button" className="mobile-score-button" disabled={isRolling || isCalculating} onClick={onScore}>
+            <button type="button" className="mobile-score-button" disabled={isRolling || isCalculating} aria-keyshortcuts="Alt+S" onClick={onScore}>
               <span>INSCRIRE {selectedPoints} PTS</span><small>{CATEGORY_BY_ID[selectedCategory].shortLabel}</small>
             </button>
           ) : rollNumber > 0 && !isCalculating && recommendationMessage && recommendedCategory ? (
@@ -174,7 +180,13 @@ export function GameTable({
             </a>
           ) : (
             <p className="mobile-dock-hint" aria-live="polite">
-              {rollNumber === 0 ? "3 lancers pour construire ton coup" : isCalculating ? "Calcul du meilleur choix…" : "Touche les dés à garder, puis choisis une case."}
+              {rollNumber === 0
+                ? "3 lancers pour construire ton coup"
+                : isCalculating
+                  ? "Calcul du meilleur choix…"
+                  : calculationError
+                    ? "Conseil indisponible · tu peux continuer à jouer"
+                    : "Touche les dés à garder, puis choisis une case."}
             </p>
           )}
         </div>

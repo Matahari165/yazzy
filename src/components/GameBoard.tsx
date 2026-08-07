@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { bestCombinationLabel, CATEGORY_IDS, scoreDice, totalScore, upperSubtotal, type CategoryId } from "@/domain/yatzy";
+import { bestCombinationLabel, CATEGORY_BY_ID, CATEGORY_IDS, scoreDice, totalScore, upperSubtotal, type CategoryId } from "@/domain/yatzy";
 import { useFinishedFocus } from "@/hooks/useFinishedFocus";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useProbabilityEngine } from "@/hooks/useProbabilityEngine";
@@ -27,7 +27,7 @@ export function GameBoard() {
     [game.scores],
   );
   const remainingRolls = Math.max(0, 3 - game.rollNumber);
-  const { evaluations, isCalculating, analyzeHold } = useProbabilityEngine(
+  const { evaluations, isCalculating, calculationError, analyzeHold } = useProbabilityEngine(
     openCategories,
     game.dice,
     remainingRolls,
@@ -72,7 +72,7 @@ export function GameBoard() {
       roll();
       setIsRolling(false);
       rollTimeoutRef.current = null;
-    }, 320);
+    }, rollDelay);
   };
 
   const handleScore = () => {
@@ -84,9 +84,12 @@ export function GameBoard() {
     );
     if (best) {
       const gap = best.expectedScore - points;
-      const nextFeedback = scoreFeedback(selectedCategory, points, best.category, gap);
+      const nextFeedback = scoreFeedback(selectedCategory, points, best.category, gap, remainingRolls);
       setFeedback(nextFeedback.message);
       setCoachTone(nextFeedback.tone);
+    } else {
+      setFeedback(`${points} point${points > 1 ? "s" : ""} inscrit${points > 1 ? "s" : ""} dans la case ${CATEGORY_BY_ID[selectedCategory].label}. Le coach n’a pas pu comparer ce choix.`);
+      setCoachTone("neutral");
     }
     navigator.vibrate?.(18);
     score(selectedCategory);
@@ -131,12 +134,18 @@ export function GameBoard() {
   useGameKeyboard({
     disabled: isRolling || isResetDialogOpen,
     canRoll: game.rollNumber < 3 && heldCount < 5 && !isCalculating && !isFinished,
+    canScore: selectedCategory !== null && !isRolling && !isCalculating && !isFinished,
     onRoll: handleRoll,
+    onScore: handleScore,
     onToggleDie: toggleHeld,
   });
 
   if (!hasLoaded) {
-    return <main id="main-content" className="app-loading" aria-label="Chargement de la partie" />;
+    return (
+      <main id="main-content" className="app-loading" aria-busy="true">
+        <p className="sr-only" role="status">Chargement de la partie…</p>
+      </main>
+    );
   }
 
   const selectedPoints = selectedCategory
@@ -166,11 +175,13 @@ export function GameBoard() {
           ) : (
             <>
               <ScoreCard
+                dice={game.dice}
                 scores={game.scores}
                 evaluations={evaluations}
                 selected={selectedCategory}
                 canSelect={game.rollNumber > 0 && !isRolling && !isCalculating}
                 isCalculating={isCalculating}
+                calculationError={calculationError}
                 recommended={bestEvaluation?.category}
                 titleId="arcade-score-title"
                 onSelect={handleCategorySelect}
@@ -189,6 +200,7 @@ export function GameBoard() {
                 recommendationMessage={currentRecommendation}
                 recommendedCategory={bestEvaluation?.category ?? null}
                 isCalculating={isCalculating}
+                calculationError={calculationError}
                 onToggleDie={toggleHeld}
                 onRoll={handleRoll}
                 onScore={handleScore}
@@ -199,6 +211,7 @@ export function GameBoard() {
 
         <CoachPanel
           isCalculating={isCalculating}
+          calculationError={calculationError}
           tone={coachTone}
           targetEvaluation={targetEvaluation}
           feedback={feedback}

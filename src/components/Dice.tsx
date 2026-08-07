@@ -36,13 +36,14 @@ export function Dice({ value, held, disabled, rolling, index, onToggle }: DicePr
       data-held={held}
       data-rolling={rolling && !held}
       aria-pressed={held}
+      aria-keyshortcuts={`Alt+${index + 1}`}
       aria-label={`Dé ${index + 1} : ${value}${disabled ? ", résultat final" : held ? ", gardé" : ", à relancer"}`}
       disabled={disabled || rolling}
       onClick={onToggle}
     >
       <DieGlyph value={value} className="die-face" />
       <span className="die-state">{disabled ? "Final" : held ? "Gardé" : "Relancer"}</span>
-      <kbd>{index + 1}</kbd>
+      <kbd aria-hidden="true">⌥{index + 1}</kbd>
     </button>
   );
 }

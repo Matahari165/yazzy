@@ -86,6 +86,10 @@ export function MathNote() {
     <div className="math-note">
       <span>FORMULE DES ISSUES</span>
       <code>P(x) = n! / (x₁! · … · x₆!) × (1/6)ⁿ</code>
+      <dl className="formula-legend">
+        <div><dt>n</dt><dd>nombre de dés relancés</dd></div>
+        <div><dt>x₁…x₆</dt><dd>quantités obtenues de chaque face, dont la somme vaut n</dd></div>
+      </dl>
       <p>Chaque résultat possible est multiplié par sa probabilité. Yazzy garde ensuite la décision donnant le meilleur score moyen.</p>
     </div>
   );
