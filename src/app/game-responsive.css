@@ -1,0 +1,286 @@
+@media (min-width: 1031px) {
+  .score-heads { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; background: var(--charcoal); }
+  .score-table-head, .score-table-head-secondary { display: grid; grid-template-columns: minmax(0, 1fr) 46px 82px 40px; }
+  .score-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(8, 42px);
+    grid-auto-flow: column;
+    gap: 2px 3px;
+    background: var(--charcoal);
+  }
+  .score-columns::after {
+    content: "BONUS +50 À 63";
+    grid-column: 2;
+    grid-row: 8;
+    display: grid;
+    place-items: center;
+    color: #75541f;
+    background: var(--yellow);
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: 0.05em;
+  }
+  .score-row { min-height: 42px; grid-template-columns: minmax(0, 1fr) 40px; border-bottom: 0; }
+  .score-row:nth-child(-n + 8) { grid-column: 1; }
+  .score-row:nth-child(1) { grid-row: 1; }
+  .score-row:nth-child(2) { grid-row: 2; }
+  .score-row:nth-child(3) { grid-row: 3; }
+  .score-row:nth-child(4) { grid-row: 4; }
+  .score-row:nth-child(5) { grid-row: 5; }
+  .score-row:nth-child(6) { grid-row: 6; border-bottom-width: 0; }
+  .score-row:nth-child(7) { grid-row: 7; }
+  .score-row:nth-child(8) { grid-row: 8; }
+  .score-row:nth-child(n + 9) { grid-column: 2; }
+  .score-row:nth-child(9) { grid-row: 1; }
+  .score-row:nth-child(10) { grid-row: 2; }
+  .score-row:nth-child(11) { grid-row: 3; }
+  .score-row:nth-child(12) { grid-row: 4; }
+  .score-row:nth-child(13) { grid-row: 5; }
+  .score-row:nth-child(14) { grid-row: 6; }
+  .score-row:nth-child(15) { grid-row: 7; }
+  .score-choice { min-height: 42px; grid-template-columns: 36px minmax(54px, 1fr) 46px 82px; }
+  .score-die { width: 25px; }
+  .category-name { padding-inline: 6px; font-size: 11px; }
+  .recommended-label { display: none; }
+  .current-score { font-size: 15px; }
+  .category-metrics strong, .recorded-score { font-size: 12px; }
+  .category-metrics small { font-size: 8px; }
+  .category-details summary { min-width: 40px; min-height: 42px; }
+  .category-popover { width: 340px; }
+  .table-surface { display: grid; grid-template-columns: minmax(0, 1fr) 218px; gap: 8px 18px; margin-top: 20px; }
+  .roll-status { grid-column: 1 / -1; }
+  .dice-row { grid-column: 1; grid-row: 2; margin: 11px 0 23px; }
+  .play-actions { grid-column: 2; grid-row: 2; grid-template-columns: 1fr; gap: 8px; }
+  .primary-button { min-height: 62px; }
+  .primary-button span { font-size: 24px; }
+  .roll-meter { justify-content: center; }
+  .score-button, .action-hint { grid-column: auto; }
+  .score-button { min-height: 46px; }
+}
+
+@media (max-width: 1030px) {
+  .app-shell { padding-inline: 32px; }
+  .game-layout { grid-template-columns: minmax(0, 720px); }
+  .lesson-panel { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lesson-heading { grid-column: 1 / -1; }
+  .coach-card { grid-column: 1 / -1; }
+}
+
+@media (max-width: 720px) {
+  .app-shell { width: 100%; padding: max(12px, env(safe-area-inset-top)) 12px calc(250px + env(safe-area-inset-bottom)); }
+  .game-layout { gap: 32px; }
+  .game-cabinet { padding: 15px 11px 19px; border-width: 3px; border-radius: 25px; box-shadow: 0 8px 0 #b75f4d, 0 15px 25px rgb(82 43 34 / 24%); }
+  .game-cabinet::before, .game-cabinet::after { top: 18%; width: 23px; height: 88px; border-width: 3px; }
+  .game-cabinet::before { left: -9px; border-radius: 12px 0 0 12px; }
+  .game-cabinet::after { right: -9px; border-radius: 0 12px 12px 0; }
+  .topbar { min-height: 44px; margin: 0 4px 14px; }
+  .brand { font-size: 23px; }
+  .brand-die { width: 36px; height: 36px; padding: 7px; border-width: 2px; }
+  .mode-pill { display: none; }
+  .new-game { padding: 0; }
+  .new-game span { position: absolute; overflow: hidden; width: 1px; height: 1px; clip: rect(0 0 0 0); }
+  .game-status { margin-inline: 4px; }
+  h1 { font-size: clamp(22px, 7.3vw, 30px); }
+  .score-summary strong { font-size: 31px; }
+  .score-card { border-width: 3px; box-shadow: 0 5px 0 #1d2021; }
+  .score-heading { padding: 10px 9px 9px; }
+  .score-heading h2 { font-size: 18px; }
+  .exact-badge { min-height: 27px; padding: 5px 7px; font-size: 9px; }
+  .score-table-head { grid-template-columns: minmax(0, 1fr) 49px 87px 42px; }
+  .score-table-head span:first-child { padding-left: 8px; }
+  .score-row { grid-template-columns: minmax(0, 1fr) 42px; min-height: 44px; }
+  .score-choice { min-height: 44px; grid-template-columns: 39px minmax(68px, 1fr) 49px 87px; }
+  .category-index { border-right-width: 1px; }
+  .score-die { width: 26px; }
+  .category-name { padding-inline: 6px; font-size: 11px; }
+  .recommended-label { display: none; }
+  .current-score { border-left-width: 2px; font-size: 15px; }
+  .category-metrics, .recorded-score, .probability-skeleton, .empty-metric { border-left-width: 2px; }
+  .category-metrics strong, .recorded-score { font-size: 12px; }
+  .category-metrics small { font-size: 8px; }
+  .category-details summary { min-width: 42px; min-height: 44px; }
+  .category-popover { position: fixed; top: auto; right: 12px; bottom: calc(220px + env(safe-area-inset-bottom)); left: 12px; width: auto; max-height: 58dvh; overflow-y: auto; }
+  .category-popover-close { width: 44px; height: 44px; }
+  .table-surface { display: none; }
+  .roll-status span { font-size: 9px; }
+  .dice-row { gap: 4px; margin: 22px auto 29px; }
+  .die, .die-placeholder { border-width: 2px; border-radius: 8px; }
+  .die { box-shadow: inset 0 -4px 0 var(--cream-deep), 0 4px 0 #151819; }
+  .die[data-held="true"] { box-shadow: inset 0 -4px 0 var(--mint-deep), 0 4px 0 #151819, 0 0 0 2px var(--coral); transform: translateY(-5px); }
+  .die-state { bottom: -20px; font-size: 7px; }
+  .play-actions { grid-template-columns: minmax(130px, 1fr) auto; gap: 10px; }
+  .primary-button { min-height: 66px; }
+  .primary-button span { font-size: 25px; }
+  .roll-meter { gap: 4px; }
+  .roll-meter span { width: 27px; height: 27px; font-size: 10px; }
+  .score-button, .action-hint { grid-column: 1 / -1; }
+  .score-button { min-height: 50px; }
+  .lesson-panel { grid-template-columns: 1fr; }
+  .lesson-heading, .coach-card { grid-column: auto; }
+  .lesson-heading, .coach-card, .math-note, .bonus-card { width: 100%; min-width: 0; overflow-wrap: anywhere; }
+  .lesson-heading { padding-inline: 8px; }
+  .lesson-heading h2 { font-size: 34px; }
+
+  .mobile-play-dock {
+    position: fixed;
+    z-index: 30;
+    right: 50%;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    width: min(calc(100% - 16px), 430px);
+    display: grid;
+    overflow: hidden;
+    color: var(--cream);
+    background: var(--charcoal);
+    border: 3px solid #171a1b;
+    border-radius: 19px;
+    box-shadow: 0 10px 0 rgb(171 83 65 / 78%), 0 18px 35px rgb(69 34 28 / 36%);
+    transform: translateX(50%);
+  }
+
+  .mobile-feedback {
+    min-height: 58px;
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    color: var(--charcoal);
+    background: var(--yellow);
+    border-bottom: 3px solid #171a1b;
+    text-decoration: none;
+  }
+
+  .mobile-play-dock[data-tone="success"] .mobile-feedback { background: var(--mint); }
+  .mobile-feedback svg { width: 28px; height: 28px; padding: 5px; color: var(--cream); background: var(--charcoal); border-radius: 8px; }
+  .mobile-feedback span { min-width: 0; display: grid; }
+  .mobile-feedback strong { font-size: 9px; font-weight: 950; letter-spacing: 0.08em; }
+  .mobile-feedback small {
+    overflow: hidden;
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-dock-main {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 9px 12px;
+    align-items: center;
+    padding: 10px;
+  }
+
+  .mobile-dice-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 52px));
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .mobile-dice-row .die,
+  .mobile-dice-row .die-placeholder {
+    max-width: 52px;
+    border-width: 2px;
+    border-radius: 8px;
+    box-shadow: inset 0 -3px 0 var(--cream-deep), 0 3px 0 #151819;
+  }
+
+  .mobile-dice-row .die { padding: 12%; }
+  .mobile-dice-row .die-placeholder { background: var(--charcoal-soft); box-shadow: inset 0 0 0 2px var(--charcoal-deep), 0 3px 0 #151819; }
+  .mobile-dice-row .die-state { display: none; }
+  .mobile-dice-row .die[data-held="true"] { box-shadow: inset 0 -3px 0 var(--mint-deep), 0 3px 0 #151819, 0 0 0 2px var(--coral); transform: translateY(-3px); }
+
+  .mobile-dock-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+  .mobile-roll-button { min-height: 52px; padding: 7px 10px; border-width: 2px; border-radius: 9px; box-shadow: 0 5px 0 var(--coral-dark); }
+  .mobile-roll-button span { font-size: 20px; }
+  .mobile-roll-button small { margin-top: 3px; font-size: 8px; }
+  .mobile-dock-actions .roll-meter { justify-content: end; }
+  .mobile-dock-actions .roll-meter span { width: 24px; height: 24px; border-width: 1px; box-shadow: 0 2px 0 #141718; font-size: 9px; }
+
+  .mobile-score-button,
+  .mobile-dock-hint {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+
+  .mobile-score-button {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--charcoal);
+    background: var(--mint);
+    border: 2px solid #171a1b;
+    border-radius: 8px;
+    box-shadow: 0 4px 0 var(--mint-deep);
+    font-family: var(--font-display);
+    font-weight: 950;
+  }
+
+  .mobile-score-button small { padding-left: 8px; border-left: 1px solid rgb(48 53 55 / 30%); font-family: var(--font-body); font-size: 9px; }
+  .mobile-dock-hint { color: #c8cdce; font-size: 10px; font-weight: 750; text-align: center; }
+
+  .reset-dialog-card { padding: 24px 18px 20px; border-width: 3px; }
+  .reset-dialog-actions { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 380px) {
+  .app-shell { padding-inline: 8px; }
+  .game-cabinet { padding-inline: 8px; }
+  .score-table-head { grid-template-columns: minmax(0, 1fr) 45px 78px 40px; }
+  .score-choice { grid-template-columns: 36px minmax(62px, 1fr) 45px 78px; }
+  .score-row { grid-template-columns: minmax(0, 1fr) 40px; }
+  .category-name { font-size: 10px; }
+  .category-metrics small { display: none; }
+  .roll-status span { display: none; }
+  .primary-button span { font-size: 22px; }
+}
+
+@media (max-width: 340px) {
+  .app-shell { padding-inline: 6px; }
+  .game-cabinet::before { left: -3px; }
+  .game-cabinet::after { right: -3px; }
+  .mobile-play-dock { width: calc(100% - 8px); }
+  .mobile-dock-main { padding: 8px; }
+  .mobile-dice-row { grid-template-columns: repeat(5, minmax(0, 44px)); gap: 6px; }
+  .mobile-dice-row .die, .mobile-dice-row .die-placeholder { max-width: 44px; }
+  .mobile-feedback { padding-inline: 9px; }
+}
+
+@media (max-width: 720px) and (orientation: landscape) and (max-height: 560px) {
+  .app-shell { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
+  .mobile-play-dock { width: min(calc(100% - 16px), 620px); }
+  .mobile-feedback { min-height: 44px; grid-template-columns: 30px minmax(0, 1fr); padding-block: 5px; }
+  .mobile-feedback svg { width: 24px; height: 24px; }
+  .mobile-dock-main { grid-template-columns: minmax(0, 1fr) 150px; padding: 8px; }
+  .mobile-dice-row { grid-template-columns: repeat(5, minmax(0, 44px)); gap: 6px; }
+  .mobile-dice-row .die, .mobile-dice-row .die-placeholder { max-width: 44px; }
+  .mobile-dock-actions { grid-template-columns: 1fr; }
+  .mobile-roll-button { min-height: 44px; }
+  .mobile-dock-actions .roll-meter { display: none; }
+  .mobile-score-button, .mobile-dock-hint { display: none; }
+}
+
+@media (min-width: 721px) and (orientation: landscape) and (max-height: 560px) {
+  .app-shell { padding-top: 10px; }
+  .game-layout { grid-template-columns: minmax(520px, 680px) minmax(260px, 330px); gap: 22px; }
+  .game-cabinet { padding: 12px; }
+  .topbar { margin-bottom: 9px; }
+  .game-status { margin-bottom: 10px; }
+  .score-row, .score-choice, .category-details summary { min-height: 42px; }
+  .table-surface { margin-top: 15px; }
+  .lesson-panel { display: grid; position: static; grid-template-columns: 1fr; }
+  .math-note, .bonus-card { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

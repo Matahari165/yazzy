@@ -1,9 +1,11 @@
 import { formatDiceCounts, type CategoryEvaluation } from "@/domain/probability";
 import {
   CATEGORIES,
+  type DieValue,
   type CategoryId,
 } from "@/domain/yatzy";
-import { InfoIcon } from "./icons";
+import { DieGlyph } from "./Dice";
+import { CloseIcon, InfoIcon } from "./icons";
 
 type ScoreCardProps = {
   scores: Partial<Record<CategoryId, number>>;
@@ -39,14 +41,33 @@ export function ScoreCard({
 }: ScoreCardProps) {
   const evaluationByCategory = new Map(evaluations.map((item) => [item.category, item]));
 
+  const categoryMark = (category: CategoryId, index: number) => {
+    if (index < 6) return <DieGlyph value={(index + 1) as DieValue} className="score-die" />;
+    const shortMarks: Record<CategoryId, string> = {
+      ones: "1", twos: "2", threes: "3", fours: "4", fives: "5", sixes: "6",
+      pair: "II", twoPairs: "II²", threeOfAKind: "III", fourOfAKind: "IV",
+      smallStraight: "1—5", largeStraight: "2—6", fullHouse: "3+2", chance: "Σ", yatzy: "V",
+    };
+    return <span className="combo-mark" aria-hidden="true">{shortMarks[category]}</span>;
+  };
+
   return (
     <section className={`score-card ${className}`.trim()} aria-labelledby={titleId}>
       <div className="score-heading">
         <div>
-          <p className="eyebrow">Feuille nordique</p>
-          <h2 id={titleId}>Choisis ton objectif</h2>
+          <p className="eyebrow">FEUILLE DE JEU</p>
+          <h2 id={titleId}>Choisis une case</h2>
         </div>
-        <span className="exact-badge">Calcul exact</span>
+        <span className="exact-badge">100% EXACT</span>
+      </div>
+
+      <div className="score-heads" aria-hidden="true">
+        <div className="score-table-head">
+          <span>COMBINAISON</span><span>PTS</span><span>PROBA</span><span />
+        </div>
+        <div className="score-table-head score-table-head-secondary">
+          <span>COMBINAISON</span><span>PTS</span><span>PROBA</span><span />
+        </div>
       </div>
 
       <div className="score-columns" role="list">
@@ -72,24 +93,27 @@ export function ScoreCard({
                 aria-pressed={isSelected}
                 onClick={() => onSelect(category.id)}
               >
-                <span className="category-index">{String(index + 1).padStart(2, "0")}</span>
+                <span className="category-index">{categoryMark(category.id, index)}</span>
                 <span className="category-name">
-                  {category.label}
+                  {category.shortLabel}
                   {isRecommended ? <small className="recommended-label">Conseillé</small> : null}
                 </span>
+                <strong className="current-score">
+                  {isFilled ? score : evaluation ? evaluation.currentScore : "—"}
+                </strong>
                 {isFilled ? (
-                  <strong className="recorded-score">{score}</strong>
+                  <span className="recorded-score">OK</span>
                 ) : isCalculating ? (
                   <span className="probability-skeleton" aria-label="Calcul en cours" />
                 ) : !evaluation ? (
-                  <span className="empty-metric">Après le lancer</span>
+                  <span className="empty-metric">—</span>
                 ) : (
                   <span className="category-metrics">
-                    <strong>{decimal.format(evaluation.expectedScore)} pts</strong>
+                    <strong>{category.id === "chance" ? decimal.format(evaluation.expectedScore) : percent.format(evaluation.successProbability)}</strong>
                     <small>
                       {category.id === "chance"
-                        ? "moyenne attendue"
-                        : `${percent.format(evaluation.successProbability)} de réussite`}
+                        ? "pts moyens"
+                        : `${decimal.format(evaluation.expectedScore)} pts moy.`}
                     </small>
                   </span>
                 )}
@@ -100,7 +124,21 @@ export function ScoreCard({
                   <InfoIcon />
                 </summary>
                 <div className="category-popover">
-                  <strong>{category.rule}</strong>
+                  <div className="category-popover-heading">
+                    <strong>{category.rule}</strong>
+                    <button
+                      type="button"
+                      className="category-popover-close"
+                      aria-label={`Fermer l’explication de ${category.label}`}
+                      onClick={(event) => {
+                        const details = event.currentTarget.closest("details");
+                        details?.removeAttribute("open");
+                        details?.querySelector("summary")?.focus();
+                      }}
+                    >
+                      <CloseIcon />
+                    </button>
+                  </div>
                   <p>{category.scoring}</p>
                   {evaluation ? (
                     <>

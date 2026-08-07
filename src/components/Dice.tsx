@@ -9,6 +9,16 @@ const PIPS: Record<DieValue, number[]> = {
   6: [0, 2, 3, 5, 6, 8],
 };
 
+export function DieGlyph({ value, className = "" }: { value: DieValue; className?: string }) {
+  return (
+    <span className={`die-glyph ${className}`.trim()} aria-hidden="true">
+      {Array.from({ length: 9 }, (_, pip) => (
+        <span className="pip" data-visible={PIPS[value].includes(pip)} key={pip} />
+      ))}
+    </span>
+  );
+}
+
 type DiceProps = {
   value: DieValue;
   held: boolean;
@@ -30,11 +40,7 @@ export function Dice({ value, held, disabled, rolling, index, onToggle }: DicePr
       disabled={disabled || rolling}
       onClick={onToggle}
     >
-      <span className="die-face" aria-hidden="true">
-        {Array.from({ length: 9 }, (_, pip) => (
-          <span className="pip" data-visible={PIPS[value].includes(pip)} key={pip} />
-        ))}
-      </span>
+      <DieGlyph value={value} className="die-face" />
       <span className="die-state">{held ? "Gardé" : "Relancer"}</span>
       <kbd>{index + 1}</kbd>
     </button>

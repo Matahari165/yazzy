@@ -9,10 +9,12 @@ Yazzy est une application web de Yatzy nordique qui explique les probabilités e
 - probabilités et espérances exactes pour le tour ;
 - premier retour du coach après une relance ou un score ;
 - sauvegarde locale ;
-- interface Mac, tablette et mobile.
+- interface arcade responsive, conçue pour téléphone, tablette et Mac ;
 - lancer animé, reconnaissance des combinaisons et recommandation visuelle ;
-- feuille de score mobile accessible sans quitter le plateau ;
+- feuille de score toujours visible, avec probabilités exactes dans la grille ;
 - détail mathématique de chaque case avec stratégie de conservation.
+- pupitre mobile fixe avec dés, lancer, score et dernier conseil toujours accessibles ;
+- confirmation de nouvelle partie intégrée au style du jeu.
 
 La stratégie complète de la feuille, les bots et le mode entre amis ne sont pas encore développés.
 

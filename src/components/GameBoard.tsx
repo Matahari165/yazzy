@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { formatDiceCounts } from "@/domain/probability";
-import { bestCombinationLabel, CATEGORY_BY_ID, CATEGORY_IDS, scoreDice, totalScore, upperSubtotal, type CategoryId } from "@/domain/yatzy";
+import { bestCombinationLabel, CATEGORY_IDS, scoreDice, totalScore, upperSubtotal, type CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useProbabilityEngine } from "@/hooks/useProbabilityEngine";
 import { useYazzyGame } from "@/hooks/useYazzyGame";
-import { CoachCard } from "./CoachCard";
-import { AppHeader, FinishedCard, GameStatus, MathNote } from "./GameChrome";
+import { CoachPanel } from "./CoachPanel";
+import { AppHeader, FinishedCard, GameStatus } from "./GameChrome";
 import { GameTable } from "./GameTable";
-import { ScorePanels } from "./ScorePanels";
+import { ResetGameDialog } from "./ResetGameDialog";
+import { ScoreCard } from "./ScoreCard";
 import { gameTitle, holdFeedback, scoreFeedback } from "./gamePresentation";
 
 export function GameBoard() {
@@ -18,7 +18,7 @@ export function GameBoard() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [coachTone, setCoachTone] = useState<"neutral" | "success" | "tip">("neutral");
   const [isRolling, setIsRolling] = useState(false);
-  const [isScoreSheetOpen, setIsScoreSheetOpen] = useState(false);
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const rollTimeoutRef = useRef<number | null>(null);
   const openCategories = useMemo(
     () => CATEGORY_IDS.filter((category) => !(category in game.scores)),
@@ -80,13 +80,9 @@ export function GameBoard() {
     navigator.vibrate?.(18);
     score(selectedCategory);
     setSelectedCategory(null);
-    setIsScoreSheetOpen(false);
   };
 
-  const handleReset = () => {
-    if (game.turn > 1 || game.rollNumber > 0) {
-      if (!window.confirm("Recommencer la partie et effacer le score actuel ?")) return;
-    }
+  const performReset = () => {
     if (rollTimeoutRef.current !== null) {
       window.clearTimeout(rollTimeoutRef.current);
       rollTimeoutRef.current = null;
@@ -96,12 +92,19 @@ export function GameBoard() {
     setSelectedCategory(null);
     setFeedback(null);
     setCoachTone("neutral");
-    setIsScoreSheetOpen(false);
+    setIsResetDialogOpen(false);
+  };
+
+  const handleReset = () => {
+    if (game.turn > 1 || game.rollNumber > 0) {
+      setIsResetDialogOpen(true);
+      return;
+    }
+    performReset();
   };
 
   const handleCategorySelect = (category: CategoryId) => {
     setSelectedCategory(category);
-    setIsScoreSheetOpen(false);
   };
 
   useEffect(() => () => {
@@ -109,7 +112,7 @@ export function GameBoard() {
   }, []);
 
   useGameKeyboard({
-    disabled: isScoreSheetOpen || isRolling,
+    disabled: isRolling || isResetDialogOpen,
     canRoll: game.rollNumber < 3 && !isFinished,
     onRoll: handleRoll,
     onToggleDie: toggleHeld,
@@ -129,16 +132,25 @@ export function GameBoard() {
 
   return (
     <main id="main-content" className="app-shell">
-      <AppHeader onNewGame={handleReset} />
-
       <div className="game-layout">
-        <section className="play-column" aria-labelledby="game-title">
+        <section className="game-cabinet" aria-labelledby="game-title">
+          <AppHeader onNewGame={handleReset} />
           <GameStatus title={title} turn={game.turn} total={total} completedCategories={completedCategories} />
 
           {isFinished ? (
-            <FinishedCard total={total} onReplay={handleReset} />
+            <FinishedCard total={total} onReplay={performReset} />
           ) : (
             <>
+              <ScoreCard
+                scores={game.scores}
+                evaluations={evaluations}
+                selected={selectedCategory}
+                canSelect={game.rollNumber > 0 && !isRolling}
+                isCalculating={isCalculating}
+                recommended={bestEvaluation?.category}
+                titleId="arcade-score-title"
+                onSelect={handleCategorySelect}
+              />
               <GameTable
                 dice={game.dice}
                 held={game.held}
@@ -148,51 +160,29 @@ export function GameBoard() {
                 selectedPoints={selectedPoints}
                 isRolling={isRolling}
                 rollHighlight={rollHighlight}
+                coachMessage={feedback}
+                coachTone={coachTone}
                 onToggleDie={toggleHeld}
                 onRoll={handleRoll}
                 onScore={handleScore}
               />
-
-              <CoachCard
-                loading={isCalculating}
-                tone={coachTone}
-                title={
-                  isCalculating
-                    ? "Je calcule les possibilités…"
-                    : targetEvaluation
-                      ? `Vise ${CATEGORY_BY_ID[targetEvaluation.category].label}`
-                      : "Lance les dés pour commencer"
-                }
-                message={
-                  feedback ??
-                  (targetEvaluation
-                      ? `Pour le meilleur score moyen dans cette case, garde ${formatDiceCounts(targetEvaluation.bestHoldForExpectedScore)}.`
-                    : "Après le lancer, chaque case affichera une probabilité et une espérance exactes.")
-                }
-                detail="Le coach optimise actuellement le tour. La stratégie complète de la feuille arrivera dans une phase dédiée."
-              />
             </>
           )}
-
-          <MathNote />
         </section>
 
-        <ScorePanels
-          scores={game.scores}
-          evaluations={evaluations}
-          selectedCategory={selectedCategory}
-          recommendedCategory={bestEvaluation?.category}
-          selectedPoints={selectedPoints}
-          openCategoryCount={openCategories.length}
-          upper={upper}
-          canSelect={game.rollNumber > 0 && !isFinished && !isRolling}
+        <CoachPanel
           isCalculating={isCalculating}
-          mobileOpen={isScoreSheetOpen}
-          onMobileOpen={() => setIsScoreSheetOpen(true)}
-          onMobileClose={() => setIsScoreSheetOpen(false)}
-          onSelect={handleCategorySelect}
+          tone={coachTone}
+          targetEvaluation={targetEvaluation}
+          feedback={feedback}
+          upper={upper}
         />
       </div>
+      <ResetGameDialog
+        open={isResetDialogOpen}
+        onCancel={() => setIsResetDialogOpen(false)}
+        onConfirm={performReset}
+      />
     </main>
   );
 }

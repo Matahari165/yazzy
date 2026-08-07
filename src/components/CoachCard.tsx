@@ -13,7 +13,7 @@ export function CoachCard({ title, message, detail, loading, tone = "neutral" }:
     <section className="coach-card" data-tone={tone} aria-live="polite" aria-busy={loading}>
       <div className="coach-icon"><SparkIcon /></div>
       <div>
-        <p className="eyebrow">Coach exact — objectif du tour</p>
+        <p className="eyebrow">COACH PROBABILISTE</p>
         <h2>{title}</h2>
         <p>{message}</p>
         {detail ? <p className="coach-detail">{detail}</p> : null}

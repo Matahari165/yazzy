@@ -1,7 +1,7 @@
 # Yazzy — Plan produit, mathématique et technique
 
 > Document de référence du projet
-> Version : 0.2 — 7 août 2026
+> Version : 0.3 — 7 août 2026
 > Statut : développement commencé
 
 ## État réel du projet au 7 août 2026
@@ -12,15 +12,18 @@ Implémenté et vérifié :
 - socle Next.js, React et TypeScript ;
 - moteur de score du Yatzy nordique ;
 - moteur exact de probabilité et d'espérance par case, exécuté hors du fil principal ;
-- 11 tests automatisés sur les règles et les probabilités ;
+- 16 tests automatisés sur les règles, les probabilités et les retours du coach ;
 - partie solo : lancer, conservation, relance, sélection d'une case, score et tour suivant ;
 - sauvegarde locale automatique ;
 - premier coach exact au niveau du tour ;
 - interface responsive vérifiée en largeur Mac, à 375 px et en paysage mobile ;
 - raccourcis clavier `1` à `5` pour les dés et `R` pour relancer ;
-- mode sombre système, navigation clavier et mouvement réduit.
+- navigation clavier et mouvement réduit ;
 - animation courte du lancer et reconnaissance visuelle des combinaisons ;
-- feuille de score mobile modale, avec fermeture par Échap et retour immédiat au plateau ;
+- interface arcade inspirée d'une borne de jeu : corail, anthracite, crème et menthe ;
+- feuille de score toujours visible et adaptée en deux colonnes sur Mac ;
+- pupitre mobile fixe pour garder les dés, l'action et le retour du coach à portée du pouce ;
+- fenêtre de confirmation cohérente avec la direction visuelle ;
 - recommandation mise en évidence et détail mathématique enrichi pour chaque case.
 
 Non implémenté :
@@ -379,41 +382,42 @@ Pour le futur multijoueur :
 - zones tactiles d'au moins 44 × 44 px ;
 - animations entre 150 et 300 ms, avec prise en charge de `prefers-reduced-motion`.
 
-### Direction visuelle proposée
+### Direction visuelle validée
 
-- ambiance : jeu de table moderne, chaleureux, légèrement malicieux, pas enfantin ;
-- fond clair indigo très pâle ;
-- couleur principale indigo ;
-- accent orange réservé aux actions importantes ;
-- cartes avec faible relief et contraste net ;
-- titres arrondis de type Fredoka ;
-- texte très lisible de type Nunito ;
-- dés en SVG ou CSS, jamais en emoji ;
-- mode sombre prévu dès le système de couleurs, même s'il arrive après le MVP.
+- ambiance : borne d'arcade colorée, tactile et joyeuse ;
+- fond corail uni et grand boîtier anthracite aux coins très arrondis ;
+- feuille de score crème avec une colonne joueur corail et une colonne probabilité menthe ;
+- dés en CSS, placés dans des logements sombres ;
+- action principale large avec relief franc, comme un bouton physique ;
+- titres très épais et arrondis, texte secondaire simple et lisible ;
+- traits sombres, aplats francs et ombres courtes ;
+- aucun emoji ni décor réaliste ;
+- thème clair unique pour la V1 afin de préserver cette identité.
 
-Palette de départ à valider sur maquette :
+Palette validée :
 
 | Rôle | Couleur |
 |---|---|
-| Principale | `#4F46E5` |
-| Accent | `#EA580C` |
-| Fond | `#EEF2FF` |
-| Texte | `#1E1B4B` |
-| Bordure | `#C7D2FE` |
-| Erreur | `#DC2626` |
+| Fond principal | `#F49A7A` |
+| Boîtier | `#303537` |
+| Grille | `#FFF0D3` |
+| Catégories | `#F8D591` |
+| Joueur / action | `#F49A7A` |
+| Probabilités / conseil | `#B7E2CE` |
+| Traits | `#25292B` |
 
 ### Écran de partie mobile
 
-Ordre vertical proposé :
+Ordre vertical validé :
 
-1. score, tour et lancers restants ;
-2. cinq dés sélectionnables ;
-3. bouton « Relancer 3 dés » ou « Choisir une case » ;
-4. conseil court du coach ;
-5. grille de score repliable, triée par pertinence ;
-6. panneau « Pourquoi ? » en feuille remontante.
+1. marque, score, tour et progression ;
+2. grille complète avec score courant et probabilité ;
+3. cinq dés sélectionnables ;
+4. grand bouton « Lancer » ou « Relancer » ;
+5. conseil du coach ;
+6. formule, explication et progression du bonus.
 
-Sur ordinateur, la grille reste à droite des dés. Le calcul détaillé s'ouvre dans un panneau latéral sans masquer la partie.
+Sur Mac, la grille passe en deux colonnes dans la borne. Les dés et l'action restent visibles sous la grille ; les explications occupent un panneau latéral séparé.
 
 ### Écrans nécessaires
 

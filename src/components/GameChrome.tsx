@@ -5,13 +5,13 @@ export function AppHeader({ onNewGame }: { onNewGame: () => void }) {
     <header className="topbar">
       <a className="brand" href="#main-content" aria-label="Yazzy, revenir au jeu">
         <span className="brand-die" aria-hidden="true"><i /><i /><i /></span>
-        <span>Yazzy</span>
+        <span>YAZZY</span>
       </a>
       <div className="topbar-meta">
-        <span className="mode-pill">Solo · Apprentissage</span>
+        <span className="mode-pill">SOLO · EXACT</span>
         <button type="button" className="new-game" onClick={onNewGame}>
           <RefreshIcon />
-          Nouvelle partie
+          <span>REJOUER</span>
         </button>
       </div>
     </header>
@@ -27,16 +27,15 @@ type GameStatusProps = {
 
 export function GameStatus({ turn, total, completedCategories, title }: GameStatusProps) {
   return (
-    <>
-      <div className="game-status">
-        <div>
-          <p className="eyebrow">Partie nordique · Tour {Math.min(turn, 15)} sur 15</p>
-          <h1 id="game-title">{title}</h1>
-        </div>
-        <div className="score-summary" aria-label={`Score actuel ${total}`}>
-          <span>Score</span>
-          <strong>{total}</strong>
-        </div>
+    <div className="game-status">
+      <div>
+        <p className="eyebrow">TOUR {Math.min(turn, 15)} / 15</p>
+        <h1 id="game-title">{title}</h1>
+      </div>
+      <div className="score-summary" aria-label={`Score actuel ${total}`}>
+        <span>SCORE</span>
+        <strong>{total}</strong>
+        <small>{completedCategories}/15 cases</small>
       </div>
       <progress
         className="progress-track"
@@ -44,7 +43,7 @@ export function GameStatus({ turn, total, completedCategories, title }: GameStat
         max={15}
         value={completedCategories}
       />
-    </>
+    </div>
   );
 }
 
@@ -72,8 +71,9 @@ export function FinishedCard({ total, onReplay }: { total: number; onReplay: () 
 export function MathNote() {
   return (
     <div className="math-note">
-      <span>Formule utilisée</span>
+      <span>FORMULE DES ISSUES</span>
       <code>P(x) = n! / (x₁! · … · x₆!) × (1/6)ⁿ</code>
+      <p>Chaque résultat possible est multiplié par sa probabilité. Yazzy garde ensuite la décision donnant le meilleur score moyen.</p>
     </div>
   );
 }

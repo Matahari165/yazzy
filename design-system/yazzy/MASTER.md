@@ -1,227 +1,63 @@
-# Design System Master File
+# Yazzy — système visuel
 
-> **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`.
-> If that file exists, its rules **override** this Master file.
-> If not, strictly follow the rules below.
+> Source de vérité pour l'interface. Direction validée à partir de la référence visuelle fournie le 7 août 2026.
 
----
+## Intention
 
-**Project:** Yazzy
-**Generated:** 2026-08-07 22:48:44
-**Category:** Educational App
-**Design Dials:** Variance 6/10 (Balanced / Modern) | Motion 5/10 (Standard) | Density 5/10 (Standard)
+Yazzy ressemble à une petite borne de jeu colorée, pas à un tableau de bord. La feuille de score est le décor principal. Les mathématiques sont visibles sans rendre le jeu froid.
 
----
+## Palette
 
-## Global Rules
+| Rôle | Couleur | Variable |
+|---|---|---|
+| Fond corail | `#F49A7A` | `--coral` |
+| Boîtier anthracite | `#303537` | `--charcoal` |
+| Bord sombre | `#25292B` | `--charcoal-deep` |
+| Papier crème | `#FFF0D3` | `--cream` |
+| Case catégorie | `#F8D591` | `--yellow` |
+| Case probabilité | `#B7E2CE` | `--mint` |
+| Texte principal | `#2D3234` | `--ink` |
 
-### Color Palette
+Le corail identifie le joueur et l'action. Le menthe identifie les probabilités et le coach. Le sens reste toujours écrit : la couleur seule ne suffit pas.
 
-| Role | Hex | CSS Variable |
-|------|-----|--------------|
-| Primary | `#4F46E5` | `--color-primary` |
-| On Primary | `#FFFFFF` | `--color-on-primary` |
-| Secondary | `#818CF8` | `--color-secondary` |
-| Accent/CTA | `#EA580C` | `--color-accent` |
-| Background | `#EEF2FF` | `--color-background` |
-| Foreground | `#1E1B4B` | `--color-foreground` |
-| Muted | `#EBEEF8` | `--color-muted` |
-| Border | `#C7D2FE` | `--color-border` |
-| Destructive | `#DC2626` | `--color-destructive` |
-| Ring | `#4F46E5` | `--color-ring` |
+## Formes et relief
 
-**Color Notes:** Playful indigo + energetic orange [Accent adjusted from #F97316 for WCAG 3:1]
+- boîtier : rayon de 25 à 34 px, bord sombre de 3 à 4 px ;
+- grille : traits anthracite de 2 à 3 px ;
+- boutons : ombre courte et dure donnant un effet physique ;
+- dés : crème, carrés arrondis, points anthracite ;
+- cartes pédagogiques : aplats crème, menthe ou jaune avec bord sombre ;
+- pas de verre, de dégradé décoratif, de flou ni de carte blanche de SaaS.
 
-### Typography
+## Typographie
 
-- **Heading Font:** Fredoka
-- **Body Font:** Nunito
-- **Mood:** playful, friendly, fun, creative, warm, approachable
-- **Google Fonts:** [Fredoka + Nunito](https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@300;400;500;600;700&display=swap)
+- titres et nombres : pile système arrondie et très épaisse ;
+- texte : Avenir Next ou police système ;
+- nombres de score : chiffres tabulaires ;
+- libellés courts et directs ;
+- aucune dépendance à une police distante pour garder un chargement immédiat.
 
-**CSS Import:**
-```css
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@300;400;500;600;700&display=swap');
-```
+## Structure responsive
 
-### Spacing Variables
+### Téléphone
 
-*Density: 5/10 — Standard*
+Une borne verticale : en-tête et feuille complète. Un pupitre fixe conserve les cinq dés, l'action principale et le dernier conseil à portée du pouce. Les explications viennent ensuite dans le défilement. Largeur minimale : 375 px sans défilement horizontal.
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--space-xs` | `4px` / `0.25rem` | Tight gaps |
-| `--space-sm` | `8px` / `0.5rem` | Icon gaps, inline spacing |
-| `--space-md` | `16px` / `1rem` | Standard padding |
-| `--space-lg` | `24px` / `1.5rem` | Section padding |
-| `--space-xl` | `32px` / `2rem` | Large gaps |
-| `--space-2xl` | `48px` / `3rem` | Section margins |
-| `--space-3xl` | `64px` / `4rem` | Hero padding |
+### Mac
 
-### Shadow Depths
+La borne reste à gauche et le labo pédagogique à droite. La feuille est répartie en deux colonnes pour que les dés et le bouton restent visibles dans une fenêtre de 900 px de haut.
 
-| Level | Value | Usage |
-|-------|-------|-------|
-| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)` | Subtle lift |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)` | Cards, buttons |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)` | Modals, dropdowns |
-| `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.15)` | Hero images, featured cards |
+### Paysage compact
 
----
+Borne à gauche, coach à droite. La formule et le bonus peuvent passer sous la zone visible, mais aucune action n'est cachée par un élément fixe.
 
-## Component Specs
+## Interaction et accessibilité
 
-### Buttons
-
-```css
-/* Primary Button */
-.btn-primary {
-  background: #EA580C;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-/* Secondary Button */
-.btn-secondary {
-  background: transparent;
-  color: #4F46E5;
-  border: 2px solid #4F46E5;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-```
-
-### Cards
-
-```css
-.card {
-  background: #EEF2FF;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--shadow-md);
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-```
-
-### Inputs
-
-```css
-.input {
-  padding: 12px 16px;
-  border: 1px solid #E2E8F0;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border-color 200ms ease;
-}
-
-.input:focus {
-  border-color: #4F46E5;
-  outline: none;
-  box-shadow: 0 0 0 3px #4F46E520;
-}
-```
-
-### Modals
-
-```css
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-.modal {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: var(--shadow-xl);
-  max-width: 500px;
-  width: 90%;
-}
-```
-
----
-
-## Style Guidelines
-
-**Style:** Claymorphism
-
-**Keywords:** Soft 3D, chunky, playful, toy-like, bubbly, thick borders (3-4px), double shadows, rounded (16-24px)
-
-**Best For:** Educational apps, children's apps, SaaS platforms, creative tools, fun-focused, onboarding, casual games
-
-**Key Effects:** Inner+outer shadows (subtle, no hard lines), soft press (200ms ease-out), fluffy elements, smooth transitions
-
-### Page Pattern
-
-**Pattern Name:** App Store Style Landing
-
-- **Conversion Strategy:** Show real screenshots. Include ratings (4.5+ stars). QR code for mobile. Platform-specific CTAs.
-- **CTA Placement:** Download buttons prominent (App Store + Play Store) throughout
-- **Section Order:** 1. Hero with device mockup, 2. Screenshots carousel, 3. Features with icons, 4. Reviews/ratings, 5. Download CTAs
-
----
-
-## Motion
-
-**Stagger List** (Standard) — Trigger: load or scroll | Duration: 300-450ms | Easing: `back.out(1.4)`
-
-```js
-gsap.from('.grid-item', { opacity: 0, scale: 0.92, y: 16, duration: 0.4, stagger: { each: 0.06, from: 'start', grid: 'auto' }, ease: 'back.out(1.4)' });
-```
-
-**Framework notes:** grid: 'auto' lets GSAP infer rows/columns from a CSS grid layout for a natural wave stagger
-
-- ✅ Combine with from: 'center' for a bento-grid layout to draw the eye inward first
-- ❌ Don't use back.out on dense data tables; the overshoot reads as sloppy on informational UI
-- ⚡ Group DOM writes; avoid interleaving layout reads (getBoundingClientRect) between staggered tweens
-
----
-
-## Anti-Patterns (Do NOT Use)
-
-- ❌ Dark modes
-- ❌ Complex jargon
-
-### Additional Forbidden Patterns
-
-- ❌ **Emojis as icons** — Use SVG icons (Heroicons, Lucide, Simple Icons)
-- ❌ **Missing cursor:pointer** — All clickable elements must have cursor:pointer
-- ❌ **Layout-shifting hovers** — Avoid scale transforms that shift layout
-- ❌ **Low contrast text** — Maintain 4.5:1 minimum contrast ratio
-- ❌ **Instant state changes** — Always use transitions (150-300ms)
-- ❌ **Invisible focus states** — Focus states must be visible for a11y
-
----
-
-## Pre-Delivery Checklist
-
-Before delivering any UI code, verify:
-
-- [ ] No emojis used as icons (use SVG instead)
-- [ ] All icons from consistent icon set (Heroicons/Lucide)
-- [ ] `cursor-pointer` on all clickable elements
-- [ ] Hover states with smooth transitions (150-300ms)
-- [ ] Light mode: text contrast 4.5:1 minimum
-- [ ] Focus states visible for keyboard navigation
-- [ ] `prefers-reduced-motion` respected
-- [ ] Responsive: 375px, 768px, 1024px, 1440px
-- [ ] No content hidden behind fixed navbars
-- [ ] No horizontal scroll on mobile
+- action principale unique : lancer ou relancer ;
+- zones tactiles de 44 px minimum sur téléphone ;
+- état gardé indiqué par la couleur, le déplacement et le texte ;
+- focus clavier blanc, très visible ;
+- touches `1` à `5` pour garder les dés et `R` pour lancer ;
+- animations de 150 à 320 ms, supprimées avec `prefers-reduced-motion` ;
+- détails mathématiques ouverts avec un vrai bouton sémantique ;
+- aucun emoji utilisé comme icône.

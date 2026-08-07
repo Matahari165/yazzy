@@ -1,4 +1,4 @@
-import { CATEGORY_BY_ID, type CategoryId } from "@/domain/yatzy";
+import { CATEGORY_BY_ID, type CategoryId } from "../domain/yatzy";
 
 const decimal = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
 
@@ -20,12 +20,21 @@ export function scoreFeedback(
   bestCategory: CategoryId,
   gap: number,
 ): CoachFeedback {
-  return gap < 0.1
-    ? { message: `${CATEGORY_BY_ID[category].label} était un excellent choix pour ce tour.`, tone: "success" }
-    : {
-        message: `Tu inscris ${points} point${points > 1 ? "s" : ""}. En valeur immédiate, viser ${CATEGORY_BY_ID[bestCategory].label} valait environ ${decimal.format(gap)} point attendu de plus.`,
-        tone: "tip",
-      };
+  if (gap < 0.1) {
+    return { message: `${CATEGORY_BY_ID[category].label} était un excellent choix pour ce tour.`, tone: "success" };
+  }
+
+  if (bestCategory === category) {
+    return {
+      message: `Tu inscris ${points} point${points > 1 ? "s" : ""} maintenant. Relancer avant d'inscrire ${CATEGORY_BY_ID[category].label} valait environ ${decimal.format(gap)} point attendu de plus.`,
+      tone: "tip",
+    };
+  }
+
+  return {
+    message: `Tu inscris ${points} point${points > 1 ? "s" : ""}. En valeur immédiate, viser ${CATEGORY_BY_ID[bestCategory].label} valait environ ${decimal.format(gap)} point attendu de plus.`,
+    tone: "tip",
+  };
 }
 
 export function gameTitle(rollNumber: number, selectedCategory: CategoryId | null): string {
