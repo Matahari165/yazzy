@@ -1,5 +1,7 @@
 import { MultiplayerClient } from "./MultiplayerClient";
 
-export default function PlayRoomPage({ params, searchParams }: { params: { roomId: string }, searchParams: { host?: string } }) {
-  return <MultiplayerClient roomId={params.roomId} isHost={searchParams.host === "true"} />;
+export default async function PlayRoomPage({ params, searchParams }: { params: Promise<{ roomId: string }>, searchParams: Promise<{ host?: string }> }) {
+  const { roomId } = await params;
+  const { host } = await searchParams;
+  return <MultiplayerClient roomId={roomId} isHost={host === "true"} />;
 }
