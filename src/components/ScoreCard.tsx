@@ -65,15 +65,17 @@ export function ScoreCard({
                 aria-label={`${category.label}, ${stateLabel}, ${filled ? `${score} points inscrits` : currentScore === null ? "aucun score affiché" : `${currentScore} points possibles`}`}
                 onClick={() => onSelect?.(category.id)}
               >
-                <span className="score-category">
-                  <span>{category.label}</span>
-                  {isRecommended ? <small>Conseillée</small> : null}
-                  {isSelected ? <small>Sélectionnée</small> : null}
+                <span className="score-meta">
+                  <span className="score-category">
+                    <span>{category.label}</span>
+                    {isRecommended ? <small>Conseillée</small> : null}
+                    {isSelected ? <small>Sélectionnée</small> : null}
+                  </span>
+                  <span className="score-state">
+                    {filled ? "Inscrite" : isSelected ? "Prête" : isRecommended ? "Conseillée" : isReadOnly ? "Libre" : evaluation && isCalculating ? "Calcul…" : "Libre"}
+                  </span>
                 </span>
                 <strong className="score-value">{currentScore === null ? "—" : currentScore}</strong>
-                <span className="score-state">
-                  {filled ? "Inscrite" : isSelected ? "Prête" : isReadOnly ? "Libre" : evaluation && isCalculating ? "Calcul…" : "Libre"}
-                </span>
               </button>
             </div>
           );

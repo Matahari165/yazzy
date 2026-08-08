@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CATEGORY_BY_ID, CATEGORY_IDS, scoreDice, type CategoryId } from "@/domain/yatzy";
+import { CATEGORY_BY_ID, CATEGORY_IDS, scoreDice, totalScore, type CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useProbabilityEngine } from "@/hooks/useProbabilityEngine";
 import { useYazzyGame } from "@/hooks/useYazzyGame";
@@ -37,7 +37,11 @@ export function GameBoard() {
   const selectedPoints = selectedCategory && game.human.dice.length === 5
     ? scoreDice(selectedCategory, game.human.dice)
     : 0;
-  const botFeedback = game.activePlayer === "human" && game.botTurn.status === "idle" ? game.botTurn.message : null;
+  const botFeedback = game.activePlayer === "human" && game.botTurn.status === "idle"
+    ? game.botTurn.targetCategory
+      ? `Bot : ${CATEGORY_BY_ID[game.botTurn.targetCategory].label} · ${game.bot.scores[game.botTurn.targetCategory] ?? 0} point${(game.bot.scores[game.botTurn.targetCategory] ?? 0) > 1 ? "s" : ""} · total ${totalScore(game.bot.scores)}.`
+      : game.botTurn.message
+    : null;
   const visibleFeedback = botFeedback ?? feedback;
 
   useEffect(() => () => {
@@ -66,7 +70,7 @@ export function GameBoard() {
   const handleScore = () => {
     if (!selectedCategory || game.activePlayer !== "human" || isRolling || isCalculating) return;
     const points = scoreDice(selectedCategory, game.human.dice);
-    setFeedback(`${CATEGORY_BY_ID[selectedCategory].label} : ${points} point${points > 1 ? "s" : ""} inscrit${points > 1 ? "s" : ""}. Le bot joue maintenant.`);
+    setFeedback(`Bot : ${CATEGORY_BY_ID[selectedCategory].label} · ${points} point${points > 1 ? "s" : ""}.`);
     score(selectedCategory);
     setSelectedCategory(null);
   };

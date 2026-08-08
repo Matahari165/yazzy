@@ -175,7 +175,7 @@ export function scoreBotTurn(current: GameState, category: CategoryId): GameStat
     botTurn: {
       status: "idle",
       targetCategory: category,
-      message: `Le bot a inscrit ${points} point${points > 1 ? "s" : ""} dans ${CATEGORY_BY_ID[category].label}.`,
+      message: `Bot : ${CATEGORY_BY_ID[category].label} · ${points} point${points > 1 ? "s" : ""}.`,
     },
   };
 }

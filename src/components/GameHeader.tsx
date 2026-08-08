@@ -12,7 +12,7 @@ export function GameHeader({ game }: { game: GameState }) {
     <>
       <header className="game-header">
         <Link className="game-logo" href="/" aria-label="Yazzy, revenir à l’accueil">YAZZY</Link>
-        <span className="mode-label">CONTRE BOT · {getBotPolicy(game.botLevel).label}</span>
+        <span className="mode-label">BOT · {getBotPolicy(game.botLevel).label}</span>
         <Link className="quit-link" href="/">Quitter</Link>
       </header>
       <section className="game-overview" aria-label="État de la partie">

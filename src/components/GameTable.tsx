@@ -68,13 +68,13 @@ export function GameTable({
 }: GameTableProps) {
   const heldCount = held.filter(Boolean).length;
   const canRoll = rollNumber < 3 && !(rollNumber > 0 && heldCount === 5) && !isRolling && !isCalculating;
-  const actionLabel = rollNumber === 0 ? "Lancer les dés" : "Relancer";
+  const actionLabel = rollNumber === 0 ? "Lancer" : "Relancer";
 
   return (
     <section className="game-table" aria-label="Zone de lancer">
       <div className="table-instruction" aria-live="polite">
         <strong>{isRolling ? "Les dés roulent…" : rollNumber === 0 ? "À toi de lancer" : rollNumber >= 3 ? "Résultat final" : `${heldCount} dé${heldCount > 1 ? "s" : ""} gardé${heldCount > 1 ? "s" : ""}`}</strong>
-        <span>{rollNumber === 0 ? "Trois lancers pour construire ton coup." : rollNumber >= 3 ? "Choisis une case dans ta feuille." : "Chaque dé indique maintenant son état."}</span>
+        <span>{rollNumber === 0 ? "Jusqu’à trois lancers." : rollNumber >= 3 ? "Choisis une case dans ta feuille." : "Chaque dé indique son état."}</span>
       </div>
 
       {selectedCategory ? (
@@ -101,7 +101,7 @@ export function GameTable({
       />
 
       <div className="roll-controls">
-        <span className="roll-count">{rollNumber === 0 ? "Prêt à lancer" : `Lancer ${Math.min(rollNumber, 3)} sur 3`}</span>
+        <span className="roll-count">{rollNumber === 0 ? "Prêt à lancer" : `Lancer ${Math.min(rollNumber, 3)}/3`}</span>
         {rollNumber >= 3 ? (
           <div className="roll-complete" role="status">Résultat final · choisis une case</div>
         ) : heldCount === 5 && rollNumber > 0 ? (

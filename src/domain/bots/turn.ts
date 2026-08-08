@@ -54,7 +54,7 @@ export function completeBotTurn(current: GameState, rollDie: () => DieValue = ro
     ...finished,
     botTurn: {
       ...finished.botTurn,
-      message: `Le bot a inscrit ${points} point${points > 1 ? "s" : ""} dans ${CATEGORY_BY_ID[targetCategory].label}. Score du bot : ${totalScore(finished.bot.scores)}.`,
+      message: `Bot : ${CATEGORY_BY_ID[targetCategory].label} · ${points} point${points > 1 ? "s" : ""} · total ${totalScore(finished.bot.scores)}.`,
     },
   };
 }

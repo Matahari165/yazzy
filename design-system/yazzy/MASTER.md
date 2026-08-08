@@ -47,7 +47,7 @@ L’accueil et le choix du bot sont centrés sur une action principale. Pendant 
 
 ### Paysage compact
 
-La feuille adopte quatre colonnes lorsque la hauteur est courte. Les dés, l’action et le statut restent dans le second panneau. Aucun défilement horizontal n’est autorisé.
+La feuille adopte deux colonnes lisibles lorsque la hauteur est courte et peut défiler dans son propre panneau. Les dés, l’action et le statut restent dans le second panneau. Aucun défilement horizontal n’est autorisé.
 
 ### Mac
 
