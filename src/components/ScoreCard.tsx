@@ -29,8 +29,9 @@ type ScoreCardProps = {
   canSelect: boolean;
   isReadOnly?: boolean;
   isCalculating?: boolean;
-  onSelect?: (category: CategoryId) => void;
+  onSelect?: (category: CategoryId | null) => void;
   onScore?: () => void;
+  targetEvaluation?: CategoryEvaluation;
 };
 
 function formatPoints(score: number) {
@@ -65,10 +66,14 @@ export function ScoreCard({
   isCalculating = false,
   onSelect,
   onScore,
+  targetEvaluation,
 }: ScoreCardProps) {
   const [explainedCategory, setExplainedCategory] = useState<CategoryId | null>(null);
   const upperScore = (humanScores.ones ?? 0) + (humanScores.twos ?? 0) + (humanScores.threes ?? 0) + (humanScores.fours ?? 0) + (humanScores.fives ?? 0) + (humanScores.sixes ?? 0);
-  const closeExplanation = useCallback(() => setExplainedCategory(null), []);
+  const closeExplanation = useCallback(() => {
+    setExplainedCategory(null);
+    onSelect?.(null);
+  }, [onSelect]);
 
   return (
     <section className="score-card" aria-label={label} aria-busy={isCalculating}>
@@ -131,6 +136,7 @@ export function ScoreCard({
                   placement={index >= CATEGORIES.length - 5 ? "above" : "below"}
                   scoreText={scoreText}
                   coachEvaluation={coachEvaluation}
+                  targetEvaluation={targetEvaluation}
                   scoreAction={(!filled && !isReadOnly && canSelect && onScore) ? () => { closeExplanation(); onScore(); } : undefined}
                   scorePoints={currentScore}
                   onClose={closeExplanation}

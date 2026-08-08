@@ -1,8 +1,6 @@
-import type { CategoryEvaluation } from "@/domain/probability";
 import { type CategoryId, type DieValue } from "@/domain/yatzy";
 import type { GameState } from "@/domain/game";
 import { Dice } from "./Dice";
-import { DecisionPanel } from "./DecisionPanel";
 
 type DiceTrayProps = {
   dice: DieValue[];
@@ -41,14 +39,10 @@ type GameTableProps = {
   held: boolean[];
   rollNumber: number;
   selectedCategory: CategoryId | null;
-  selectedPoints: number;
-  targetEvaluation?: CategoryEvaluation;
   isRolling: boolean;
   isCalculating: boolean;
-  calculationError: string | null;
   onToggleDie: (index: number) => void;
   onRoll: () => void;
-  onScore: () => void;
 };
 
 export function GameTable({
@@ -56,14 +50,10 @@ export function GameTable({
   held,
   rollNumber,
   selectedCategory,
-  selectedPoints,
-  targetEvaluation,
   isRolling,
   isCalculating,
-  calculationError,
   onToggleDie,
   onRoll,
-  onScore,
 }: GameTableProps) {
   const heldCount = held.filter(Boolean).length;
   const canRoll = rollNumber < 3 && !(rollNumber > 0 && heldCount === 5) && !isRolling && !isCalculating;
@@ -77,18 +67,6 @@ export function GameTable({
 
   return (
     <section className="game-table" aria-label="Zone de lancer" aria-busy={isCalculating}>
-      {selectedCategory ? (
-        <DecisionPanel
-          category={selectedCategory}
-          points={selectedPoints}
-          evaluation={targetEvaluation}
-          remainingRolls={Math.max(0, 3 - rollNumber)}
-          isCalculating={isCalculating}
-          calculationError={calculationError}
-          disabled={isRolling || isCalculating}
-          onScore={onScore}
-        />
-      ) : null}
 
       <DiceTray
         dice={dice}

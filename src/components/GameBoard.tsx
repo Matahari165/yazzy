@@ -104,6 +104,7 @@ export function GameBoard() {
             isCalculating={game.activePlayer === "human" && isCalculating}
             onSelect={setSelectedCategory}
             onScore={handleScore}
+            targetEvaluation={selectedEvaluation}
           />
 
           {game.activePlayer === "human" ? (
@@ -112,14 +113,10 @@ export function GameBoard() {
               held={game.human.held}
               rollNumber={game.human.rollNumber}
               selectedCategory={selectedCategory}
-              selectedPoints={selectedPoints}
-              targetEvaluation={selectedEvaluation}
               isRolling={isRolling}
               isCalculating={isCalculating}
-              calculationError={calculationError}
               onToggleDie={toggleHeld}
               onRoll={handleRoll}
-              onScore={handleScore}
             />
           ) : (
             <BotTurnPanel game={game} onSkip={skipBotAnimation} />

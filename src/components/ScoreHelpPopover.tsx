@@ -10,10 +10,13 @@ type ScoreHelpPopoverProps = {
   placement: "above" | "below";
   scoreText: string;
   coachEvaluation?: CategoryEvaluation;
+  targetEvaluation?: CategoryEvaluation;
   scoreAction?: () => void;
   scorePoints?: number | null;
   onClose: () => void;
 };
+
+const percent = new Intl.NumberFormat("fr-FR", { style: "percent", maximumFractionDigits: 1 });
 
 function focusElement(elementId: string) {
   document.getElementById(elementId)?.focus({ preventScroll: true });
@@ -25,6 +28,7 @@ export function ScoreHelpPopover({
   placement,
   scoreText,
   coachEvaluation,
+  targetEvaluation,
   scoreAction,
   scorePoints,
   onClose,
@@ -91,6 +95,13 @@ export function ScoreHelpPopover({
           </svg>
         </button>
       </header>
+
+      {targetEvaluation && (
+        <div style={{ padding: '0 12px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>Chance de marquer</span>
+          <strong style={{ fontSize: 14 }}>{percent.format(targetEvaluation.successProbability)}</strong>
+        </div>
+      )}
 
       <dl className="score-help-details">
         <div>
