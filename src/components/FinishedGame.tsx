@@ -11,7 +11,6 @@ export function FinishedGame({ game }: { game: GameState }) {
     <section className="finished-card" tabIndex={-1} aria-labelledby="finished-title">
       <p className="eyebrow">PARTIE TERMINÉE</p>
       <h1 id="finished-title" tabIndex={-1}>{resultTitle}</h1>
-      <p className="finished-lead">Ta décision et celle du bot ont été jouées avec le même tirage équitable.</p>
       <div className="finished-scoreboard">
         <div><span>TOI</span><strong>{humanTotal}</strong></div>
         <div><span>BOT</span><strong>{botTotal}</strong></div>

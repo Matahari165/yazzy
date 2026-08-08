@@ -30,7 +30,7 @@ export function DecisionPanel({
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const definition = CATEGORY_BY_ID[category];
   const reason = remainingRolls > 0 && evaluation
-    ? `${formatHoldAction(evaluation.bestHoldForExpectedScore)} pour viser le meilleur score moyen de cette case.`
+    ? formatHoldAction(evaluation.bestHoldForExpectedScore)
     : remainingRolls > 0
       ? "Le conseil arrive dès que le calcul est terminé."
       : "Aucun lancer ne reste : tu peux inscrire ce résultat.";

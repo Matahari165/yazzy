@@ -109,7 +109,7 @@ export function ScoreHelpPopover({
           <div className="score-help-result" style={{ marginTop: 8, gridColumn: "1 / -1", background: 'var(--surface-muted)' }}>
             <dt style={{ color: 'var(--green)' }}>💡 Conseil du Coach</dt>
             <dd style={{ fontSize: 13, textAlign: 'left', marginTop: 4, fontFamily: 'var(--font-body)' }}>
-              {formatHoldAction(coachEvaluation.bestHoldForExpectedScore)} pour maximiser tes chances.
+              {formatHoldAction(coachEvaluation.bestHoldForExpectedScore)}.
             </dd>
           </div>
         )}

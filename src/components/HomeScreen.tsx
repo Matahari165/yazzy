@@ -31,8 +31,6 @@ export function HomeScreen() {
           </div>
         </header>
 
-        <p className="lobby-lead">Une partie claire, des décisions qui comptent, et un bot qui joue vraiment ses dés.</p>
-
         <div className="lobby-actions">
           {canResume ? (
             <Link className="secondary-action" href="/game">

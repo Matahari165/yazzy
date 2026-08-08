@@ -34,7 +34,6 @@ export function BotSetupScreen() {
           <Link className="back-link" href="/">← Accueil</Link>
           <p className="eyebrow">JOUER CONTRE UN BOT</p>
           <h1 id="setup-title">Choisis ton adversaire</h1>
-          <p>Chaque niveau change ses décisions, jamais l’équité de ses dés.</p>
         </header>
 
         <div className="level-list" role="radiogroup" aria-label="Niveau du bot">
