@@ -62,6 +62,7 @@ La feuille dense et le pupitre sont présentés dans deux colonnes équilibrées
 - états des dés visibles en couleur, position et forme, avec libellés accessibles invisibles ;
 - raccourcis `⌥1` à `⌥5`, `⌥R` et `⌥S` actifs mais non affichés pendant la partie ;
 - trois points compacts indiquent les lancers disponibles et consommés ;
+- toucher une case conserve sa sélection habituelle et ouvre une fiche courte « Réalisation / Calcul / Score » ; la fiche est ancrée à la case sur Mac et présentée en bas de l’écran sur mobile ;
 - animation des dés de 220 à 300 ms, résultat généré au clic, dés gardés immobiles ;
 - `prefers-reduced-motion` réduit l’animation à un fondu court ;
 - contraste AA et focus visible ;

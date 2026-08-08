@@ -1,6 +1,7 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important;
+    animation-duration: 80ms !important;
     transition-duration: 80ms !important;
   }
 }

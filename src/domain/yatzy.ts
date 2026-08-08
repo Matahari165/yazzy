@@ -26,6 +26,7 @@ export type CategoryDefinition = {
   shortLabel: string;
   rule: string;
   scoring: string;
+  maximumScore: number;
   section: "upper" | "lower";
   fixedScore?: number;
 };
@@ -42,6 +43,7 @@ const upper = (
   section: "upper",
   rule: `Obtenir un ou plusieurs ${label.toLowerCase()}.`,
   scoring: `Somme uniquement les dés de valeur ${value}.`,
+  maximumScore: value * 5,
 });
 
 export const CATEGORIES: readonly CategoryDefinition[] = [
@@ -58,6 +60,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     section: "lower",
     rule: "Au moins deux dés identiques.",
     scoring: "Somme la paire de valeur la plus élevée.",
+    maximumScore: 12,
   },
   {
     id: "twoPairs",
@@ -66,6 +69,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     section: "lower",
     rule: "Deux paires de valeurs différentes.",
     scoring: "Somme les quatre dés des deux paires.",
+    maximumScore: 22,
   },
   {
     id: "threeOfAKind",
@@ -74,6 +78,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     section: "lower",
     rule: "Au moins trois dés identiques.",
     scoring: "Somme trois dés identiques.",
+    maximumScore: 18,
   },
   {
     id: "fourOfAKind",
@@ -82,6 +87,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     section: "lower",
     rule: "Au moins quatre dés identiques.",
     scoring: "Somme quatre dés identiques.",
+    maximumScore: 24,
   },
   {
     id: "smallStraight",
@@ -90,6 +96,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     section: "lower",
     rule: "Obtenir exactement 1, 2, 3, 4 et 5.",
     scoring: "15 points.",
+    maximumScore: 15,
     fixedScore: 15,
   },
   {
@@ -99,6 +106,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     section: "lower",
     rule: "Obtenir exactement 2, 3, 4, 5 et 6.",
     scoring: "20 points.",
+    maximumScore: 20,
     fixedScore: 20,
   },
   {
@@ -108,6 +116,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     section: "lower",
     rule: "Un brelan et une paire de valeurs différentes.",
     scoring: "Somme les cinq dés.",
+    maximumScore: 28,
   },
   {
     id: "yatzy",
@@ -116,6 +125,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     section: "lower",
     rule: "Cinq dés identiques.",
     scoring: "50 points.",
+    maximumScore: 50,
     fixedScore: 50,
   },
 ];
