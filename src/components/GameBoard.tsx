@@ -37,12 +37,6 @@ export function GameBoard() {
   const selectedPoints = selectedCategory && game.human.dice.length === 5
     ? scoreDice(selectedCategory, game.human.dice)
     : 0;
-  const botFeedback = game.activePlayer === "human" && game.botTurn.status === "idle"
-    ? game.botTurn.targetCategory
-      ? `Bot : ${CATEGORY_BY_ID[game.botTurn.targetCategory].label} · ${game.bot.scores[game.botTurn.targetCategory] ?? 0} point${(game.bot.scores[game.botTurn.targetCategory] ?? 0) > 1 ? "s" : ""} · total ${totalScore(game.bot.scores)}.`
-      : game.botTurn.message
-    : null;
-  const visibleFeedback = botFeedback ?? feedback;
 
   useEffect(() => () => {
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
@@ -91,7 +85,6 @@ export function GameBoard() {
   return (
     <main id="main-content" className="game-shell">
       <GameHeader game={game} />
-      {visibleFeedback ? <p className="game-feedback" role="status">{visibleFeedback}</p> : null}
       {isFinished ? (
         <FinishedGame game={game} />
       ) : (

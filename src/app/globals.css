@@ -332,7 +332,6 @@ h3 { font-size: 18px; line-height: 1.2; }
 }
 
 .quit-link:hover { color: var(--ink); background: var(--surface-muted); }
-.game-feedback { margin: 0 0 12px; padding: 8px 12px; color: var(--ink); background: var(--yellow-soft); border-radius: var(--radius-sm); font-size: 13px; }
 .game-content { display: grid; grid-template-columns: minmax(360px, 0.98fr) minmax(360px, 1.02fr); gap: 16px; align-items: start; }
 
 .score-card,
@@ -431,6 +430,7 @@ h3 { font-size: 18px; line-height: 1.2; }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .bonus-summary { display: grid; gap: 4px; padding: 8px 14px 10px; background: var(--surface-muted); }
+.total-row { display: grid; grid-template-columns: minmax(0, 1fr) 32px 32px; gap: 8px; padding: 6px 14px; align-items: center; }
 .bonus-summary > div { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
 .bonus-summary strong { font-variant-numeric: tabular-nums; }
 .bonus-summary progress { width: 100%; height: 5px; accent-color: var(--green); }

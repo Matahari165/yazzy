@@ -1,9 +1,20 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { CATEGORIES, scoreDice, type CategoryDefinition, type CategoryId, type Dice } from "@/domain/yatzy";
+import { CATEGORIES, scoreDice, type CategoryDefinition, type CategoryId, type Dice, totalScore } from "@/domain/yatzy";
 import type { CategoryEvaluation } from "@/domain/probability";
 import { ScoreHelpPopover } from "./ScoreHelpPopover";
+
+const VISUAL_HINTS: Partial<Record<CategoryId, string>> = {
+  pair: "⚅ ⚅",
+  twoPairs: "⚅ ⚅ ⚄ ⚄",
+  threeOfAKind: "⚅ ⚅ ⚅",
+  fourOfAKind: "⚅ ⚅ ⚅ ⚅",
+  smallStraight: "⚀ ⚁ ⚂ ⚃ ⚄",
+  largeStraight: "⚁ ⚂ ⚃ ⚄ ⚅",
+  fullHouse: "⚅ ⚅ ⚅ ⚄ ⚄",
+  yatzy: "⚅ ⚅ ⚅ ⚅ ⚅",
+};
 
 type ScoreCardProps = {
   label: string;
@@ -104,7 +115,10 @@ export function ScoreCard({
                 aria-label={`${category.label}, toi : ${filled ? `${score} points inscrits` : currentScore === null ? "aucun score affiché" : `${currentScore} points possibles`}, bot : ${botScore === undefined ? "aucun score inscrit" : `${botScore} points inscrits`}. ${stateLabel}. Ouvrir l’explication.`}
                 onClick={handleClick}
               >
-                <span className="score-category">{category.label}</span>
+                <span className="score-category">
+                  {category.label}
+                  {VISUAL_HINTS[category.id] && <span style={{ display: 'block', fontSize: 13, color: 'var(--ink-soft)', fontWeight: 'normal', letterSpacing: '0.15em', marginTop: 1 }}>{VISUAL_HINTS[category.id]}</span>}
+                </span>
                 <strong className="score-value" aria-hidden="true">{currentScore === null ? "—" : currentScore}</strong>
                 <strong className="score-value score-value-bot" aria-hidden="true">{botScore === undefined ? "—" : botScore}</strong>
               </button>
@@ -130,6 +144,11 @@ export function ScoreCard({
         </div>
         <progress max={63} value={Math.min(63, upperScore)} aria-label="Progression du bonus supérieur" />
       </footer>
+      <div className="total-row">
+        <span style={{ fontSize: 16, fontWeight: 800 }}>Total</span>
+        <strong className="score-value" style={{ color: 'var(--ink)' }}>{totalScore(humanScores)}</strong>
+        <strong className="score-value score-value-bot">{totalScore(botScores)}</strong>
+      </div>
     </section>
   );
 }
