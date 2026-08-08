@@ -103,6 +103,7 @@ export function GameBoard() {
             isReadOnly={game.activePlayer === "bot"}
             isCalculating={game.activePlayer === "human" && isCalculating}
             onSelect={setSelectedCategory}
+            onScore={handleScore}
           />
 
           {game.activePlayer === "human" ? (

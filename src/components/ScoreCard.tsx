@@ -30,6 +30,7 @@ type ScoreCardProps = {
   isReadOnly?: boolean;
   isCalculating?: boolean;
   onSelect?: (category: CategoryId) => void;
+  onScore?: () => void;
 };
 
 function formatPoints(score: number) {
@@ -63,6 +64,7 @@ export function ScoreCard({
   isReadOnly = false,
   isCalculating = false,
   onSelect,
+  onScore,
 }: ScoreCardProps) {
   const [explainedCategory, setExplainedCategory] = useState<CategoryId | null>(null);
   const upperScore = (humanScores.ones ?? 0) + (humanScores.twos ?? 0) + (humanScores.threes ?? 0) + (humanScores.fours ?? 0) + (humanScores.fives ?? 0) + (humanScores.sixes ?? 0);
@@ -119,8 +121,8 @@ export function ScoreCard({
                   {category.label}
                   {VISUAL_HINTS[category.id] && <span style={{ display: 'block', fontSize: 13, color: 'var(--ink-soft)', fontWeight: 'normal', letterSpacing: '0.15em', marginTop: 1 }}>{VISUAL_HINTS[category.id]}</span>}
                 </span>
-                <strong className="score-value" aria-hidden="true">{currentScore === null ? "—" : currentScore}</strong>
-                <strong className="score-value score-value-bot" aria-hidden="true">{botScore === undefined ? "—" : botScore}</strong>
+                <strong className="score-value" aria-hidden="true">{currentScore === null ? "" : currentScore}</strong>
+                <strong className="score-value score-value-bot" aria-hidden="true">{botScore === undefined ? "" : botScore}</strong>
               </button>
               {isExplained ? (
                 <ScoreHelpPopover
@@ -129,6 +131,8 @@ export function ScoreCard({
                   placement={index >= CATEGORIES.length - 5 ? "above" : "below"}
                   scoreText={scoreText}
                   coachEvaluation={coachEvaluation}
+                  scoreAction={(!filled && !isReadOnly && canSelect && onScore) ? () => { closeExplanation(); onScore(); } : undefined}
+                  scorePoints={currentScore}
                   onClose={closeExplanation}
                 />
               ) : null}
