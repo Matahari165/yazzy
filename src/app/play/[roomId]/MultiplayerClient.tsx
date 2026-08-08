@@ -82,9 +82,9 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string, isHost: 
       {isFinished ? (
         <FinishedGame game={game} />
       ) : (
-        <div className="game-content" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="game-content">
           {isHost && Object.keys(opponentPlayer.scores).length === 0 && (
-            <div style={{ padding: 16, background: "var(--surface-muted)", border: "1px solid var(--line)", borderRadius: 12 }}>
+            <div style={{ gridColumn: "1 / -1", padding: 16, background: "var(--surface-muted)", border: "1px solid var(--line)", borderRadius: 12 }}>
               <p style={{ margin: "0 0 4px 0", fontSize: 14, fontWeight: "bold", color: "var(--ink)" }}>Invite ton ami à rejoindre la partie !</p>
               <p style={{ margin: "0 0 12px 0", fontSize: 13, color: "var(--ink-soft)" }}>Partage-lui ce lien. Vous serez connectés en temps réel.</p>
               <input type="text" readOnly value={inviteLink} style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid var(--line)", background: "white", fontFamily: "monospace", fontSize: 14, cursor: "pointer" }} onClick={(e) => { e.currentTarget.select(); navigator.clipboard.writeText(e.currentTarget.value); alert("Lien copié dans le presse-papiers !"); }} />
