@@ -84,7 +84,7 @@ export function GameBoard() {
 
   return (
     <main id="main-content" className="game-shell">
-      <GameHeader game={game} />
+      <GameHeader game={game} isCoachEnabled={isCoachEnabled} onToggleCoach={toggleCoach} />
       {isFinished ? (
         <FinishedGame game={game} />
       ) : (

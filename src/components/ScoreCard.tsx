@@ -77,11 +77,6 @@ export function ScoreCard({
 
   return (
     <section className="score-card" aria-label={label} aria-busy={isCalculating}>
-      <header style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 14px 0' }}>
-         <button onClick={onToggleCoach} style={{ background: isCoachEnabled ? 'var(--green-soft)' : 'var(--surface-muted)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '4px 10px', color: isCoachEnabled ? 'var(--green)' : 'var(--ink-soft)', fontSize: 11, fontWeight: 'bold', cursor: 'pointer', transition: 'all 150ms' }}>
-           💡 Coach {isCoachEnabled ? "Activé" : "Désactivé"}
-         </button>
-      </header>
       <div className="score-legend" aria-hidden="true">
         <span>Toi</span>
         <span>Bot</span>
