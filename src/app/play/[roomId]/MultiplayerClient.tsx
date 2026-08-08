@@ -1,6 +1,5 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { useMultiplayerGame } from "../../../hooks/useMultiplayerGame";
 import { GameTable } from "../../../components/GameTable";
 import { GameHeader } from "../../../components/GameHeader";
@@ -12,10 +11,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useProbabilityEngine } from "../../../hooks/useProbabilityEngine";
 import { CATEGORY_IDS } from "../../../domain/yatzy";
 
-export function MultiplayerClient({ roomId }: { roomId: string }) {
-  const searchParams = useSearchParams();
-  const isHost = searchParams.get("host") === "true";
-  
+export function MultiplayerClient({ roomId, isHost }: { roomId: string, isHost: boolean }) {
   const { game, roll, toggleHeld, score, hasLoaded, isFinished, isOpponentTurn } = useMultiplayerGame(roomId, isHost ? "human" : "bot");
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [isRolling, setIsRolling] = useState(false);
