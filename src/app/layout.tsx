@@ -4,7 +4,7 @@ import "./game-polish.css";
 import "./game-responsive.css";
 
 export const metadata: Metadata = {
-  title: "Yazzy — Joue, calcule, progresse",
+  title: "Yazzy",
   description: "Le Yatzy qui explique chaque probabilité et chaque décision.",
 };
 
