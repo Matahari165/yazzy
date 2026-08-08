@@ -23,26 +23,27 @@ type DiceProps = {
   value: DieValue;
   held: boolean;
   disabled: boolean;
+  finalResult?: boolean;
   rolling: boolean;
   index: number;
   onToggle: () => void;
 };
 
-export function Dice({ value, held, disabled, rolling, index, onToggle }: DiceProps) {
+export function Dice({ value, held, disabled, finalResult = false, rolling, index, onToggle }: DiceProps) {
   return (
     <button
       type="button"
-      className="die"
+      className="die-button"
       data-held={held}
       data-rolling={rolling && !held}
       aria-pressed={held}
       aria-keyshortcuts={`Alt+${index + 1}`}
-      aria-label={`Dé ${index + 1} : ${value}${disabled ? ", résultat final" : held ? ", gardé" : ", à relancer"}`}
-      disabled={disabled || rolling}
+      aria-label={`Dé ${index + 1} : ${value}, ${finalResult ? "résultat final" : held ? "gardé" : "à relancer"}`}
+      disabled={disabled}
       onClick={onToggle}
     >
       <DieGlyph value={value} className="die-face" />
-      <span className="die-state">{disabled ? "Final" : held ? "Gardé" : "Relancer"}</span>
+      <span className="die-state">{finalResult ? "Résultat final" : held ? "Gardé" : "À relancer"}</span>
       <kbd aria-hidden="true">⌥{index + 1}</kbd>
     </button>
   );

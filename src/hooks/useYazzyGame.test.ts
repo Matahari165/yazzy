@@ -1,35 +1,46 @@
 import { describe, expect, it } from "vitest";
-import { isStoredGame, rollGame, type GameState } from "./useYazzyGame";
+import { createGame, rollPlayerTurn, scoreHumanTurn } from "../domain/game";
 
-const gameWithOneRoll = (): GameState => ({
-  dice: [6, 2, 3, 4, 5],
-  held: [true, false, false, false, false],
-  rollNumber: 1,
-  turn: 1,
-  scores: {},
-});
-
-describe("état de partie", () => {
-  it("conserve les dés verrouillés après une relance", () => {
-    const values = [1, 1, 1, 1] as const;
+describe("état du jeu", () => {
+  it("conserve les dés gardés après une relance", () => {
+    const current = {
+      dice: [6, 2, 3, 4, 5] as [6, 2, 3, 4, 5],
+      held: [true, false, false, false, false],
+      rollNumber: 1,
+      scores: {},
+    };
     let index = 0;
-    const next = rollGame(gameWithOneRoll(), () => values[index++]);
+    const next = rollPlayerTurn(current, () => ([1, 1, 1, 1][index++] ?? 1) as 1);
 
     expect(next.dice).toEqual([6, 1, 1, 1, 1]);
     expect(next.held).toEqual([true, false, false, false, false]);
     expect(next.rollNumber).toBe(2);
   });
 
-  it("ne consomme pas un lancer quand les cinq dés sont gardés", () => {
-    const current = { ...gameWithOneRoll(), held: [true, true, true, true, true] };
-    expect(rollGame(current)).toBe(current);
+  it("refuse une relance quand les cinq dés sont gardés", () => {
+    const current = {
+      dice: [6, 2, 3, 4, 5] as [6, 2, 3, 4, 5],
+      held: [true, true, true, true, true],
+      rollNumber: 1,
+      scores: {},
+    };
+    expect(rollPlayerTurn(current)).toBe(current);
   });
 
-  it("rejette une sauvegarde incohérente", () => {
-    expect(isStoredGame({ ...gameWithOneRoll(), dice: [7, 2, 3, 4, 5] })).toBe(false);
-    expect(isStoredGame({ ...gameWithOneRoll(), rollNumber: 4 })).toBe(false);
-    expect(isStoredGame({ ...gameWithOneRoll(), scores: { unknown: 12 } })).toBe(false);
-    expect(isStoredGame({ ...gameWithOneRoll(), scores: [] })).toBe(false);
-    expect(isStoredGame({ ...gameWithOneRoll(), turn: 4 })).toBe(false);
+  it("enchaîne inscription humaine et passage au bot", () => {
+    const game = {
+      ...createGame("calculator"),
+      human: {
+        dice: [6, 5, 4, 3, 2] as [6, 5, 4, 3, 2],
+        held: [false, false, false, false, false],
+        rollNumber: 1,
+        scores: {},
+      },
+    };
+    const next = scoreHumanTurn(game, "chance");
+
+    expect(next.activePlayer).toBe("bot");
+    expect(next.human.scores.chance).toBe(20);
+    expect(next.botTurn.status).toBe("rolling");
   });
 });

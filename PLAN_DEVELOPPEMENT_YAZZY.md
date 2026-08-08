@@ -1,10 +1,10 @@
 # Yazzy — Plan produit, mathématique et technique
 
 > Document de référence du projet
-> Version : 0.3 — 7 août 2026
+> Version : 0.4 — 8 août 2026
 > Statut : développement commencé
 
-## État réel du projet au 7 août 2026
+## État réel du projet au 8 août 2026
 
 Implémenté et vérifié :
 
@@ -12,24 +12,22 @@ Implémenté et vérifié :
 - socle Next.js, React et TypeScript ;
 - moteur de score du Yatzy nordique ;
 - moteur exact de probabilité et d'espérance par case, exécuté hors du fil principal ;
-- 16 tests automatisés sur les règles, les probabilités et les retours du coach ;
-- partie solo : lancer, conservation, relance, sélection d'une case, score et tour suivant ;
-- sauvegarde locale automatique ;
-- premier coach exact au niveau du tour ;
-- interface responsive vérifiée en largeur Mac, à 375 px et en paysage mobile ;
-- raccourcis clavier `1` à `5` pour les dés et `R` pour relancer ;
-- navigation clavier et mouvement réduit ;
-- animation courte du lancer et reconnaissance visuelle des combinaisons ;
-- interface arcade inspirée d'une borne de jeu : corail, anthracite, crème et menthe ;
-- feuille de score toujours visible et adaptée en deux colonnes sur Mac ;
-- pupitre mobile fixe pour garder les dés, l'action et le retour du coach à portée du pouce ;
-- fenêtre de confirmation cohérente avec la direction visuelle ;
-- recommandation mise en évidence et détail mathématique enrichi pour chaque case.
+- 27 tests automatisés sur les règles, les probabilités, les politiques de bot et les transitions de partie ;
+- accueil explicite, choix du niveau puis partie contre bot sur `/`, `/bot` et `/game` ;
+- état v2 à deux joueurs : joueur actif, dés, scores, tour et état du tour bot ;
+- sauvegarde locale versionnée `yazzy.game.v2`, sans suppression de l’ancienne clé ;
+- probabilités exactes affichées uniquement dans le panneau de décision de la case sélectionnée ;
+- dés avec libellés Gardé, À relancer et Résultat final ;
+- animation courte des faces finales, dés gardés immobiles et mouvement réduit ;
+- interface de plateau claire vérifiée à 320, 375, 390 et 430 px, en paysage et sur une largeur Mac ;
+- raccourcis clavier `⌥1` à `⌥5`, `⌥R` et `⌥S` ;
+- confirmation avant d’écraser une partie v2 existante ;
+- bouton ami visible, désactivé et marqué Bientôt.
 
 Non implémenté :
 
-- stratégie optimale de la feuille complète et bonus intégré au conseil ;
-- bots ;
+- stratégie optimale de la feuille complète et bonus intégré au conseil ; le Stratège actuel reste une heuristique ;
+- explication détaillée des décisions du bot ;
 - bilan pédagogique de fin de partie ;
 - PWA hors ligne ;
 - comptes et mode entre amis ;
@@ -384,13 +382,13 @@ Pour le futur multijoueur :
 
 ### Direction visuelle validée
 
-- ambiance : borne d'arcade colorée, tactile et joyeuse ;
-- fond corail uni et grand boîtier anthracite aux coins très arrondis ;
-- feuille de score crème avec une colonne joueur corail et une colonne probabilité menthe ;
-- dés en CSS, placés dans des logements sombres ;
-- action principale large avec relief franc, comme un bouton physique ;
-- titres très épais et arrondis, texte secondaire simple et lisible ;
-- traits sombres, aplats francs et ombres courtes ;
+- ambiance : jeu de plateau moderne, léger et accueillant ;
+- fond crème clair et surfaces blanches, avec corail comme accent de marque ;
+- feuille de score simple, sans grille noire ni répétition de probabilités ;
+- dés SVG avec contour vert, pastille et libellé d’état ;
+- action principale large avec une ombre très légère ;
+- titres arrondis mais moins gras, texte fonctionnel à 12 px minimum ;
+- cartes espacées, bordures uniformes et rayons de 10, 16 ou 24 px ;
 - aucun emoji ni décor réaliste ;
 - thème clair unique pour la V1 afin de préserver cette identité.
 
@@ -398,26 +396,25 @@ Palette validée :
 
 | Rôle | Couleur |
 |---|---|
-| Fond principal | `#F49A7A` |
-| Boîtier | `#303537` |
-| Grille | `#FFF0D3` |
-| Catégories | `#F8D591` |
-| Joueur / action | `#F49A7A` |
-| Probabilités / conseil | `#B7E2CE` |
-| Traits | `#25292B` |
+| Fond principal | `#F7F1E8` |
+| Surface | `#FFFDF8` |
+| Texte | `#25292B` |
+| Joueur / action | `#ED896E` |
+| Dés gardés / confirmation | `#DCEFE5` |
+| Accent de confirmation | `#237A58` |
+| Traits | `#DDD6CC` |
 
 ### Écran de partie mobile
 
 Ordre vertical validé :
 
-1. marque, score, tour et progression ;
-2. grille complète avec score courant et probabilité ;
-3. cinq dés sélectionnables ;
-4. grand bouton « Lancer » ou « Relancer » ;
-5. conseil du coach ;
-6. formule, explication et progression du bonus.
+1. marque, scores des deux joueurs, tour et joueur actif ;
+2. feuille de score avec nom, score et état ;
+3. panneau contextuel unique pour la case sélectionnée ;
+4. cinq dés avec Gardé / À relancer / Résultat final ;
+5. une action principale « Lancer », « Relancer » ou « Inscrire ».
 
-Sur Mac, la grille passe en deux colonnes dans la borne. Les dés et l'action restent visibles sous la grille ; les explications occupent un panneau latéral séparé.
+Sur Mac, la feuille et le pupitre sont présentés dans deux colonnes. Sur les téléphones très courts, seule la liste des scores défile ; les dés et l’action restent visibles.
 
 ### Écrans nécessaires
 

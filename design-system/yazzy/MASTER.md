@@ -1,63 +1,66 @@
 # Yazzy — système visuel
 
-> Source de vérité pour l'interface. Direction validée à partir de la référence visuelle fournie le 7 août 2026.
+> Source de vérité pour l’interface mobile et Mac. La direction arcade précédente est abandonnée.
 
 ## Intention
 
-Yazzy ressemble à une petite borne de jeu colorée, pas à un tableau de bord. La feuille de score est le décor principal. Les mathématiques sont visibles sans rendre le jeu froid.
+Yazzy est un jeu de plateau moderne, léger et accueillant. Le score reste le centre du jeu ; les probabilités apparaissent seulement quand le joueur sélectionne une case. Chaque écran propose une action principale identifiable.
 
 ## Palette
 
 | Rôle | Couleur | Variable |
 |---|---|---|
-| Fond corail | `#F49A7A` | `--coral` |
-| Boîtier anthracite | `#303537` | `--charcoal` |
-| Bord sombre | `#25292B` | `--charcoal-deep` |
-| Papier crème | `#FFF0D3` | `--cream` |
-| Case catégorie | `#F8D591` | `--yellow` |
-| Case probabilité | `#B7E2CE` | `--mint` |
-| Texte principal | `#2D3234` | `--ink` |
+| Fond de page | `#F7F1E8` | `--page` |
+| Surface | `#FFFDF8` | `--surface` |
+| Texte anthracite | `#25292B` | `--ink` |
+| Texte secondaire | `#5C6261` | `--ink-soft` |
+| Accent de marque | `#ED896E` | `--coral` |
+| Accent accentué | `#C96350` | `--coral-deep` |
+| Dé gardé / confirmation | `#237A58` | `--green` |
+| Surface gardée | `#DCEFE5` | `--green-soft` |
+| Ligne | `#DDD6CC` | `--line` |
 
-Le corail identifie le joueur et l'action. Le menthe identifie les probabilités et le coach. Le sens reste toujours écrit : la couleur seule ne suffit pas.
+La couleur n’est jamais le seul signal : le texte Gardé, À relancer, Résultat final, Inscrite, Conseillée ou Sélectionnée accompagne toujours l’état.
 
 ## Formes et relief
 
-- boîtier : rayon de 25 à 34 px, bord sombre de 3 à 4 px ;
-- grille : traits anthracite de 2 à 3 px ;
-- boutons : ombre courte et dure donnant un effet physique ;
-- dés : crème, carrés arrondis, points anthracite ;
-- cartes pédagogiques : aplats crème, menthe ou jaune avec bord sombre ;
-- pas de verre, de dégradé décoratif, de flou ni de carte blanche de SaaS.
+- cartes espacées par paliers de 8 px ;
+- bordure uniforme de 1 px ou absence de bordure ;
+- rayons cohérents : `10px`, `16px`, `24px` ;
+- ombres très légères, sans effet de borne ni grille noire ;
+- pas de dégradé décoratif, de flou ou de relief dur ;
+- dés en SVG, avec contour vert et libellé lorsqu’ils sont gardés.
 
 ## Typographie
 
-- titres et nombres : pile système arrondie et très épaisse ;
-- texte : Avenir Next ou police système ;
-- nombres de score : chiffres tabulaires ;
-- libellés courts et directs ;
-- aucune dépendance à une police distante pour garder un chargement immédiat.
+- pile système arrondie sans police distante ;
+- texte fonctionnel à `12px` minimum, corps courant à `16px` ;
+- catégories de la feuille à `15px` minimum ;
+- poids 600–800, sans graisse extrême ;
+- nombres de score avec chiffres tabulaires.
 
 ## Structure responsive
 
 ### Téléphone
 
-Pendant une partie, l’écran ne garde que la feuille et le pupitre de jeu. La feuille utilise deux colonnes de huit cases en portrait ; le tour, le score et l’action « recommencer » sont condensés dans son en-tête. Le pupitre fixe conserve les cinq dés et les actions à portée du pouce. L’ensemble tient sans défilement dès 320 × 568 px. Les explications de case s’ouvrent au-dessus du pupitre dans une fenêtre interne.
-
-### Mac
-
-La borne reste à gauche et le labo pédagogique à droite. La feuille est répartie en deux colonnes pour que les dés et le bouton restent visibles dans une fenêtre de 900 px de haut.
+L’accueil et le choix du bot sont centrés sur une action principale. Pendant la partie, seule la liste des scores défile ; les dés et l’action restent dans la zone basse visible. Les cinq dés ont une zone tactile d’au moins 48 × 48 px et affichent leur état textuellement.
 
 ### Paysage compact
 
-Sur téléphone, la feuille passe à quatre colonnes de quatre cases et le pupitre aligne les dés, le lancer et l’inscription. Sur tablette et Mac, la borne reste à gauche et le coach à droite. Aucune action n’est cachée par un élément fixe.
+La feuille adopte quatre colonnes lorsque la hauteur est courte. Les dés, l’action et le statut restent dans le second panneau. Aucun défilement horizontal n’est autorisé.
+
+### Mac
+
+La feuille et le pupitre sont présentés dans deux colonnes équilibrées. Le panneau de lancer reste visible pendant le défilement de la feuille si nécessaire.
 
 ## Interaction et accessibilité
 
-- action principale unique : lancer ou relancer ;
-- zones tactiles de 44 px minimum sur téléphone ;
-- état gardé indiqué par la couleur, le déplacement et le texte ;
-- focus clavier blanc, très visible ;
-- raccourcis avec Option pour éviter les conflits d’accessibilité : `⌥1` à `⌥5` pour garder les dés, `⌥R` pour lancer et `⌥S` pour inscrire ;
-- animations de 150 à 320 ms, supprimées avec `prefers-reduced-motion` ;
-- détails mathématiques ouverts avec un vrai bouton sémantique ;
-- aucun emoji utilisé comme icône.
+- une seule action principale par étape ;
+- boutons natifs et liens Next sémantiques ;
+- zones tactiles d’au moins 48 px ;
+- états des dés visibles en couleur, contour et texte ;
+- raccourcis `⌥1` à `⌥5`, `⌥R` et `⌥S` ;
+- animation des dés de 220 à 300 ms, résultat généré au clic, dés gardés immobiles ;
+- `prefers-reduced-motion` réduit l’animation à un fondu court ;
+- contraste AA et focus visible ;
+- aucune icône emoji.

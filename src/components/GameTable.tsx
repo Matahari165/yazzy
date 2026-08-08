@@ -1,35 +1,24 @@
+import type { CategoryEvaluation } from "@/domain/probability";
 import { CATEGORY_BY_ID, type CategoryId, type DieValue } from "@/domain/yatzy";
+import type { GameState } from "@/domain/game";
+import { getBotPolicy } from "@/domain/bots";
 import { Dice } from "./Dice";
-import { SparkIcon } from "./icons";
+import { DecisionPanel } from "./DecisionPanel";
 
-type GameTableProps = {
+type DiceTrayProps = {
   dice: DieValue[];
   held: boolean[];
-  heldCount: number;
   rollNumber: number;
-  selectedCategory: CategoryId | null;
-  selectedPoints: number;
-  isRolling: boolean;
-  isCalculating: boolean;
-  calculationError: string | null;
-  rollHighlight: string | null;
-  coachMessage: string | null;
-  recommendationMessage: string | null;
-  recommendedCategory: CategoryId | null;
-  coachTone: "neutral" | "success" | "tip";
-  onToggleDie: (index: number) => void;
-  onRoll: () => void;
-  onScore: () => void;
+  rolling: boolean;
+  disabled: boolean;
+  finalResult?: boolean;
+  label: string;
+  onToggle?: (index: number) => void;
 };
 
-type DiceTrayProps = Pick<
-  GameTableProps,
-  "dice" | "held" | "rollNumber" | "isRolling" | "onToggleDie"
-> & { className: string };
-
-function DiceTray({ dice, held, rollNumber, isRolling, onToggleDie, className }: DiceTrayProps) {
+export function DiceTray({ dice, held, rollNumber, rolling, disabled, finalResult, label, onToggle }: DiceTrayProps) {
   return (
-    <div className={className} aria-label="Tes cinq dés">
+    <div className="dice-tray" role="group" aria-label={label}>
       {dice.length === 5
         ? dice.map((value, index) => (
             <Dice
@@ -37,160 +26,126 @@ function DiceTray({ dice, held, rollNumber, isRolling, onToggleDie, className }:
               value={value}
               index={index}
               held={held[index]}
-              disabled={rollNumber >= 3}
-              rolling={isRolling}
-              onToggle={() => onToggleDie(index)}
+              disabled={disabled || rollNumber >= 3}
+              finalResult={finalResult ?? rollNumber >= 3}
+              rolling={rolling}
+              onToggle={() => onToggle?.(index)}
             />
           ))
-        : Array.from({ length: 5 }, (_, index) => <span className="die-placeholder" key={index} />)}
+        : Array.from({ length: 5 }, (_, index) => <span className="die-placeholder" key={index} aria-hidden="true" />)}
     </div>
   );
 }
 
-type RollButtonProps = Pick<GameTableProps, "heldCount" | "rollNumber" | "isRolling" | "isCalculating" | "onRoll"> & {
-  className?: string;
+type GameTableProps = {
+  dice: DieValue[];
+  held: boolean[];
+  rollNumber: number;
+  selectedCategory: CategoryId | null;
+  selectedPoints: number;
+  targetEvaluation?: CategoryEvaluation;
+  isRolling: boolean;
+  isCalculating: boolean;
+  calculationError: string | null;
+  onToggleDie: (index: number) => void;
+  onRoll: () => void;
+  onScore: () => void;
 };
-
-function RollButton({ heldCount, rollNumber, isRolling, isCalculating, onRoll, className = "" }: RollButtonProps) {
-  if (rollNumber >= 3) {
-    return <div className={`roll-complete ${className}`.trim()} role="status"><strong>3 / 3</strong><span>Choisis une case</span></div>;
-  }
-
-  if (rollNumber > 0 && heldCount === 5) {
-    return <div className={`roll-complete ${className}`.trim()} role="status"><strong>TOUS GARDÉS</strong><span>Choisis une case ou libère un dé</span></div>;
-  }
-
-  return (
-    <button
-      type="button"
-      className={`primary-button ${className}`.trim()}
-      disabled={isRolling || isCalculating}
-      aria-keyshortcuts="Alt+R"
-      onClick={onRoll}
-    >
-      <span>{isRolling ? "ROULE…" : isCalculating ? "CALCUL…" : rollNumber === 0 ? "LANCER" : "RELANCER"}</span>
-      <small>
-        {isCalculating ? "choix optimal" : rollNumber === 0 ? "les 5 dés" : `${5 - heldCount} dé${5 - heldCount > 1 ? "s" : ""}`}
-        <kbd aria-hidden="true">⌥R</kbd>
-      </small>
-    </button>
-  );
-}
-
-function RollMeter({ rollNumber }: { rollNumber: number }) {
-  const rollsLeft = Math.max(0, 3 - rollNumber);
-  return (
-    <div className="roll-meter" aria-label={`${rollsLeft} lancer${rollsLeft > 1 ? "s" : ""} restant${rollsLeft > 1 ? "s" : ""}`}>
-      {[1, 2, 3].map((step) => (
-        <span key={step} data-used={step <= rollNumber}>{step}</span>
-      ))}
-    </div>
-  );
-}
 
 export function GameTable({
   dice,
   held,
-  heldCount,
   rollNumber,
   selectedCategory,
   selectedPoints,
+  targetEvaluation,
   isRolling,
   isCalculating,
   calculationError,
-  rollHighlight,
-  coachMessage,
-  recommendationMessage,
-  recommendedCategory,
-  coachTone,
   onToggleDie,
   onRoll,
   onScore,
 }: GameTableProps) {
+  const heldCount = held.filter(Boolean).length;
+  const canRoll = rollNumber < 3 && !(rollNumber > 0 && heldCount === 5) && !isRolling && !isCalculating;
+  const actionLabel = rollNumber === 0 ? "Lancer les dés" : "Relancer";
+
   return (
-    <>
-      <div className="table-surface" data-rolling={isRolling} aria-busy={isRolling || isCalculating}>
-        <div className="roll-status" aria-live="polite">
-          <strong>{isRolling ? "ÇA ROULE…" : rollNumber === 0 ? "PRÊT ?" : `${heldCount} GARDÉ${heldCount > 1 ? "S" : ""}`}</strong>
-          <span>{rollNumber === 0 ? "Lance les cinq dés" : rollNumber >= 3 ? "Aucun lancer restant · choisis une case" : "Clique les dés à conserver"}</span>
-        </div>
-
-        {rollHighlight && !isRolling ? <div className="combo-banner" role="status">{rollHighlight}</div> : null}
-
-        <DiceTray
-          className="dice-row"
-          dice={dice}
-          held={held}
-          rollNumber={rollNumber}
-          isRolling={isRolling}
-          onToggleDie={onToggleDie}
-        />
-
-        <div className="play-actions">
-          <RollButton heldCount={heldCount} rollNumber={rollNumber} isRolling={isRolling} isCalculating={isCalculating} onRoll={onRoll} />
-          <RollMeter rollNumber={rollNumber} />
-          {selectedCategory ? (
-            <button type="button" className="score-button" disabled={isRolling || isCalculating} aria-keyshortcuts="Alt+S" onClick={onScore}>
-              <span>INSCRIRE <strong>{selectedPoints}</strong><kbd aria-hidden="true">⌥S</kbd></span>
-            </button>
-          ) : (
-            <p className="action-hint">
-              {rollNumber === 0
-                ? "Trois lancers par tour"
-                : "Choisis ensuite une case dans la grille."}
-            </p>
-          )}
-        </div>
+    <section className="game-table" aria-label="Zone de lancer">
+      <div className="table-instruction" aria-live="polite">
+        <strong>{isRolling ? "Les dés roulent…" : rollNumber === 0 ? "À toi de lancer" : rollNumber >= 3 ? "Résultat final" : `${heldCount} dé${heldCount > 1 ? "s" : ""} gardé${heldCount > 1 ? "s" : ""}`}</strong>
+        <span>{rollNumber === 0 ? "Trois lancers pour construire ton coup." : rollNumber >= 3 ? "Choisis une case dans ta feuille." : "Chaque dé indique maintenant son état."}</span>
       </div>
 
-      <section className="mobile-play-dock" aria-label="Commandes de jeu" aria-busy={isRolling || isCalculating} data-tone={coachTone}>
-        {coachMessage && !selectedCategory ? (
-          <div className="mobile-feedback" role="status">
-            <SparkIcon />
-            <span><strong>BILAN DU COUP</strong><small>{coachMessage}</small></span>
-          </div>
-        ) : null}
-        <div className="mobile-dock-main">
-          <DiceTray
-            className="mobile-dice-row"
-            dice={dice}
-            held={held}
-            rollNumber={rollNumber}
-            isRolling={isRolling}
-            onToggleDie={onToggleDie}
-          />
-          <div className="mobile-dock-actions">
-            <RollButton
-              className="mobile-roll-button"
-              heldCount={heldCount}
-              rollNumber={rollNumber}
-              isRolling={isRolling}
-              isCalculating={isCalculating}
-              onRoll={onRoll}
-            />
-            <RollMeter rollNumber={rollNumber} />
-          </div>
-          {selectedCategory ? (
-            <button type="button" className="mobile-score-button" disabled={isRolling || isCalculating} aria-keyshortcuts="Alt+S" onClick={onScore}>
-              <span>INSCRIRE {selectedPoints} PTS</span><small>{CATEGORY_BY_ID[selectedCategory].shortLabel}</small>
-            </button>
-          ) : rollNumber > 0 && !isCalculating && recommendationMessage && recommendedCategory ? (
-            <a className="mobile-dock-hint mobile-recommendation-link" href={`#score-${recommendedCategory}`}>
-              <span>{recommendationMessage}</span><strong>VOIR LA CASE ↑</strong>
-            </a>
-          ) : (
-            <p className="mobile-dock-hint" aria-live="polite">
-              {rollNumber === 0
-                ? "3 lancers pour construire ton coup"
-                : isCalculating
-                  ? "Calcul du meilleur choix…"
-                  : calculationError
-                    ? "Conseil indisponible · tu peux continuer à jouer"
-                    : "Touche les dés à garder, puis choisis une case."}
-            </p>
-          )}
-        </div>
-      </section>
-    </>
+      {selectedCategory ? (
+        <DecisionPanel
+          category={selectedCategory}
+          points={selectedPoints}
+          evaluation={targetEvaluation}
+          remainingRolls={Math.max(0, 3 - rollNumber)}
+          isCalculating={isCalculating}
+          calculationError={calculationError}
+          disabled={isRolling || isCalculating}
+          onScore={onScore}
+        />
+      ) : null}
+
+      <DiceTray
+        dice={dice}
+        held={held}
+        rollNumber={rollNumber}
+        rolling={isRolling}
+        disabled={isRolling}
+        label="Tes cinq dés"
+        onToggle={onToggleDie}
+      />
+
+      <div className="roll-controls">
+        <span className="roll-count">{rollNumber === 0 ? "Prêt à lancer" : `Lancer ${Math.min(rollNumber, 3)} sur 3`}</span>
+        {rollNumber >= 3 ? (
+          <div className="roll-complete" role="status">Résultat final · choisis une case</div>
+        ) : heldCount === 5 && rollNumber > 0 ? (
+          <div className="roll-complete" role="status">Tous les dés sont gardés</div>
+        ) : (
+          <button className={selectedCategory ? "secondary-action" : "primary-action"} type="button" disabled={!canRoll} onClick={onRoll}>
+            {isRolling ? "Les dés roulent…" : actionLabel}
+          </button>
+        )}
+      </div>
+      <p className="keyboard-help">⌥1 à ⌥5 pour garder un dé · ⌥R pour lancer · ⌥S pour inscrire</p>
+    </section>
+  );
+}
+
+type BotTurnPanelProps = {
+  game: GameState;
+  onSkip: () => void;
+};
+
+export function BotTurnPanel({ game, onSkip }: BotTurnPanelProps) {
+  const policy = getBotPolicy(game.botLevel);
+  const currentRoll = Math.min(game.bot.rollNumber, 3);
+  const isAnimating = game.botTurn.status !== "idle";
+
+  return (
+    <section className="bot-turn-panel" aria-labelledby="bot-turn-title" aria-live="polite">
+      <div>
+        <p className="eyebrow">LE BOT JOUE</p>
+        <h2 id="bot-turn-title">{policy.label}</h2>
+        <p>{game.botTurn.status === "choosing" ? "Il choisit une case…" : currentRoll === 0 ? "Prépare son premier lancer" : `Lancer ${currentRoll} sur 3`}</p>
+      </div>
+      <DiceTray
+        dice={game.bot.dice}
+        held={game.bot.held}
+        rollNumber={game.bot.rollNumber}
+        rolling={game.botTurn.status === "rolling" || game.botTurn.status === "waiting"}
+        disabled
+        finalResult={game.bot.rollNumber >= 3}
+        label="Les dés du bot"
+      />
+      <p className="bot-turn-note">Ses dés restent équitables. Son niveau change uniquement ses décisions.</p>
+      {isAnimating ? <button className="secondary-action" type="button" onClick={onSkip}>Passer l’animation</button> : null}
+      {game.botTurn.targetCategory ? <p className="bot-target">Case visée : {CATEGORY_BY_ID[game.botTurn.targetCategory].label}</p> : null}
+    </section>
   );
 }

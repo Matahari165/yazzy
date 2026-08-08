@@ -1,217 +1,92 @@
-import { formatDiceCounts, type CategoryEvaluation } from "@/domain/probability";
-import {
-  CATEGORIES,
-  scoreDice,
-  type Dice,
-  type DieValue,
-  type CategoryId,
-} from "@/domain/yatzy";
-import { DieGlyph } from "./Dice";
-import { CloseIcon, InfoIcon } from "./icons";
+import { CATEGORIES, scoreDice, type CategoryId, type Dice } from "@/domain/yatzy";
+import type { CategoryEvaluation } from "@/domain/probability";
 
 type ScoreCardProps = {
-  dice: Dice;
-  turn: number;
-  total: number;
+  title: string;
+  eyebrow: string;
   scores: Partial<Record<CategoryId, number>>;
+  dice: Dice;
   evaluations: CategoryEvaluation[];
   selected: CategoryId | null;
-  canSelect: boolean;
-  isCalculating: boolean;
-  calculationError: string | null;
   recommended?: CategoryId;
-  titleId?: string;
-  className?: string;
-  onSelect: (category: CategoryId) => void;
+  canSelect: boolean;
+  isReadOnly?: boolean;
+  isCalculating?: boolean;
+  onSelect?: (category: CategoryId) => void;
 };
 
-const percent = new Intl.NumberFormat("fr-FR", {
-  style: "percent",
-  maximumFractionDigits: 1,
-});
-
-const decimal = new Intl.NumberFormat("fr-FR", {
-  maximumFractionDigits: 1,
-});
-
 export function ScoreCard({
-  dice,
-  turn,
-  total,
+  title,
+  eyebrow,
   scores,
+  dice,
   evaluations,
   selected,
-  canSelect,
-  isCalculating,
-  calculationError,
   recommended,
-  titleId = "score-title",
-  className = "",
+  canSelect,
+  isReadOnly = false,
+  isCalculating = false,
   onSelect,
 }: ScoreCardProps) {
-  const evaluationByCategory = new Map(evaluations.map((item) => [item.category, item]));
-
-  const categoryMark = (category: CategoryId, index: number) => {
-    if (index < 6) return <DieGlyph value={(index + 1) as DieValue} className="score-die" />;
-    const shortMarks: Record<CategoryId, string> = {
-      ones: "1", twos: "2", threes: "3", fours: "4", fives: "5", sixes: "6",
-      pair: "II", twoPairs: "II²", threeOfAKind: "III", fourOfAKind: "IV",
-      smallStraight: "1—5", largeStraight: "2—6", fullHouse: "3+2", chance: "Σ", yatzy: "V",
-    };
-    return <span className="combo-mark" aria-hidden="true">{shortMarks[category]}</span>;
-  };
+  const evaluationByCategory = new Map(evaluations.map((evaluation) => [evaluation.category, evaluation]));
+  const completed = Object.keys(scores).length;
+  const upperScore = (scores.ones ?? 0) + (scores.twos ?? 0) + (scores.threes ?? 0) + (scores.fours ?? 0) + (scores.fives ?? 0) + (scores.sixes ?? 0);
 
   return (
-    <section className={`score-card ${className}`.trim()} aria-labelledby={titleId} aria-busy={isCalculating}>
-      <div className="score-heading">
+    <section className="score-card" aria-labelledby="score-card-title" aria-busy={isCalculating}>
+      <header className="score-card-header">
         <div>
-          <p className="eyebrow">FEUILLE DE JEU</p>
-          <h2 id={titleId}>Choisis une case</h2>
+          <p className="eyebrow">{eyebrow}</p>
+          <h2 id="score-card-title">{title}</h2>
         </div>
-        <span className="mobile-score-meta" aria-label={`Tour ${turn} sur 15, score ${total} points`}>
-          T{turn}/15 · <strong>{total}</strong> PTS
-        </span>
-        <span
-          className="exact-badge"
-          data-error={Boolean(calculationError)}
-          title={calculationError ?? "Calcul exhaustif de toutes les issues possibles"}
-        >
-          {calculationError ? "CALCUL PAUSÉ" : "CALCUL EXACT"}
-        </span>
-      </div>
+        <span className="score-progress">{completed}/15 cases</span>
+      </header>
 
-      <div className="score-heads" aria-hidden="true">
-        <div className="score-table-head">
-          <span><span className="table-heading-full">COMBINAISON</span><span className="table-heading-compact">CASE</span></span>
-          <span>PTS</span>
-          <span><span className="table-heading-full">RÉUSSITE</span><span className="table-heading-compact">PROBA</span></span>
-          <span />
-        </div>
-        <div className="score-table-head score-table-head-secondary">
-          <span><span className="table-heading-full">COMBINAISON</span><span className="table-heading-compact">CASE</span></span>
-          <span>PTS</span>
-          <span><span className="table-heading-full">RÉUSSITE</span><span className="table-heading-compact">PROBA</span></span>
-          <span />
-        </div>
-      </div>
-
-      <div className="score-columns" role="list">
-        {CATEGORIES.map((category, index) => {
+      <div className="score-list" role="list" aria-label={title}>
+        {CATEGORIES.map((category) => {
           const score = scores[category.id];
-          const evaluation = evaluationByCategory.get(category.id);
-          const isFilled = score !== undefined;
+          const filled = score !== undefined;
           const isSelected = selected === category.id;
-          const isRecommended = recommended === category.id && !isFilled;
-          return (
-            <div
-              id={`score-${category.id}`}
-              className="score-row"
-              data-filled={isFilled}
-              data-selected={isSelected}
-              data-recommended={isRecommended}
-              role="listitem"
-              key={category.id}
-            >
-              <button
-                type="button"
-                className="score-choice"
-                disabled={!canSelect || isFilled}
-                aria-pressed={isSelected}
-                onClick={() => onSelect(category.id)}
-              >
-                <span className="category-index">{categoryMark(category.id, index)}</span>
-                <span className="category-name">
-                  <span className="category-label-full">{category.shortLabel}</span>
-                  <span className="category-label-compact">
-                    {category.id === "smallStraight"
-                      ? "P. suite"
-                      : category.id === "largeStraight"
-                        ? "G. suite"
-                        : category.shortLabel}
-                  </span>
-                  {isSelected
-                    ? <small className="recommended-label selected-label">CHOISI</small>
-                    : isRecommended ? <small className="recommended-label">TOP</small> : null}
-                </span>
-                <strong className="current-score">
-                  {isFilled
-                    ? score
-                    : evaluation
-                      ? evaluation.currentScore
-                      : canSelect
-                        ? scoreDice(category.id, dice)
-                        : "—"}
-                </strong>
-                {isFilled ? (
-                  <span className="recorded-score">OK</span>
-                ) : isCalculating ? (
-                  <span className="probability-skeleton" aria-label="Calcul en cours" />
-                ) : !evaluation ? (
-                  <span className="empty-metric">—</span>
-                ) : (
-                  <span className="category-metrics">
-                    <strong>{category.id === "chance" ? decimal.format(evaluation.expectedScore) : percent.format(evaluation.successProbability)}</strong>
-                    <small>
-                      {category.id === "chance"
-                        ? "pts moyens"
-                        : `${decimal.format(evaluation.expectedScore)} pts moy.`}
-                    </small>
-                  </span>
-                )}
-              </button>
+          const isRecommended = recommended === category.id && !filled && !isReadOnly;
+          const currentScore = filled ? score : dice.length === 5 && canSelect ? scoreDice(category.id, dice) : null;
+          const evaluation = evaluationByCategory.get(category.id);
+          const stateLabel = filled ? "case inscrite" : isSelected ? "case sélectionnée" : isRecommended ? "case conseillée" : "case libre";
 
-              <details className="category-details" name={`${titleId}-explanations`}>
-                <summary aria-label={`Comprendre la case ${category.label}`}>
-                  <InfoIcon />
-                </summary>
-                <div className="category-popover">
-                  <div className="category-popover-heading">
-                    <strong>{category.rule}</strong>
-                    <button
-                      type="button"
-                      className="category-popover-close"
-                      aria-label={`Fermer l’explication de ${category.label}`}
-                      onClick={(event) => {
-                        const details = event.currentTarget.closest("details");
-                        details?.removeAttribute("open");
-                        details?.querySelector("summary")?.focus();
-                      }}
-                    >
-                      <CloseIcon />
-                    </button>
-                  </div>
-                  <p>{category.scoring}</p>
-                  <p className="probability-definition">
-                    <strong>Probabilité affichée.</strong>{" "}
-                    {category.id === "chance"
-                      ? "Chance réussit toujours : Yazzy affiche donc directement le meilleur score moyen possible."
-                      : "La chance d’inscrire plus de 0 point d’ici la fin du tour, en choisissant à chaque lancer la meilleure conservation pour réussir cette case."}
-                  </p>
-                  {evaluation ? (
-                    <>
-                      <dl className="math-breakdown">
-                        {category.id !== "chance" ? (
-                          <><dt>Probabilité de marquer</dt><dd>{percent.format(evaluation.successProbability)}</dd></>
-                        ) : null}
-                        <dt>Score moyen attendu</dt><dd>{decimal.format(evaluation.expectedScore)} pts</dd>
-                        {category.id !== "chance" ? (
-                          <><dt>Pour maximiser la réussite</dt><dd>{formatDiceCounts(evaluation.bestHoldForSuccess)}</dd></>
-                        ) : null}
-                        <dt>Pour maximiser les points</dt><dd>{formatDiceCounts(evaluation.bestHoldForExpectedScore)}</dd>
-                      </dl>
-                      <p className="calculation-explainer">
-                        Yazzy teste toutes les conservations possibles. La stratégie qui maximise la réussite peut différer de celle qui maximise les points moyens ; le coach choisit les points moyens.
-                      </p>
-                    </>
-                  ) : null}
-                  <code>P = max<sub>garde</sub> Σ P(issue) × P(suite)</code>
-                  <p className="formula-caption"><strong>max<sub>garde</sub></strong> signifie que Yazzy refait la somme pour chaque choix de dés gardés, puis conserve le meilleur résultat.</p>
-                </div>
-              </details>
+          return (
+            <div className="score-list-item" key={category.id} role="listitem">
+              <button
+                className="score-row"
+                data-filled={filled}
+                data-selected={isSelected}
+                data-recommended={isRecommended}
+                type="button"
+                disabled={isReadOnly || !canSelect || filled}
+                aria-pressed={isSelected}
+                aria-label={`${category.label}, ${stateLabel}, ${filled ? `${score} points inscrits` : currentScore === null ? "aucun score affiché" : `${currentScore} points possibles`}`}
+                onClick={() => onSelect?.(category.id)}
+              >
+                <span className="score-category">
+                  <span>{category.label}</span>
+                  {isRecommended ? <small>Conseillée</small> : null}
+                  {isSelected ? <small>Sélectionnée</small> : null}
+                </span>
+                <strong className="score-value">{currentScore === null ? "—" : currentScore}</strong>
+                <span className="score-state">
+                  {filled ? "Inscrite" : isSelected ? "Prête" : isReadOnly ? "Libre" : evaluation && isCalculating ? "Calcul…" : "Libre"}
+                </span>
+              </button>
             </div>
           );
         })}
       </div>
+
+      <footer className="bonus-summary">
+        <div>
+          <span>Bonus supérieur</span>
+          <strong>{Math.min(63, upperScore)} / 63</strong>
+        </div>
+        <progress max={63} value={Math.min(63, upperScore)} aria-label="Progression du bonus supérieur" />
+      </footer>
     </section>
   );
 }
