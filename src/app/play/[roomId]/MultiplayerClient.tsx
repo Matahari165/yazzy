@@ -82,7 +82,15 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string, isHost: 
       {isFinished ? (
         <FinishedGame game={game} />
       ) : (
-        <div className="game-content">
+        <div className="game-content" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {isHost && Object.keys(opponentPlayer.scores).length === 0 && (
+            <div style={{ padding: 16, background: "var(--surface-muted)", border: "1px solid var(--line)", borderRadius: 12 }}>
+              <p style={{ margin: "0 0 4px 0", fontSize: 14, fontWeight: "bold", color: "var(--ink)" }}>Invite ton ami à rejoindre la partie !</p>
+              <p style={{ margin: "0 0 12px 0", fontSize: 13, color: "var(--ink-soft)" }}>Partage-lui ce lien. Vous serez connectés en temps réel.</p>
+              <input type="text" readOnly value={inviteLink} style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid var(--line)", background: "white", fontFamily: "monospace", fontSize: 14, cursor: "pointer" }} onClick={(e) => { e.currentTarget.select(); navigator.clipboard.writeText(e.currentTarget.value); alert("Lien copié dans le presse-papiers !"); }} />
+            </div>
+          )}
+
           <ScoreCard
             label="Feuille de score"
             humanScores={game.human.scores}
@@ -109,15 +117,9 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string, isHost: 
               onRoll={handleRoll}
             />
           ) : (
-            <div style={{ padding: 20, textAlign: "center", color: "var(--ink-soft)" }}>
-              <div className="spinner" style={{ marginBottom: 16 }}>🎲</div>
-              <p>Au tour de ton adversaire...</p>
-              {isHost && Object.keys(opponentPlayer.scores).length === 0 && (
-                <div style={{ marginTop: 24, padding: 16, background: "var(--surface-muted)", borderRadius: 8 }}>
-                  <p style={{ marginBottom: 8, fontSize: 13 }}>Envoie ce lien à ton ami :</p>
-                  <input type="text" readOnly value={inviteLink} style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid var(--line)", fontFamily: "monospace", fontSize: 14 }} onClick={(e) => e.currentTarget.select()} />
-                </div>
-              )}
+            <div style={{ padding: 40, textAlign: "center", color: "var(--ink-soft)", background: "var(--surface)", borderRadius: 12, border: "1px solid var(--line)" }}>
+              <div className="spinner" style={{ marginBottom: 16, fontSize: 32 }}>🎲</div>
+              <p style={{ fontWeight: 600 }}>Au tour de ton adversaire...</p>
             </div>
           )}
         </div>
