@@ -11,7 +11,7 @@ import { GameHeader } from "./GameHeader";
 import { ScoreCard } from "./ScoreCard";
 
 export function GameBoard() {
-  const { game, roll, toggleHeld, score, skipBotAnimation, isFinished, hasLoaded } = useYazzyGame();
+  const { game, roll, toggleHeld, score, skipBotAnimation, isFinished, hasLoaded, isCoachEnabled, toggleCoach } = useYazzyGame();
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -102,7 +102,10 @@ export function GameBoard() {
             botScores={game.bot.scores}
             dice={game.human.dice}
             selected={game.activePlayer === "human" ? selectedCategory : null}
-            recommended={game.activePlayer === "human" ? bestEvaluation?.category : undefined}
+            recommended={game.activePlayer === "human" && isCoachEnabled ? bestEvaluation?.category : undefined}
+            coachEvaluation={bestEvaluation}
+            isCoachEnabled={isCoachEnabled}
+            onToggleCoach={toggleCoach}
             canSelect={game.activePlayer === "human" && game.human.rollNumber > 0 && !isRolling && !isCalculating}
             isReadOnly={game.activePlayer === "bot"}
             isCalculating={game.activePlayer === "human" && isCalculating}

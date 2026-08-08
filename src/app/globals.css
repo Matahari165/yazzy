@@ -384,7 +384,7 @@ h3 { font-size: 18px; line-height: 1.2; }
 .score-row[data-selected="true"] { background: var(--coral-soft); box-shadow: inset 4px 0 0 var(--coral-deep); }
 .score-row[data-recommended="true"] { background: var(--green-soft); box-shadow: inset 4px 0 0 var(--green); }
 .score-row[data-selected="true"][data-recommended="true"] { box-shadow: inset 4px 0 0 var(--coral-deep); }
-.score-row[data-filled="true"] { color: var(--ink-soft); }
+.score-row[data-filled="true"] { opacity: 0.35; color: var(--ink-soft); }
 .score-category { min-width: 0; overflow: hidden; font-size: 15px; font-weight: 700; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
 .score-value { min-width: 32px; font-family: var(--font-display); font-size: 17px; text-align: right; font-variant-numeric: tabular-nums; }
 .score-value-bot { color: var(--green); }

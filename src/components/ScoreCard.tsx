@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { CATEGORIES, scoreDice, type CategoryDefinition, type CategoryId, type Dice } from "@/domain/yatzy";
+import type { CategoryEvaluation } from "@/domain/probability";
 import { ScoreHelpPopover } from "./ScoreHelpPopover";
 
 type ScoreCardProps = {
@@ -11,6 +12,9 @@ type ScoreCardProps = {
   dice: Dice;
   selected: CategoryId | null;
   recommended?: CategoryId;
+  coachEvaluation?: CategoryEvaluation;
+  isCoachEnabled: boolean;
+  onToggleCoach: () => void;
   canSelect: boolean;
   isReadOnly?: boolean;
   isCalculating?: boolean;
@@ -41,6 +45,9 @@ export function ScoreCard({
   dice,
   selected,
   recommended,
+  coachEvaluation,
+  isCoachEnabled,
+  onToggleCoach,
   canSelect,
   isReadOnly = false,
   isCalculating = false,
@@ -52,6 +59,11 @@ export function ScoreCard({
 
   return (
     <section className="score-card" aria-label={label} aria-busy={isCalculating}>
+      <header style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 14px 0' }}>
+         <button onClick={onToggleCoach} style={{ background: isCoachEnabled ? 'var(--green-soft)' : 'var(--surface-muted)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '4px 10px', color: isCoachEnabled ? 'var(--green)' : 'var(--ink-soft)', fontSize: 11, fontWeight: 'bold', cursor: 'pointer', transition: 'all 150ms' }}>
+           💡 Coach {isCoachEnabled ? "Activé" : "Désactivé"}
+         </button>
+      </header>
       <div className="score-legend" aria-hidden="true">
         <span>Toi</span>
         <span>Bot</span>
@@ -102,6 +114,7 @@ export function ScoreCard({
                   category={category}
                   placement={index >= CATEGORIES.length - 5 ? "above" : "below"}
                   scoreText={scoreText}
+                  coachEvaluation={coachEvaluation}
                   onClose={closeExplanation}
                 />
               ) : null}

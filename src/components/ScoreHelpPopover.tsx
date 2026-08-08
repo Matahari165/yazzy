@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { formatHoldAction, type CategoryEvaluation } from "@/domain/probability";
 import type { CategoryDefinition } from "@/domain/yatzy";
 
 type ScoreHelpPopoverProps = {
@@ -8,6 +9,7 @@ type ScoreHelpPopoverProps = {
   category: CategoryDefinition;
   placement: "above" | "below";
   scoreText: string;
+  coachEvaluation?: CategoryEvaluation;
   onClose: () => void;
 };
 
@@ -20,6 +22,7 @@ export function ScoreHelpPopover({
   category,
   placement,
   scoreText,
+  coachEvaluation,
   onClose,
 }: ScoreHelpPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -98,6 +101,14 @@ export function ScoreHelpPopover({
           <dt>Score</dt>
           <dd>{scoreText}</dd>
         </div>
+        {coachEvaluation && coachEvaluation.category === category.id && (
+          <div className="score-help-result" style={{ marginTop: 8, gridColumn: "1 / -1", background: 'var(--surface-muted)' }}>
+            <dt style={{ color: 'var(--green)' }}>💡 Conseil du Coach</dt>
+            <dd style={{ fontSize: 13, textAlign: 'left', marginTop: 4, fontFamily: 'var(--font-body)' }}>
+              {formatHoldAction(coachEvaluation.bestHoldForExpectedScore)} pour maximiser tes chances.
+            </dd>
+          </div>
+        )}
       </dl>
     </div>
   );
