@@ -9,29 +9,25 @@ export function GameHeader({ game }: { game: GameState }) {
   const isHumanTurn = game.activePlayer === "human";
 
   return (
-    <>
-      <header className="game-header">
-        <Link className="game-logo" href="/" aria-label="Yazzy, revenir à l’accueil">YAZZY</Link>
-        <span className="mode-label">BOT · {getBotPolicy(game.botLevel).label}</span>
-        <Link className="quit-link" href="/">Quitter</Link>
-      </header>
-      <section className="game-overview" aria-label="État de la partie">
-        <div className="round-heading">
-          <p className="eyebrow">TOUR {Math.min(game.turn, 15)} / 15</p>
-          <p className="active-player" data-active={isHumanTurn}>{isHumanTurn ? "À toi de jouer" : "Le bot joue"}</p>
-        </div>
-        <div className="player-scores">
-          <div className="player-score" data-active={isHumanTurn}>
-            <span>TOI</span>
-            <strong>{humanTotal}</strong>
-          </div>
-          <div className="player-score" data-active={!isHumanTurn}>
-            <span>BOT</span>
-            <strong>{botTotal}</strong>
-          </div>
-        </div>
-        <progress className="game-progress" max={15} value={Object.keys(game.human.scores).length} aria-label={`${Object.keys(game.human.scores).length} tours terminés sur 15`} />
-      </section>
-    </>
+    <header className="game-header">
+      <Link className="game-logo" href="/" aria-label="Yazzy, revenir à l’accueil">YAZZY</Link>
+      <span className="mode-label">BOT · {getBotPolicy(game.botLevel).label}</span>
+      <div
+        className="match-score"
+        role="group"
+        aria-label={`Score : toi ${humanTotal}, bot ${botTotal}. ${isHumanTurn ? "À toi de jouer." : "Le bot joue."}`}
+      >
+        <span className="match-player" data-active={isHumanTurn} aria-hidden="true">
+          <i className="turn-dot" aria-hidden="true" />
+          Toi <strong>{humanTotal}</strong>
+        </span>
+        <span className="score-separator" aria-hidden="true">·</span>
+        <span className="match-player" data-active={!isHumanTurn} aria-hidden="true">
+          <i className="turn-dot" aria-hidden="true" />
+          Bot <strong>{botTotal}</strong>
+        </span>
+      </div>
+      <Link className="quit-link" href="/">Quitter</Link>
+    </header>
   );
 }

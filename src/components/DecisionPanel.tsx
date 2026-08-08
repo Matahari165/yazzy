@@ -39,25 +39,13 @@ export function DecisionPanel({
   return (
     <section className="decision-panel" aria-labelledby="decision-title">
       <div className="decision-panel-heading">
-        <div>
-          <p className="eyebrow">TA DÉCISION</p>
-          <h2 id="decision-title">{definition.label}</h2>
-        </div>
+        <h2 id="decision-title">{definition.label}</h2>
         <strong className="decision-points">{points} pts</strong>
       </div>
-      <dl className="decision-facts">
-        <div>
-          <dt>Score possible</dt>
-          <dd>{points} point{points > 1 ? "s" : ""}</dd>
-        </div>
-        <div>
-          <dt>{category === "chance" ? "Score moyen" : "Chance de marquer"}</dt>
-          <dd>
-            {isCalculating ? "Calcul…" : calculationError ? "Indisponible" : evaluation ? category === "chance" ? `${decimal.format(evaluation.expectedScore)} pts` : percent.format(evaluation.successProbability) : "—"}
-          </dd>
-        </div>
-      </dl>
-      <p className="decision-reason">{reason}</p>
+      <p className="decision-metric">
+        <span>{category === "chance" ? "Score moyen" : "Chance de marquer"}</span>
+        <strong>{isCalculating ? "Calcul…" : calculationError ? "Indisponible" : evaluation ? category === "chance" ? `${decimal.format(evaluation.expectedScore)} pts` : percent.format(evaluation.successProbability) : "—"}</strong>
+      </p>
       <div className="decision-actions">
         <button className="secondary-action" type="button" aria-expanded={isDetailsOpen} onClick={() => setIsDetailsOpen((open) => !open)}>
           {isDetailsOpen ? "Masquer les détails" : "Comprendre"}
@@ -68,9 +56,8 @@ export function DecisionPanel({
       </div>
       {isDetailsOpen ? (
         <div className="decision-details">
+          <p>{reason}</p>
           <p>{definition.scoring}</p>
-          {evaluation ? <p>Le moteur exact compare toutes les conservations possibles. Le score moyen attendu est de {decimal.format(evaluation.expectedScore)} point{evaluation.expectedScore > 1 ? "s" : ""}.</p> : null}
-          <code>P = max des choix gardés × probabilité de chaque issue</code>
         </div>
       ) : null}
     </section>

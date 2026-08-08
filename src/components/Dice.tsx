@@ -43,8 +43,6 @@ export function Dice({ value, held, disabled, finalResult = false, rolling, inde
       onClick={onToggle}
     >
       <DieGlyph value={value} className="die-face" />
-      <span className="die-state">{finalResult ? "Résultat final" : held ? "Gardé" : "À relancer"}</span>
-      <kbd aria-hidden="true">⌥{index + 1}</kbd>
     </button>
   );
 }

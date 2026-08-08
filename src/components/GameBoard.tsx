@@ -70,7 +70,7 @@ export function GameBoard() {
   const handleScore = () => {
     if (!selectedCategory || game.activePlayer !== "human" || isRolling || isCalculating) return;
     const points = scoreDice(selectedCategory, game.human.dice);
-    setFeedback(`Bot : ${CATEGORY_BY_ID[selectedCategory].label} · ${points} point${points > 1 ? "s" : ""}.`);
+    setFeedback(`${CATEGORY_BY_ID[selectedCategory].label} · ${points} point${points > 1 ? "s" : ""}.`);
     score(selectedCategory);
     setSelectedCategory(null);
   };
@@ -97,11 +97,9 @@ export function GameBoard() {
       ) : (
         <div className="game-content">
           <ScoreCard
-            title={game.activePlayer === "human" ? "Ta feuille" : "La feuille du bot"}
-            eyebrow={game.activePlayer === "human" ? "TON SCORE" : "SCORE DU BOT"}
+            label={game.activePlayer === "human" ? "Ta feuille de score" : "Feuille de score du bot"}
             scores={game.activePlayer === "human" ? game.human.scores : game.bot.scores}
             dice={game.activePlayer === "human" ? game.human.dice : game.bot.dice}
-            evaluations={game.activePlayer === "human" ? evaluations : []}
             selected={game.activePlayer === "human" ? selectedCategory : null}
             recommended={game.activePlayer === "human" ? bestEvaluation?.category : undefined}
             canSelect={game.activePlayer === "human" && game.human.rollNumber > 0 && !isRolling && !isCalculating}

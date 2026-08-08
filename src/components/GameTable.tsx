@@ -1,7 +1,6 @@
 import type { CategoryEvaluation } from "@/domain/probability";
-import { CATEGORY_BY_ID, type CategoryId, type DieValue } from "@/domain/yatzy";
+import { type CategoryId, type DieValue } from "@/domain/yatzy";
 import type { GameState } from "@/domain/game";
-import { getBotPolicy } from "@/domain/bots";
 import { Dice } from "./Dice";
 import { DecisionPanel } from "./DecisionPanel";
 
@@ -69,14 +68,15 @@ export function GameTable({
   const heldCount = held.filter(Boolean).length;
   const canRoll = rollNumber < 3 && !(rollNumber > 0 && heldCount === 5) && !isRolling && !isCalculating;
   const actionLabel = rollNumber === 0 ? "Lancer" : "Relancer";
+  const usedRolls = Math.min(rollNumber, 3);
+  const remainingRolls = 3 - usedRolls;
+  const mustScore = usedRolls >= 3 || (usedRolls > 0 && heldCount === 5);
+  const rollStatus = usedRolls === 0
+    ? "Trois lancers disponibles"
+    : `${usedRolls} lancer${usedRolls > 1 ? "s" : ""} utilisé${usedRolls > 1 ? "s" : ""}, ${remainingRolls} disponible${remainingRolls !== 1 ? "s" : ""}`;
 
   return (
-    <section className="game-table" aria-label="Zone de lancer">
-      <div className="table-instruction" aria-live="polite">
-        <strong>{isRolling ? "Les dés roulent…" : rollNumber === 0 ? "À toi de lancer" : rollNumber >= 3 ? "Résultat final" : `${heldCount} dé${heldCount > 1 ? "s" : ""} gardé${heldCount > 1 ? "s" : ""}`}</strong>
-        <span>{rollNumber === 0 ? "Jusqu’à trois lancers." : rollNumber >= 3 ? "Choisis une case dans ta feuille." : "Chaque dé indique son état."}</span>
-      </div>
-
+    <section className="game-table" aria-label="Zone de lancer" aria-busy={isCalculating}>
       {selectedCategory ? (
         <DecisionPanel
           category={selectedCategory}
@@ -101,18 +101,19 @@ export function GameTable({
       />
 
       <div className="roll-controls">
-        <span className="roll-count">{rollNumber === 0 ? "Prêt à lancer" : `Lancer ${Math.min(rollNumber, 3)}/3`}</span>
-        {rollNumber >= 3 ? (
-          <div className="roll-complete" role="status">Résultat final · choisis une case</div>
-        ) : heldCount === 5 && rollNumber > 0 ? (
-          <div className="roll-complete" role="status">Tous les dés sont gardés</div>
+        <span className="roll-indicator" role="img" aria-label={rollStatus}>
+          {[0, 1, 2].map((rollIndex) => (
+            <i key={rollIndex} data-used={rollIndex < usedRolls} aria-hidden="true" />
+          ))}
+        </span>
+        {mustScore ? (
+          <div className="roll-complete" role="status">Choisis une case</div>
         ) : (
           <button className={selectedCategory ? "secondary-action" : "primary-action"} type="button" disabled={!canRoll} onClick={onRoll}>
-            {isRolling ? "Les dés roulent…" : actionLabel}
+            {isRolling ? "Les dés roulent…" : isCalculating ? "Calcul…" : actionLabel}
           </button>
         )}
       </div>
-      <p className="keyboard-help">⌥1 à ⌥5 pour garder un dé · ⌥R pour lancer · ⌥S pour inscrire</p>
     </section>
   );
 }
@@ -123,17 +124,12 @@ type BotTurnPanelProps = {
 };
 
 export function BotTurnPanel({ game, onSkip }: BotTurnPanelProps) {
-  const policy = getBotPolicy(game.botLevel);
-  const currentRoll = Math.min(game.bot.rollNumber, 3);
   const isAnimating = game.botTurn.status !== "idle";
+  const botStatus = game.botTurn.status === "choosing" ? "Le bot choisit…" : "Le bot lance…";
 
   return (
     <section className="bot-turn-panel" aria-labelledby="bot-turn-title" aria-live="polite">
-      <div>
-        <p className="eyebrow">LE BOT JOUE</p>
-        <h2 id="bot-turn-title">{policy.label}</h2>
-        <p>{game.botTurn.status === "choosing" ? "Il choisit une case…" : currentRoll === 0 ? "Prépare son premier lancer" : `Lancer ${currentRoll} sur 3`}</p>
-      </div>
+      <p className="bot-status" id="bot-turn-title">{botStatus}</p>
       <DiceTray
         dice={game.bot.dice}
         held={game.bot.held}
@@ -143,9 +139,7 @@ export function BotTurnPanel({ game, onSkip }: BotTurnPanelProps) {
         finalResult={game.bot.rollNumber >= 3}
         label="Les dés du bot"
       />
-      <p className="bot-turn-note">Ses dés restent équitables. Son niveau change uniquement ses décisions.</p>
-      {isAnimating ? <button className="secondary-action" type="button" onClick={onSkip}>Passer l’animation</button> : null}
-      {game.botTurn.targetCategory ? <p className="bot-target">Case visée : {CATEGORY_BY_ID[game.botTurn.targetCategory].label}</p> : null}
+      {isAnimating ? <button className="secondary-action" type="button" onClick={onSkip}>Passer</button> : null}
     </section>
   );
 }
