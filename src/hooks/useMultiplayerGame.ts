@@ -10,7 +10,7 @@ export function useMultiplayerGame(roomId: string, localPlayerId: "human" | "bot
   const [hasLoaded, setHasLoaded] = useState(false);
 
   const socket = usePartySocket({
-    host: process.env.NEXT_PUBLIC_PARTYKIT_HOST || "127.0.0.1:1999",
+    host: process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999",
     room: roomId,
     onMessage: (e) => {
       try {
@@ -20,16 +20,11 @@ export function useMultiplayerGame(roomId: string, localPlayerId: "human" | "bot
       } catch {}
     },
     onOpen: () => {
+      setHasLoaded(true);
       setTimeout(() => {
-        setHasLoaded((loaded) => {
-          if (!loaded) {
-            setGame((current) => {
-              socket.send(JSON.stringify(current));
-              return current;
-            });
-            return true;
-          }
-          return loaded;
+        setGame((current) => {
+          socket.send(JSON.stringify(current));
+          return current;
         });
       }, 500);
     }
