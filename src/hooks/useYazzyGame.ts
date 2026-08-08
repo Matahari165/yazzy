@@ -21,6 +21,34 @@ export function useYazzyGame() {
   const [game, setGame] = useState<GameState>(() => createGame("calculator"));
   const [hasLoaded, setHasLoaded] = useState(false);
   const botTimerRef = useRef<number | null>(null);
+  const botWorkerRef = useRef<Worker | null>(null);
+  const botRequestIdRef = useRef(0);
+
+  useEffect(() => {
+    try {
+      botWorkerRef.current = new Worker(new URL("../workers/bot.worker.ts", import.meta.url));
+    } catch {}
+    return () => botWorkerRef.current?.terminate();
+  }, []);
+
+  const runBotStep = useCallback((type: "prepare" | "complete", currentState: GameState): Promise<GameState> => {
+    return new Promise((resolve) => {
+      const worker = botWorkerRef.current;
+      if (!worker) {
+        resolve(type === "prepare" ? prepareBotStep(currentState) : completeBotTurn(currentState));
+        return;
+      }
+      const requestId = ++botRequestIdRef.current;
+      const listener = (event: MessageEvent) => {
+        if (event.data.requestId === requestId) {
+          worker.removeEventListener("message", listener);
+          resolve(event.data.state);
+        }
+      };
+      worker.addEventListener("message", listener);
+      worker.postMessage({ type, requestId, state: currentState });
+    });
+  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -74,15 +102,22 @@ export function useYazzyGame() {
           };
         });
       });
-      schedule(() => setGame((current) => prepareBotStep(current)));
     } else if (game.botTurn.status === "waiting") {
-      schedule(() => setGame((current) => prepareBotStep(current)));
+      schedule(() => {
+        runBotStep("prepare", game).then((nextState) => {
+          setGame((current) => current.activePlayer === "bot" && current.botTurn.status === "waiting" ? nextState : current);
+        });
+      });
     } else if (game.botTurn.status === "choosing") {
-      schedule(() => setGame((current) => completeBotTurn(current)));
+      schedule(() => {
+        runBotStep("complete", game).then((nextState) => {
+          setGame((current) => current.activePlayer === "bot" && current.botTurn.status === "choosing" ? nextState : current);
+        });
+      });
     }
 
     return () => clearBotTimer();
-  }, [clearBotTimer, game.activePlayer, game.bot.rollNumber, game.botTurn.status, hasLoaded]);
+  }, [clearBotTimer, game, hasLoaded, runBotStep]);
 
   const roll = useCallback(() => {
     setGame((current) => {

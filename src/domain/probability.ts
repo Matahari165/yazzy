@@ -95,6 +95,11 @@ function solve(category: CategoryId, counts: DiceCounts, remainingRolls: number)
   const cached = solveCache.get(key);
   if (cached) return cached;
 
+  if (solveCache.size > 50000) {
+    solveCache.clear();
+    outcomeCache.clear();
+  }
+
   const dice = countsToDice(counts);
   const score = scoreDice(category, dice);
   if (remainingRolls === 0) {
