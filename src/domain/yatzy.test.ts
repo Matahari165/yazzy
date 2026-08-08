@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { bestCombinationLabel, scoreDice, totalScore, upperSubtotal } from "./yatzy";
+import { CATEGORY_IDS, bestCombinationLabel, scoreDice, totalScore, upperSubtotal } from "./yatzy";
 
 describe("Yatzy nordique — scores", () => {
+  it("joue avec 14 cases, sans Chance", () => {
+    expect(CATEGORY_IDS).toHaveLength(14);
+    expect(CATEGORY_IDS.map(String)).not.toContain("chance");
+  });
+
   it("calcule la section supérieure", () => {
     expect(scoreDice("fours", [4, 4, 4, 2, 6])).toBe(12);
   });

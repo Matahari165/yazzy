@@ -16,7 +16,6 @@ type DecisionPanelProps = {
 };
 
 const percent = new Intl.NumberFormat("fr-FR", { style: "percent", maximumFractionDigits: 1 });
-const decimal = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
 
 export function DecisionPanel({
   category,
@@ -43,8 +42,8 @@ export function DecisionPanel({
         <strong className="decision-points">{points} pts</strong>
       </div>
       <p className="decision-metric">
-        <span>{category === "chance" ? "Score moyen" : "Chance de marquer"}</span>
-        <strong>{isCalculating ? "Calcul…" : calculationError ? "Indisponible" : evaluation ? category === "chance" ? `${decimal.format(evaluation.expectedScore)} pts` : percent.format(evaluation.successProbability) : "—"}</strong>
+        <span>Chance de marquer</span>
+        <strong>{isCalculating ? "Calcul…" : calculationError ? "Indisponible" : evaluation ? percent.format(evaluation.successProbability) : "—"}</strong>
       </p>
       <div className="decision-actions">
         <button className="secondary-action" type="button" aria-expanded={isDetailsOpen} onClick={() => setIsDetailsOpen((open) => !open)}>

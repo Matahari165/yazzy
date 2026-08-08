@@ -27,11 +27,6 @@ describe("moteur de probabilités exactes", () => {
     expect(result.expectedScore).toBe(0);
   });
 
-  it("garde les dés 5 et 6 pour maximiser Chance avec deux relances", () => {
-    const result = evaluateCategory("chance", [2, 3, 4, 5, 6], 2);
-    expect(countsToDice(result.bestHoldForExpectedScore)).toEqual([5, 6]);
-  });
-
   it("formule naturellement les conseils de conservation", () => {
     expect(formatHoldAction([0, 0, 0, 0, 0, 0])).toBe("Relance tout");
     expect(formatHoldAction([0, 0, 0, 2, 0, 0])).toBe("Garde 4–4");

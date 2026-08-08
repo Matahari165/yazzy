@@ -24,10 +24,10 @@ const rolledHuman = (scores: PlayerState["scores"] = {}): PlayerState => ({
 describe("partie à deux joueurs", () => {
   it("fait passer la main du joueur au bot après une inscription", () => {
     const current = { ...createGame("calculator"), human: rolledHuman() };
-    const next = scoreHumanTurn(current, "chance");
+    const next = scoreHumanTurn(current, "largeStraight");
 
     expect(next.activePlayer).toBe("bot");
-    expect(next.human.scores.chance).toBe(20);
+    expect(next.human.scores.largeStraight).toBe(20);
     expect(next.botTurn.status).toBe("rolling");
   });
 
@@ -36,15 +36,15 @@ describe("partie à deux joueurs", () => {
       ...createGame("discovery"),
       activePlayer: "bot" as const,
       turn: 1,
-      human: { ...rolledHuman({ chance: 20 }), dice: [], rollNumber: 0 },
+      human: { ...rolledHuman({ largeStraight: 20 }), dice: [], rollNumber: 0 },
       bot: rolledHuman(),
-      botTurn: { status: "choosing" as const, targetCategory: "chance" as const, message: "Le bot joue." },
+      botTurn: { status: "choosing" as const, targetCategory: "largeStraight" as const, message: "Le bot joue." },
     };
-    const next = scoreBotTurn(current, "chance");
+    const next = scoreBotTurn(current, "largeStraight");
 
     expect(next.activePlayer).toBe("human");
     expect(next.turn).toBe(2);
-    expect(next.bot.scores.chance).toBe(20);
+    expect(next.bot.scores.largeStraight).toBe(20);
     expect(next.botTurn.status).toBe("idle");
     expect(isStoredGame(next)).toBe(true);
   });
@@ -71,10 +71,10 @@ describe("partie à deux joueurs", () => {
     expect(next.bot.rollNumber).toBe(0);
   });
 
-  it("valide uniquement la sauvegarde version 2 sans toucher à l'ancienne", () => {
+  it("valide uniquement la sauvegarde version 3 sans toucher à l'ancienne", () => {
     const game = createGame("strategist");
     expect(isStoredGame(game)).toBe(true);
-    expect(isStoredGame({ ...game, version: 1 })).toBe(false);
+    expect(isStoredGame({ ...game, version: 2 })).toBe(false);
     expect(isStoredGame({ ...game, mode: "solo" })).toBe(false);
   });
 });

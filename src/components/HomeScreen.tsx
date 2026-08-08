@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { isFinished, type GameState } from "@/domain/game";
+import { CATEGORY_IDS } from "@/domain/yatzy";
 import { readStoredGame } from "@/lib/gameStorage";
 
 export function HomeScreen() {
@@ -36,7 +37,7 @@ export function HomeScreen() {
           {canResume ? (
             <Link className="secondary-action" href="/game">
               <span>Reprendre la partie</span>
-              <small>Tour {Math.min(savedGame.turn, 15)} sur 15</small>
+              <small>Tour {Math.min(savedGame.turn, CATEGORY_IDS.length)} sur {CATEGORY_IDS.length}</small>
             </Link>
           ) : null}
           <Link className="primary-action" href="/bot">Jouer contre un bot</Link>

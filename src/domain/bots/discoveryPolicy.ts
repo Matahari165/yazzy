@@ -1,10 +1,10 @@
-import { CATEGORY_IDS, countDice, scoreDice, type CategoryId, type DiceCounts } from "../yatzy";
+import { CATEGORY_IDS, scoreDice, type CategoryId, type DiceCounts } from "../yatzy";
 import { chooseFirstOpenCategory, simpleHold } from "./utils";
 import type { BotDecisionContext, BotPolicy } from "./types";
 
 function pickCategory(context: BotDecisionContext): CategoryId {
   const open = CATEGORY_IDS.filter((category) => context.scores[category] === undefined);
-  if (!open.length) return "chance";
+  if (!open.length) return CATEGORY_IDS[0];
 
   if (context.dice.length === 5) {
     const immediate = open.reduce<{ category: CategoryId; score: number } | null>((best, category) => {
@@ -14,12 +14,11 @@ function pickCategory(context: BotDecisionContext): CategoryId {
     if (immediate && immediate.score > 0) return immediate.category;
   }
 
-  return open.includes("chance") ? "chance" : chooseFirstOpenCategory(context.scores);
+  return chooseFirstOpenCategory(context.scores);
 }
 
 function pickHold(context: BotDecisionContext, category: CategoryId): DiceCounts {
   if (context.dice.length !== 5) return [0, 0, 0, 0, 0, 0];
-  if (category === "chance") return countDice(context.dice);
   return simpleHold(context.dice);
 }
 

@@ -21,7 +21,7 @@ export function evaluateOpenCategories(context: BotDecisionContext): CategoryEva
 }
 
 export function chooseFirstOpenCategory(scores: Partial<Record<CategoryId, number>>): CategoryId {
-  return openCategories(scores)[0] ?? "chance";
+  return openCategories(scores)[0] ?? CATEGORY_IDS[0];
 }
 
 export function holdFlagsForDice(dice: Dice, hold: DiceCounts): boolean[] {

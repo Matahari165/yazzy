@@ -14,14 +14,14 @@ Implémenté et vérifié :
 - moteur exact de probabilité et d'espérance par case, exécuté hors du fil principal ;
 - 27 tests automatisés sur les règles, les probabilités, les politiques de bot et les transitions de partie ;
 - accueil explicite, choix du niveau puis partie contre bot sur `/`, `/bot` et `/game` ;
-- état v2 à deux joueurs : joueur actif, dés, scores, tour et état du tour bot ;
-- sauvegarde locale versionnée `yazzy.game.v2`, sans suppression de l’ancienne clé ;
+- état v3 à deux joueurs : joueur actif, dés, scores, tour et état du tour bot ;
+- sauvegarde locale versionnée `yazzy.game.v3`, sans suppression de l’ancienne clé ;
 - probabilités exactes affichées uniquement dans le panneau de décision de la case sélectionnée ;
 - dés avec libellés Gardé, À relancer et Résultat final ;
 - animation courte des faces finales, dés gardés immobiles et mouvement réduit ;
 - interface de plateau claire vérifiée à 320, 375, 390 et 430 px, en paysage et sur une largeur Mac ;
 - raccourcis clavier `⌥1` à `⌥5`, `⌥R` et `⌥S` ;
-- confirmation avant d’écraser une partie v2 existante ;
+- confirmation avant d’écraser une partie v3 existante ;
 - bouton ami visible, désactivé et marqué Bientôt.
 
 Non implémenté :
@@ -98,7 +98,7 @@ Ces questions ne bloquent pas la conception du moteur, mais elles doivent être 
 
 ## 4. Règles de référence proposées
 
-Une partie comprend 15 tours. À chaque tour :
+Une partie comprend 14 tours. À chaque tour :
 
 1. le joueur lance cinq dés ;
 2. il peut garder n'importe quels dés et relancer les autres ;
@@ -117,7 +117,6 @@ Une partie comprend 15 tours. À chaque tour :
 | Petite suite | 1, 2, 3, 4, 5 | 15 |
 | Grande suite | 2, 3, 4, 5, 6 | 20 |
 | Full | un brelan et une paire de valeurs différentes | somme des cinq dés |
-| Chance | aucune condition | somme des cinq dés |
 | Yatzy | cinq dés identiques | 50 |
 
 Bonus supérieur : 50 points si le total des cases As à Six atteint au moins 63.
@@ -148,13 +147,11 @@ Ou :
 
 Les nombres présentés dans l'application devront toujours être produits et vérifiés par le moteur.
 
-Pour les cases à score fixe — suites et Yatzy — une probabilité de réussite suffit. Pour les cases à score variable — As à Six, paires, brelan, carré, full et chance — le détail doit aussi montrer :
+Pour les cases à score fixe — suites et Yatzy — une probabilité de réussite suffit. Pour les cases à score variable — As à Six, paires, brelan, carré et full — le détail doit aussi montrer :
 
 - la probabilité de chaque score possible ;
 - la probabilité d'atteindre au moins un objectif choisi ;
 - le score moyen attendu.
-
-« Chance : 100 % de réussite » est vrai mais inutile. L'information utile est sa distribution de scores et son espérance.
 
 ### Quand afficher un retour
 
@@ -279,7 +276,7 @@ Le produit doit afficher la nature de chaque résultat :
 - `Estimation` : simulation ou approximation, avec nombre d'itérations et marge d'erreur ;
 - `Indisponible` : le moteur ne sait pas répondre proprement.
 
-La probabilité de compléter une case pendant le tour peut être exacte. L'optimisation parfaite de toute une partie est beaucoup plus coûteuse : 15 cases créent déjà `2^15 = 32 768` configurations, auxquelles s'ajoutent le bonus supérieur, les 252 combinaisons de dés et le numéro du lancer. La V1 ne devra pas qualifier une stratégie globale d'« exacte » tant que le calcul exhaustif et ses tests ne le prouvent pas.
+La probabilité de compléter une case pendant le tour peut être exacte. L'optimisation parfaite de toute une partie est beaucoup plus coûteuse : 14 cases créent déjà `2^14 = 16 384` configurations, auxquelles s'ajoutent le bonus supérieur, les 252 combinaisons de dés et le numéro du lancer. La V1 ne devra pas qualifier une stratégie globale d'« exacte » tant que le calcul exhaustif et ses tests ne le prouvent pas.
 
 ## 7. Moteur de décision
 
@@ -455,7 +452,7 @@ Il peut aussi afficher le score réel, le score attendu au départ, l'écart cum
 
 - partie solo complète ;
 - lancer, sélection, relance, arrêt anticipé et score ;
-- grille de 15 cases et bonus ;
+- grille de 14 cases et bonus ;
 - probabilités exactes du tour ;
 - explication simple et formule ;
 - sauvegarde locale et reprise ;
@@ -668,7 +665,7 @@ Le score brut ne mesure pas seul la progression, car la chance crée beaucoup de
 ### Phase 0 — Cadrage et maquette
 
 - valider la variante ;
-- écrire les critères d'acceptation des 15 cases ;
+- écrire les critères d'acceptation des 14 cases ;
 - dessiner le parcours mobile ;
 - produire une maquette cliquable de l'écran de jeu ;
 - tester la compréhension de « probabilité » contre « espérance ».

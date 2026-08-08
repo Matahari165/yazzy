@@ -2,8 +2,8 @@ import type { BotLevel } from "./bots";
 import { rollFairDie } from "../lib/random";
 import { CATEGORY_BY_ID, CATEGORY_IDS, scoreDice, type CategoryId, type DieValue } from "./yatzy";
 
-export const GAME_VERSION = 2;
-export const GAME_STORAGE_KEY = "yazzy.game.v2";
+export const GAME_VERSION = 3;
+export const GAME_STORAGE_KEY = "yazzy.game.v3";
 
 export type PlayerId = "human" | "bot";
 export type BotTurnStatus = "idle" | "rolling" | "waiting" | "choosing";
@@ -91,7 +91,7 @@ export function isStoredGame(value: unknown): value is GameState {
   const expectedActive = humanCount === botCount ? "human" : humanCount === botCount + 1 ? "bot" : null;
   const botTurn = game.botTurn;
   const turn = game.turn;
-  if (typeof turn !== "number" || !Number.isInteger(turn) || turn < 1 || turn > 16) return false;
+  if (typeof turn !== "number" || !Number.isInteger(turn) || turn < 1 || turn > CATEGORY_IDS.length + 1) return false;
   const hasValidTarget = Boolean(botTurn?.targetCategory === null || botTurn?.status === "idle" || (
     typeof botTurn?.targetCategory === "string" &&
     isCategory(botTurn.targetCategory) &&
@@ -171,7 +171,7 @@ export function scoreBotTurn(current: GameState, category: CategoryId): GameStat
     ...current,
     bot,
     activePlayer: "human",
-    turn: Math.min(16, current.turn + 1),
+    turn: Math.min(CATEGORY_IDS.length + 1, current.turn + 1),
     botTurn: {
       status: "idle",
       targetCategory: category,

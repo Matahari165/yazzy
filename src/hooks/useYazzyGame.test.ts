@@ -37,10 +37,10 @@ describe("état du jeu", () => {
         scores: {},
       },
     };
-    const next = scoreHumanTurn(game, "chance");
+    const next = scoreHumanTurn(game, "largeStraight");
 
     expect(next.activePlayer).toBe("bot");
-    expect(next.human.scores.chance).toBe(20);
+    expect(next.human.scores.largeStraight).toBe(20);
     expect(next.botTurn.status).toBe("rolling");
   });
 });

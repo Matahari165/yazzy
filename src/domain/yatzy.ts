@@ -12,7 +12,6 @@ export const CATEGORY_IDS = [
   "smallStraight",
   "largeStraight",
   "fullHouse",
-  "chance",
   "yatzy",
 ] as const;
 
@@ -111,14 +110,6 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     scoring: "Somme les cinq dés.",
   },
   {
-    id: "chance",
-    label: "Chance",
-    shortLabel: "Chance",
-    section: "lower",
-    rule: "Toutes les combinaisons sont acceptées.",
-    scoring: "Somme les cinq dés.",
-  },
-  {
     id: "yatzy",
     label: "Yatzy",
     shortLabel: "Yatzy",
@@ -184,8 +175,6 @@ export function scoreDice(category: CategoryId, dice: Dice): number {
       return [...counts].sort((a, b) => a - b).slice(-2).join(",") === "2,3"
         ? dice.reduce((sum, die) => sum + die, 0)
         : 0;
-    case "chance":
-      return dice.reduce((sum, die) => sum + die, 0);
     case "yatzy":
       return counts.some((count) => count === 5) ? 50 : 0;
     default:
