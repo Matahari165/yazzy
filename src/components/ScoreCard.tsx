@@ -6,7 +6,8 @@ import { ScoreHelpPopover } from "./ScoreHelpPopover";
 
 type ScoreCardProps = {
   label: string;
-  scores: Partial<Record<CategoryId, number>>;
+  humanScores: Partial<Record<CategoryId, number>>;
+  botScores: Partial<Record<CategoryId, number>>;
   dice: Dice;
   selected: CategoryId | null;
   recommended?: CategoryId;
@@ -35,7 +36,8 @@ function getScoreText(
 
 export function ScoreCard({
   label,
-  scores,
+  humanScores,
+  botScores,
   dice,
   selected,
   recommended,
@@ -45,14 +47,21 @@ export function ScoreCard({
   onSelect,
 }: ScoreCardProps) {
   const [explainedCategory, setExplainedCategory] = useState<CategoryId | null>(null);
-  const upperScore = (scores.ones ?? 0) + (scores.twos ?? 0) + (scores.threes ?? 0) + (scores.fours ?? 0) + (scores.fives ?? 0) + (scores.sixes ?? 0);
+  const upperScore = (humanScores.ones ?? 0) + (humanScores.twos ?? 0) + (humanScores.threes ?? 0) + (humanScores.fours ?? 0) + (humanScores.fives ?? 0) + (humanScores.sixes ?? 0);
   const closeExplanation = useCallback(() => setExplainedCategory(null), []);
 
   return (
     <section className="score-card" aria-label={label} aria-busy={isCalculating}>
+      <div className="score-legend" aria-hidden="true">
+        <span>Toi</span>
+        <span>Bot</span>
+        <span className="score-legend-repeat">Toi</span>
+        <span className="score-legend-repeat">Bot</span>
+      </div>
       <div className="score-list" role="list" aria-label={label}>
         {CATEGORIES.map((category, index) => {
-          const score = scores[category.id];
+          const score = humanScores[category.id];
+          const botScore = botScores[category.id];
           const filled = score !== undefined;
           const isSelected = selected === category.id;
           const isRecommended = recommended === category.id && !filled && !isReadOnly;
@@ -80,11 +89,12 @@ export function ScoreCard({
                 aria-haspopup="dialog"
                 aria-expanded={isExplained}
                 aria-controls={isExplained ? `score-help-${category.id}` : undefined}
-                aria-label={`${category.label}, ${stateLabel}, ${filled ? `${score} points inscrits` : currentScore === null ? "aucun score affiché" : `${currentScore} points possibles`}. Ouvrir l’explication.`}
+                aria-label={`${category.label}, toi : ${filled ? `${score} points inscrits` : currentScore === null ? "aucun score affiché" : `${currentScore} points possibles`}, bot : ${botScore === undefined ? "aucun score inscrit" : `${botScore} points inscrits`}. ${stateLabel}. Ouvrir l’explication.`}
                 onClick={handleClick}
               >
                 <span className="score-category">{category.label}</span>
-                <strong className="score-value">{currentScore === null ? "—" : currentScore}</strong>
+                <strong className="score-value" aria-hidden="true">{currentScore === null ? "—" : currentScore}</strong>
+                <strong className="score-value score-value-bot" aria-hidden="true">{botScore === undefined ? "—" : botScore}</strong>
               </button>
               {isExplained ? (
                 <ScoreHelpPopover

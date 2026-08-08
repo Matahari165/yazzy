@@ -97,9 +97,10 @@ export function GameBoard() {
       ) : (
         <div className="game-content">
           <ScoreCard
-            label={game.activePlayer === "human" ? "Ta feuille de score" : "Feuille de score du bot"}
-            scores={game.activePlayer === "human" ? game.human.scores : game.bot.scores}
-            dice={game.activePlayer === "human" ? game.human.dice : game.bot.dice}
+            label="Feuille de score : toi et bot"
+            humanScores={game.human.scores}
+            botScores={game.bot.scores}
+            dice={game.human.dice}
             selected={game.activePlayer === "human" ? selectedCategory : null}
             recommended={game.activePlayer === "human" ? bestEvaluation?.category : undefined}
             canSelect={game.activePlayer === "human" && game.human.rollNumber > 0 && !isRolling && !isCalculating}
