@@ -501,7 +501,7 @@ h3 { font-size: 18px; line-height: 1.2; }
   .match-player { gap: 3px; }
   .match-player strong { font-size: 15px; }
   .quit-link { padding-inline: 8px; font-size: 12px; }
-  .game-content { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; align-items: stretch; gap: 8px; overflow: hidden; }
+  .game-content { min-height: 0; display: grid; flex: 1; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; align-items: stretch; gap: 8px; overflow: hidden; }
   .score-card { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
   .score-list { min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(44px, auto); flex: 1; overflow-y: auto; overscroll-behavior: contain; }
   .score-legend { min-height: 28px; grid-template-columns: minmax(0, 1fr) 26px 26px minmax(0, 1fr) 26px 26px; gap: 6px; padding: 4px 10px 2px; }
