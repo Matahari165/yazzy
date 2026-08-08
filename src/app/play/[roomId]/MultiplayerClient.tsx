@@ -80,7 +80,7 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string, isHost: 
       </header>
 
       {isFinished ? (
-        <FinishedGame game={game} />
+        <FinishedGame game={game} localPlayerId={isHost ? "human" : "bot"} />
       ) : (
         <div className="game-content">
           {isHost && Object.keys(opponentPlayer.scores).length === 0 && (
@@ -93,8 +93,10 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string, isHost: 
 
           <ScoreCard
             label="Feuille de score"
-            humanScores={game.human.scores}
-            botScores={game.bot.scores}
+            playerLabel="Toi"
+            opponentLabel="Adv"
+            humanScores={localPlayer.scores}
+            botScores={opponentPlayer.scores}
             dice={localPlayer.dice}
             selected={isMyTurn ? selectedCategory : null}
             canSelect={isMyTurn && localPlayer.rollNumber > 0 && !isRolling}

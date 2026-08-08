@@ -18,6 +18,8 @@ const VISUAL_HINTS: Partial<Record<CategoryId, string>> = {
 
 type ScoreCardProps = {
   label: string;
+  playerLabel?: string;
+  opponentLabel?: string;
   humanScores: Partial<Record<CategoryId, number>>;
   botScores: Partial<Record<CategoryId, number>>;
   dice: Dice;
@@ -53,6 +55,8 @@ function getScoreText(
 
 export function ScoreCard({
   label,
+  playerLabel = "Toi",
+  opponentLabel = "Bot",
   humanScores,
   botScores,
   dice,
@@ -78,10 +82,10 @@ export function ScoreCard({
   return (
     <section className="score-card" aria-label={label} aria-busy={isCalculating}>
       <div className="score-legend" aria-hidden="true">
-        <span>Toi</span>
-        <span>Bot</span>
-        <span className="score-legend-repeat">Toi</span>
-        <span className="score-legend-repeat">Bot</span>
+        <span>{playerLabel}</span>
+        <span>{opponentLabel}</span>
+        <span className="score-legend-repeat">{playerLabel}</span>
+        <span className="score-legend-repeat">{opponentLabel}</span>
       </div>
       <div className="score-list" role="list" aria-label={label}>
         {CATEGORIES.map((category, index) => {
@@ -114,7 +118,7 @@ export function ScoreCard({
                 aria-haspopup="dialog"
                 aria-expanded={isExplained}
                 aria-controls={isExplained ? `score-help-${category.id}` : undefined}
-                aria-label={`${category.label}, toi : ${filled ? `${score} points inscrits` : currentScore === null ? "aucun score affiché" : `${currentScore} points possibles`}, bot : ${botScore === undefined ? "aucun score inscrit" : `${botScore} points inscrits`}. ${stateLabel}. Ouvrir l’explication.`}
+                aria-label={`${category.label}, ${playerLabel.toLowerCase()} : ${filled ? `${score} points inscrits` : currentScore === null ? "aucun score affiché" : `${currentScore} points possibles`}, ${opponentLabel.toLowerCase()} : ${botScore === undefined ? "aucun score inscrit" : `${botScore} points inscrits`}. ${stateLabel}. Ouvrir l’explication.`}
                 onClick={handleClick}
               >
                 <span className="score-category">
