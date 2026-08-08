@@ -23,7 +23,7 @@ const rolledHuman = (scores: PlayerState["scores"] = {}): PlayerState => ({
 
 describe("partie à deux joueurs", () => {
   it("fait passer la main du joueur au bot après une inscription", () => {
-    const current = { ...createGame("calculator"), human: rolledHuman() };
+    const current = { ...createGame("bot", "calculator"), human: rolledHuman() };
     const next = scoreHumanTurn(current, "largeStraight");
 
     expect(next.activePlayer).toBe("bot");
@@ -33,7 +33,7 @@ describe("partie à deux joueurs", () => {
 
   it("rend la main au joueur après le score du bot", () => {
     const current = {
-      ...createGame("discovery"),
+      ...createGame("bot", "discovery"),
       activePlayer: "bot" as const,
       turn: 1,
       human: { ...rolledHuman({ largeStraight: 20 }), dice: [], rollNumber: 0 },
@@ -52,7 +52,7 @@ describe("partie à deux joueurs", () => {
   it("ne laisse pas le niveau modifier le générateur de dés", () => {
     const values: (1 | 2 | 3 | 4 | 5 | 6)[] = [1, 2, 3, 4, 5];
     const results = ["discovery", "calculator", "strategist"].map((botLevel) =>
-      rollPlayerTurn(createGame(botLevel as "discovery" | "calculator" | "strategist").human, diceRoll(...values)),
+      rollPlayerTurn(createGame("bot", botLevel as "discovery" | "calculator" | "strategist").human, diceRoll(...values)),
     );
 
     expect(results.map((result) => result.dice)).toEqual([
@@ -63,7 +63,7 @@ describe("partie à deux joueurs", () => {
   });
 
   it("termine une séquence de tour bot avec un tirage injecté", () => {
-    const current = { ...createGame("discovery"), activePlayer: "bot" as const, botTurn: { status: "rolling" as const, targetCategory: null, message: "Le bot joue." } };
+    const current = { ...createGame("bot", "discovery"), activePlayer: "bot" as const, botTurn: { status: "rolling" as const, targetCategory: null, message: "Le bot joue." } };
     const next = completeBotTurn(current, diceRoll(6, 6, 6, 2, 3, 4, 5, 1));
 
     expect(next.activePlayer).toBe("human");
@@ -72,7 +72,7 @@ describe("partie à deux joueurs", () => {
   });
 
   it("valide uniquement la sauvegarde version 3 sans toucher à l'ancienne", () => {
-    const game = createGame("strategist");
+    const game = createGame("bot", "strategist");
     expect(isStoredGame(game)).toBe(true);
     expect(isStoredGame({ ...game, version: 2 })).toBe(false);
     expect(isStoredGame({ ...game, mode: "solo" })).toBe(false);

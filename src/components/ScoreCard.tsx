@@ -24,8 +24,8 @@ type ScoreCardProps = {
   selected: CategoryId | null;
   recommended?: CategoryId;
   coachEvaluation?: CategoryEvaluation;
-  isCoachEnabled: boolean;
-  onToggleCoach: () => void;
+  isCoachEnabled?: boolean;
+  onToggleCoach?: () => void;
   canSelect: boolean;
   isReadOnly?: boolean;
   isCalculating?: boolean;

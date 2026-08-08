@@ -15,8 +15,10 @@ export function GameHeader({ game, isCoachEnabled, onToggleCoach }: { game: Game
          <button onClick={onToggleCoach} style={{ background: isCoachEnabled ? 'var(--green-soft)' : 'var(--surface-muted)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', color: isCoachEnabled ? 'var(--green)' : 'var(--ink-soft)', fontSize: 11, fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms' }} aria-pressed={isCoachEnabled}>
            💡 Coach {isCoachEnabled ? "ON" : "OFF"}
          </button>
-      ) : (
+      ) : game.mode === "bot" && game.botLevel ? (
          <span className="mode-label">BOT · {getBotPolicy(game.botLevel).label}</span>
+      ) : (
+         <span className="mode-label">MULTI</span>
       )}
       <div
         className="match-score"

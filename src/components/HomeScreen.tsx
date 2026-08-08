@@ -20,6 +20,11 @@ export function HomeScreen() {
 
   const canResume = hasLoaded && savedGame !== null && !isFinished(savedGame);
 
+  const startMultiplayer = () => {
+    const roomId = Math.random().toString(36).substring(2, 6).toUpperCase();
+    window.location.href = `/play/${roomId}?host=true`;
+  };
+
   return (
     <main id="main-content" className="lobby-shell">
       <section className="lobby-card" aria-labelledby="lobby-title">
@@ -39,9 +44,8 @@ export function HomeScreen() {
             </Link>
           ) : null}
           <Link className="primary-action" href="/bot">Jouer contre un bot</Link>
-          <button className="disabled-action" type="button" disabled aria-disabled="true">
-            <span>Jouer avec un ami</span>
-            <small>Bientôt</small>
+          <button className="primary" onClick={startMultiplayer}>
+            🎮 Jouer avec un ami
           </button>
         </div>
 

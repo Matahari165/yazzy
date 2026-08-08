@@ -5,6 +5,7 @@ import { CATEGORY_BY_ID, CATEGORY_IDS, scoreDice, type CategoryId, type DieValue
 export const GAME_VERSION = 3;
 export const GAME_STORAGE_KEY = "yazzy.game.v3";
 
+export type GameMode = "bot" | "multiplayer";
 export type PlayerId = "human" | "bot";
 export type BotTurnStatus = "idle" | "rolling" | "waiting" | "choosing";
 
@@ -23,8 +24,9 @@ export type BotTurnState = {
 
 export type GameState = {
   version: typeof GAME_VERSION;
-  mode: "bot";
-  botLevel: BotLevel;
+  mode: GameMode;
+  roomId?: string;
+  botLevel: BotLevel | null;
   activePlayer: PlayerId;
   turn: number;
   human: PlayerState;
@@ -41,11 +43,13 @@ export const freshPlayer = (scores: Partial<Record<CategoryId, number>> = {}): P
   scores,
 });
 
-export function createGame(botLevel: BotLevel): GameState {
+export function createGame(mode: "bot", botLevel: BotLevel): GameState;
+export function createGame(mode: "multiplayer", roomId: string): GameState;
+export function createGame(mode: GameMode, botLevelOrRoomId: string | BotLevel): GameState {
   return {
     version: GAME_VERSION,
-    mode: "bot",
-    botLevel,
+    mode,
+    ...(mode === "bot" ? { botLevel: botLevelOrRoomId as BotLevel } : { botLevel: null, roomId: botLevelOrRoomId as string }),
     activePlayer: "human",
     turn: 1,
     human: freshPlayer(),
@@ -101,8 +105,8 @@ export function isStoredGame(value: unknown): value is GameState {
   ));
   return (
     game.version === GAME_VERSION &&
-    game.mode === "bot" &&
-    (game.botLevel === "discovery" || game.botLevel === "calculator" || game.botLevel === "strategist") &&
+    (game.mode === "bot" || game.mode === "multiplayer") &&
+    (game.mode === "bot" ? (game.botLevel === "discovery" || game.botLevel === "calculator" || game.botLevel === "strategist") : game.botLevel === null) &&
     (game.activePlayer === "human" || game.activePlayer === "bot") &&
     game.activePlayer === expectedActive &&
     turn === botCount + 1 &&
@@ -157,8 +161,8 @@ export function scoreHumanTurn(current: GameState, category: CategoryId): GameSt
     ...current,
     human,
     activePlayer: "bot",
-    bot: freshPlayer(current.bot.scores),
-    botTurn: { status: "rolling", targetCategory: null, message: "Le bot joue." },
+    bot: current.mode === "bot" ? freshPlayer(current.bot.scores) : current.bot,
+    botTurn: current.mode === "bot" ? { status: "rolling", targetCategory: null, message: "Le bot joue." } : { status: "idle", targetCategory: null, message: null },
   };
 }
 
@@ -171,12 +175,13 @@ export function scoreBotTurn(current: GameState, category: CategoryId): GameStat
     ...current,
     bot,
     activePlayer: "human",
+    human: current.mode === "multiplayer" ? freshPlayer(current.human.scores) : current.human,
     turn: Math.min(CATEGORY_IDS.length + 1, current.turn + 1),
-    botTurn: {
+    botTurn: current.mode === "bot" ? {
       status: "idle",
       targetCategory: category,
       message: `Bot : ${CATEGORY_BY_ID[category].label} · ${points} point${points > 1 ? "s" : ""}.`,
-    },
+    } : { status: "idle", targetCategory: null, message: null },
   };
 }
 

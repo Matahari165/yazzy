@@ -13,6 +13,7 @@ export function prepareBotStep(current: GameState): GameState {
   }
 
   const context = contextForBot(current);
+  if (!current.botLevel) return current;
   const policy = getBotPolicy(current.botLevel);
   const targetCategory = current.botTurn.targetCategory ?? policy.pickCategory(context);
   const hold = policy.pickHold(context, targetCategory);
@@ -27,6 +28,7 @@ export function prepareBotStep(current: GameState): GameState {
 export function completeBotTurn(current: GameState, rollDie: () => DieValue = rollFairDie): GameState {
   if (current.activePlayer !== "bot") return current;
 
+  if (!current.botLevel) return current;
   const policy = getBotPolicy(current.botLevel);
   let bot = current.bot;
   let targetCategory: CategoryId | null = current.botTurn.targetCategory;
