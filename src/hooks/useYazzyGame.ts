@@ -18,7 +18,7 @@ import { readStoredGame, writeStoredGame } from "../lib/gameStorage";
 const BOT_ANIMATION_MS = 260;
 
 export function useYazzyGame() {
-  const [game, setGame] = useState<GameState>(() => createGame("calculator"));
+  const [game, setGame] = useState<GameState>(() => createGame("strategist"));
   const [hasLoaded, setHasLoaded] = useState(false);
   const botTimerRef = useRef<number | null>(null);
   const botWorkerRef = useRef<Worker | null>(null);

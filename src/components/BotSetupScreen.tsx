@@ -10,7 +10,7 @@ import { ConfirmOverwriteDialog } from "./ConfirmOverwriteDialog";
 
 export function BotSetupScreen() {
   const router = useRouter();
-  const [selectedLevel, setSelectedLevel] = useState<BotLevel>("calculator");
+  const [selectedLevel, setSelectedLevel] = useState<BotLevel>("strategist");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const startGame = () => {
@@ -53,10 +53,9 @@ export function BotSetupScreen() {
               >
                 <span className="level-card-top">
                   <strong>{policy.label}</strong>
-                  {level === "calculator" ? <span className="recommended-chip">Conseillé</span> : null}
+                  {level === "strategist" ? <span className="recommended-chip">Conseillé</span> : null}
                 </span>
                 <span>{policy.description}</span>
-                <small>{policy.precision === "exact" ? "Décisions exactes pour le tour" : "Heuristique documentée"}</small>
               </button>
             );
           })}

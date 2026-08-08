@@ -47,7 +47,7 @@ function pickHold(context: BotDecisionContext, category: CategoryId): DiceCounts
 export const strategistPolicy: BotPolicy = {
   level: "strategist",
   label: "Stratège",
-  description: "Ajoute une heuristique sur les cases restantes et la proximité du bonus supérieur ; ce n’est pas une stratégie optimale.",
+  description: "Prend en compte les cases restantes et la proximité du bonus supérieur pour une stratégie plus globale.",
   precision: "heuristic",
   pickCategory,
   pickHold,
