@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { isFinished, type GameState } from "@/domain/game";
 import { CATEGORY_IDS } from "@/domain/yatzy";
 import { readStoredGame } from "@/lib/gameStorage";
 
 export function HomeScreen() {
+  const router = useRouter();
   const [savedGame, setSavedGame] = useState<GameState | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
 
@@ -21,8 +23,8 @@ export function HomeScreen() {
   const canResume = hasLoaded && savedGame !== null && !isFinished(savedGame);
 
   const startMultiplayer = () => {
-    const roomId = Math.random().toString(36).substring(2, 6).toUpperCase();
-    window.location.href = `/play/${roomId}?host=true`;
+    const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    router.push(`/play/${roomId}`);
   };
 
   return (
@@ -54,3 +56,4 @@ export function HomeScreen() {
     </main>
   );
 }
+

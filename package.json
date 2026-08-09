@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:multi": "npx -y concurrently -n next,party -c blue,magenta \"next dev\" \"partykit dev src/party/index.ts\"",
     "party": "partykit dev src/party/index.ts",
+    "party:deploy": "partykit deploy src/party/index.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

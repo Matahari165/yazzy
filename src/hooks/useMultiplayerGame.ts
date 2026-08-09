@@ -2,76 +2,113 @@
 
 import { useCallback, useState } from "react";
 import usePartySocket from "partysocket/react";
-import { createGame, rollPlayerTurn, scoreHumanTurn, scoreBotTurn, togglePlayerHeld, type GameState, isFinished } from "../domain/game";
+import type { MultiplayerGameState } from "../domain/multiplayer";
+import type { ServerMessage, ClientAction } from "../domain/protocol";
 import type { CategoryId } from "../domain/yatzy";
 
-export function useMultiplayerGame(roomId: string, localPlayerId: "human" | "bot") {
-  const [game, setGame] = useState<GameState>(() => createGame("multiplayer", roomId));
-  const [hasLoaded, setHasLoaded] = useState(false);
+function getPlayerId(): string {
+  if (typeof window === "undefined") return "";
+  let id = localStorage.getItem("yazzy.playerId");
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem("yazzy.playerId", id);
+  }
+  return id;
+}
+
+export type MultiplayerStatus = "connecting" | "waiting" | "playing" | "finished" | "room_full";
+
+export function useMultiplayerGame(roomId: string) {
+  const [game, setGame] = useState<MultiplayerGameState | null>(null);
+  const [localRole, setLocalRole] = useState<"player1" | "player2" | null>(null);
+  const [opponentOnline, setOpponentOnline] = useState(false);
+  const [serverStatus, setServerStatus] = useState<MultiplayerStatus>("connecting");
 
   const socket = usePartySocket({
     host: process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999",
     room: roomId,
+    id: getPlayerId(),
     onMessage: (e) => {
       try {
-        const nextState = JSON.parse(e.data);
-        setGame(nextState);
-        setHasLoaded(true);
-      } catch {}
+        const msg = JSON.parse(e.data) as ServerMessage;
+        switch (msg.type) {
+          case "GAME_STATE":
+            setGame(msg.state);
+            setLocalRole(msg.yourRole);
+            // Optionally derive opponentOnline from GAME_STATE if the other slot is filled and has a connectionId
+            if (msg.yourRole === "player1") {
+              setOpponentOnline(!!msg.state.player2?.connectionId);
+            } else if (msg.yourRole === "player2") {
+              setOpponentOnline(!!msg.state.player1?.connectionId);
+            }
+            break;
+          case "WAITING_FOR_OPPONENT":
+            break;
+          case "OPPONENT_CONNECTED":
+            setOpponentOnline(true);
+            break;
+          case "OPPONENT_DISCONNECTED":
+            setOpponentOnline(false);
+            break;
+          case "ROOM_FULL":
+            setServerStatus("room_full");
+            break;
+          case "ERROR":
+            console.error("Server error:", msg.message);
+            break;
+        }
+      } catch (err) {
+        console.error("Failed to parse server message:", err);
+      }
     },
-    onOpen: () => {
-      setHasLoaded(true);
-      setTimeout(() => {
-        setGame((current) => {
-          socket.send(JSON.stringify(current));
-          return current;
-        });
-      }, 500);
-    }
   });
 
   const roll = useCallback(() => {
-    setGame((current) => {
-      if (current.activePlayer !== localPlayerId) return current;
-      const playerField = localPlayerId === "human" ? "human" : "bot";
-      const nextState = {
-        ...current,
-        [playerField]: rollPlayerTurn(current[playerField]),
-      };
-      socket.send(JSON.stringify(nextState));
-      return nextState;
-    });
-  }, [localPlayerId, socket]);
+    const action: ClientAction = { type: "ROLL" };
+    socket.send(JSON.stringify(action));
+  }, [socket]);
 
   const toggleHeld = useCallback((index: number) => {
-    setGame((current) => {
-      if (current.activePlayer !== localPlayerId) return current;
-      const playerField = localPlayerId === "human" ? "human" : "bot";
-      const nextState = {
-        ...current,
-        [playerField]: togglePlayerHeld(current[playerField], index),
-      };
-      socket.send(JSON.stringify(nextState));
-      return nextState;
-    });
-  }, [localPlayerId, socket]);
+    const action: ClientAction = { type: "HOLD", index };
+    socket.send(JSON.stringify(action));
+  }, [socket]);
 
   const score = useCallback((category: CategoryId) => {
-    setGame((current) => {
-      if (current.activePlayer !== localPlayerId) return current;
-      const nextState = localPlayerId === "human" ? scoreHumanTurn(current, category) : scoreBotTurn(current, category);
-      socket.send(JSON.stringify(nextState));
-      return nextState;
-    });
-  }, [localPlayerId, socket]);
+    const action: ClientAction = { type: "SCORE", category };
+    socket.send(JSON.stringify(action));
+  }, [socket]);
+
+  const rematch = useCallback(() => {
+    const action: ClientAction = { type: "REMATCH" };
+    socket.send(JSON.stringify(action));
+  }, [socket]);
+
+  let status: MultiplayerStatus = serverStatus;
+  if (status !== "room_full") {
+    if (!game) {
+      status = "connecting";
+    } else {
+      status = game.status;
+    }
+  }
+
+  const isMyTurn = game?.activePlayer === localRole;
+  const localPlayer = localRole && game ? game[localRole] : null;
+  
+  const opponentRole = localRole === "player1" ? "player2" : localRole === "player2" ? "player1" : null;
+  const opponentPlayer = opponentRole && game ? game[opponentRole] : null;
 
   return {
     game,
+    localRole,
+    opponentOnline,
+    status,
     roll,
     toggleHeld,
     score,
-    isFinished: isFinished(game),
-    hasLoaded,
-    isOpponentTurn: game.activePlayer !== localPlayerId,
+    rematch,
+    isMyTurn,
+    localPlayer,
+    opponentPlayer,
   };
 }
