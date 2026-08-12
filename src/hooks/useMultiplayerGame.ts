@@ -23,11 +23,25 @@ export function useMultiplayerGame(roomId: string) {
   const [localRole, setLocalRole] = useState<"player1" | "player2" | null>(null);
   const [opponentOnline, setOpponentOnline] = useState(false);
   const [serverStatus, setServerStatus] = useState<MultiplayerStatus>("connecting");
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+
+  const playerId = getPlayerId();
 
   const socket = usePartySocket({
     host: process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999",
     room: roomId,
-    id: getPlayerId(),
+    query: { playerId },
+    onOpen: () => {
+      setIsConnected(true);
+      setConnectionError(null);
+    },
+    onClose: () => {
+      setIsConnected(false);
+    },
+    onError: () => {
+      setConnectionError("Connexion interrompue. Yazzy essaie de te reconnecter.");
+    },
     onMessage: (e) => {
       try {
         const msg = JSON.parse(e.data) as ServerMessage;
@@ -35,26 +49,17 @@ export function useMultiplayerGame(roomId: string) {
           case "GAME_STATE":
             setGame(msg.state);
             setLocalRole(msg.yourRole);
-            // Optionally derive opponentOnline from GAME_STATE if the other slot is filled and has a connectionId
             if (msg.yourRole === "player1") {
               setOpponentOnline(!!msg.state.player2?.connectionId);
             } else if (msg.yourRole === "player2") {
               setOpponentOnline(!!msg.state.player1?.connectionId);
             }
             break;
-          case "WAITING_FOR_OPPONENT":
-            break;
-          case "OPPONENT_CONNECTED":
-            setOpponentOnline(true);
-            break;
-          case "OPPONENT_DISCONNECTED":
-            setOpponentOnline(false);
-            break;
           case "ROOM_FULL":
             setServerStatus("room_full");
             break;
           case "ERROR":
-            console.error("Server error:", msg.message);
+            setConnectionError(msg.message);
             break;
         }
       } catch (err) {
@@ -83,6 +88,11 @@ export function useMultiplayerGame(roomId: string) {
     socket.send(JSON.stringify(action));
   }, [socket]);
 
+  const reconnect = useCallback(() => {
+    setConnectionError(null);
+    socket.reconnect();
+  }, [socket]);
+
   let status: MultiplayerStatus = serverStatus;
   if (status !== "room_full") {
     if (!game) {
@@ -102,11 +112,14 @@ export function useMultiplayerGame(roomId: string) {
     game,
     localRole,
     opponentOnline,
+    isConnected,
+    connectionError,
     status,
     roll,
     toggleHeld,
     score,
     rematch,
+    reconnect,
     isMyTurn,
     localPlayer,
     opponentPlayer,

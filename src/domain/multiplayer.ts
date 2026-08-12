@@ -1,5 +1,7 @@
 import { type CategoryId, type DieValue, scoreDice, CATEGORY_IDS } from "./yatzy";
 
+export type MultiplayerRole = "player1" | "player2";
+
 export type MultiplayerPlayerState = {
   dice: DieValue[];
   held: boolean[];
@@ -18,8 +20,9 @@ export type MultiplayerGameState = {
   status: "waiting" | "playing" | "finished";
   player1: PlayerSlot | null;
   player2: PlayerSlot | null;
-  activePlayer: "player1" | "player2";
+  activePlayer: MultiplayerRole;
   turn: number;
+  rematchReady: MultiplayerRole[];
 };
 
 const emptyHeld = (): boolean[] => [false, false, false, false, false];
@@ -43,6 +46,7 @@ export function createMultiplayerGame(roomId: string): MultiplayerGameState {
     player2: null,
     activePlayer: "player1",
     turn: 1,
+    rematchReady: [],
   };
 }
 
@@ -102,6 +106,10 @@ export function scoreCategory(
   };
 }
 
+export function isCategoryId(value: string): value is CategoryId {
+  return CATEGORY_IDS.includes(value as CategoryId);
+}
+
 export function isGameFinished(game: MultiplayerGameState): boolean {
   if (!game.player1 || !game.player2) return false;
   return CATEGORY_IDS.every(
@@ -111,15 +119,86 @@ export function isGameFinished(game: MultiplayerGameState): boolean {
   );
 }
 
-export function getActivePlayerSlot(game: MultiplayerGameState): PlayerSlot | null {
-  return game[game.activePlayer];
-}
-
 export function switchTurn(game: MultiplayerGameState): MultiplayerGameState {
   const isPlayer2 = game.activePlayer === "player2";
   return {
     ...game,
     activePlayer: isPlayer2 ? "player1" : "player2",
     turn: isPlayer2 ? Math.min(CATEGORY_IDS.length + 1, game.turn + 1) : game.turn,
+  };
+}
+
+function canPlay(game: MultiplayerGameState, role: MultiplayerRole): boolean {
+  return Boolean(
+    game.status === "playing" &&
+    game.activePlayer === role &&
+    game[role] &&
+    game.player1?.connectionId &&
+    game.player2?.connectionId,
+  );
+}
+
+export function rollActivePlayer(
+  game: MultiplayerGameState,
+  role: MultiplayerRole,
+  rollDie: () => DieValue,
+): MultiplayerGameState {
+  if (!canPlay(game, role)) return game;
+  const player = game[role]!;
+  const state = rollPlayerDice(player.state, rollDie);
+  return state === player.state ? game : { ...game, [role]: { ...player, state } };
+}
+
+export function holdActiveDie(
+  game: MultiplayerGameState,
+  role: MultiplayerRole,
+  index: number,
+): MultiplayerGameState {
+  if (!canPlay(game, role)) return game;
+  const player = game[role]!;
+  const state = toggleHeldDie(player.state, index);
+  return state === player.state ? game : { ...game, [role]: { ...player, state } };
+}
+
+export function scoreActiveCategory(
+  game: MultiplayerGameState,
+  role: MultiplayerRole,
+  category: CategoryId,
+): MultiplayerGameState {
+  if (!canPlay(game, role)) return game;
+  const player = game[role]!;
+  const state = scoreCategory(player.state, category);
+  if (state === player.state) return game;
+
+  let next = switchTurn({ ...game, [role]: { ...player, state } });
+  const nextRole = next.activePlayer;
+  const nextPlayer = next[nextRole]!;
+  next = {
+    ...next,
+    [nextRole]: {
+      ...nextPlayer,
+      state: freshPlayerState(nextPlayer.state.scores),
+    },
+  };
+
+  return isGameFinished(next) ? { ...next, status: "finished" } : next;
+}
+
+export function requestRematch(
+  game: MultiplayerGameState,
+  role: MultiplayerRole,
+): MultiplayerGameState {
+  if (game.status !== "finished" || game.rematchReady.includes(role)) return game;
+  return { ...game, rematchReady: [...game.rematchReady, role] };
+}
+
+export function startRematch(game: MultiplayerGameState): MultiplayerGameState {
+  if (!game.player1 || !game.player2 || game.rematchReady.length !== 2) return game;
+
+  return {
+    ...createMultiplayerGame(game.roomId),
+    status: "playing",
+    player1: { ...game.player1, state: freshPlayerState() },
+    player2: { ...game.player2, state: freshPlayerState() },
   };
 }

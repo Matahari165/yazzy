@@ -8,9 +8,10 @@ type FinishedGameProps = {
   localPlayerId?: "human" | "bot";
   localRole?: "player1" | "player2";
   onRematch?: () => void;
+  rematchRequested?: boolean;
 };
 
-export function FinishedGame({ game, localPlayerId = "human", localRole, onRematch }: FinishedGameProps) {
+export function FinishedGame({ game, localPlayerId = "human", localRole, onRematch, rematchRequested = false }: FinishedGameProps) {
   const isMultiplayer = "player1" in game;
 
   let localPoints: number;
@@ -31,33 +32,35 @@ export function FinishedGame({ game, localPlayerId = "human", localRole, onRemat
   const isTie = localPoints === opponentPoints;
   const isWinner = localPoints > opponentPoints;
 
-  const opponentLabel = isMultiplayer ? "Adversaire" : "Bot";
+  const opponentLabel = isMultiplayer ? "Ami" : "Bot";
 
   return (
     <section className="finished-card" tabIndex={-1} aria-labelledby="finished-title">
       <p className="eyebrow">PARTIE TERMINÉE</p>
-      <p style={{ fontSize: 24, margin: '16px 0' }}>
+      <h1 id="finished-title" className="finished-result">
         {isTie
-          ? "🤝 Match nul !"
+          ? "Match nul !"
           : isWinner
-            ? "🎉 Bravo, tu as gagné !"
+            ? "Bravo, tu as gagné !"
             : isMultiplayer
-              ? "😢 Ton adversaire a gagné !"
-              : "🤖 Le bot a gagné !"}
-      </p>
-      <div style={{ display: 'flex', gap: 32, justifyContent: 'center', marginBottom: 32 }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 32, fontWeight: 800, color: isWinner ? 'var(--green)' : 'var(--ink)' }}>{localPoints}</div>
-          <div style={{ fontSize: 14, color: 'var(--ink-soft)' }}>Toi</div>
+              ? "Ton ami a gagné !"
+              : "Le bot a gagné !"}
+      </h1>
+      <div className="finished-scoreboard">
+        <div data-winner={isWinner}>
+          <strong>{localPoints}</strong>
+          <span>Toi</span>
         </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 32, fontWeight: 800, color: !isWinner && !isTie ? 'var(--green)' : 'var(--ink)' }}>{opponentPoints}</div>
-          <div style={{ fontSize: 14, color: 'var(--ink-soft)' }}>{opponentLabel}</div>
+        <div data-winner={!isWinner && !isTie}>
+          <strong>{opponentPoints}</strong>
+          <span>{opponentLabel}</span>
         </div>
       </div>
       <div className="finished-actions">
         {isMultiplayer && onRematch ? (
-          <button className="primary-action" onClick={onRematch}>🔄 Revanche</button>
+          <button className="primary-action" type="button" disabled={rematchRequested} onClick={onRematch}>
+            {rematchRequested ? "En attente de ton ami…" : "Proposer une revanche"}
+          </button>
         ) : (
           <Link className="primary-action" href="/bot">Rejouer</Link>
         )}

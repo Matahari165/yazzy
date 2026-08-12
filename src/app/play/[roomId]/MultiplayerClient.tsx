@@ -1,43 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import { useMultiplayerGame } from "../../../hooks/useMultiplayerGame";
-import { GameTable } from "../../../components/GameTable";
-import { ScoreCard } from "../../../components/ScoreCard";
-import { FinishedGame } from "../../../components/FinishedGame";
-import { type CategoryId } from "../../../domain/yatzy";
-import { useGameKeyboard } from "../../../hooks/useGameKeyboard";
-import { useState, useMemo } from "react";
-import { useProbabilityEngine } from "../../../hooks/useProbabilityEngine";
-import { CATEGORY_IDS } from "../../../domain/yatzy";
-
-function getInviteLink(roomId: string): string {
-  return `${window.location.origin}/play/${roomId}`;
-}
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FinishedGame } from "@/components/FinishedGame";
+import { DiceTray, GameTable } from "@/components/GameTable";
+import { ScoreCard } from "@/components/ScoreCard";
+import { CATEGORY_IDS, type CategoryId } from "@/domain/yatzy";
+import { useGameKeyboard } from "@/hooks/useGameKeyboard";
+import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
+import { useProbabilityEngine } from "@/hooks/useProbabilityEngine";
 
 export function MultiplayerClient({ roomId }: { roomId: string }) {
   const {
     game,
     localRole,
     opponentOnline,
+    isConnected,
+    connectionError,
     status,
     roll,
     toggleHeld,
     score,
     rematch,
+    reconnect,
     isMyTurn,
     localPlayer,
     opponentPlayer,
   } = useMultiplayerGame(roomId);
-
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [isRolling, setIsRolling] = useState(false);
-  const [inviteLink] = useState(() =>
-    typeof window !== "undefined" ? getInviteLink(roomId) : ""
-  );
+  const [inviteLink, setInviteLink] = useState("");
+  const [copyStatus, setCopyStatus] = useState("");
+  const rollTimerRef = useRef<number | null>(null);
 
   const localState = localPlayer?.state;
   const opponentState = opponentPlayer?.state;
+  const canAct = Boolean(isMyTurn && isConnected && opponentOnline);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setInviteLink(`${window.location.origin}/play/${roomId}`);
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [roomId]);
+
+  useEffect(() => () => {
+    if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
+  }, []);
 
   const openCategories = useMemo(
     () => CATEGORY_IDS.filter((category) => localState?.scores[category] === undefined),
@@ -49,161 +58,158 @@ export function MultiplayerClient({ roomId }: { roomId: string }) {
     localState?.dice ?? [],
     Math.max(0, 3 - (localState?.rollNumber ?? 0)),
   );
-  const selectedEvaluation = selectedCategory ? evaluations.find((e) => e.category === selectedCategory) : undefined;
+  const isCalculatingForDice = Boolean(localState?.dice.length === 5 && isCalculating);
+  const selectedEvaluation = selectedCategory
+    ? evaluations.find((evaluation) => evaluation.category === selectedCategory)
+    : undefined;
 
   const handleRoll = () => {
-    if (!isMyTurn || isRolling || !localState || localState.rollNumber >= 3) return;
+    if (!canAct || isRolling || isCalculatingForDice || !localState || localState.rollNumber >= 3) return;
     if (localState.rollNumber > 0 && localState.held.every(Boolean)) return;
     roll();
     setIsRolling(true);
-    setTimeout(() => setIsRolling(false), 260);
+    if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
+    const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 80 : 260;
+    rollTimerRef.current = window.setTimeout(() => {
+      rollTimerRef.current = null;
+      setIsRolling(false);
+    }, duration);
   };
 
   const handleScore = () => {
-    if (!selectedCategory || !isMyTurn || isRolling) return;
+    if (!selectedCategory || !canAct || isRolling || isCalculatingForDice) return;
     score(selectedCategory);
     setSelectedCategory(null);
   };
 
   useGameKeyboard({
-    disabled: status !== "playing" || !isMyTurn || isRolling,
-    canRoll: !!localState && localState.rollNumber < 3 && !localState.held.every(Boolean),
-    canScore: selectedCategory !== null && !isRolling,
+    disabled: status !== "playing" || !canAct || isRolling || isCalculatingForDice,
+    canRoll: Boolean(localState && localState.rollNumber < 3 && !localState.held.every(Boolean)),
+    canScore: selectedCategory !== null && !isRolling && !isCalculatingForDice,
     onRoll: handleRoll,
     onScore: handleScore,
     onToggleDie: toggleHeld,
   });
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(inviteLink);
+  const handleCopyLink = async () => {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopyStatus("Lien copié");
+    } catch {
+      setCopyStatus("Sélectionne le lien puis copie-le");
+    }
   };
+
+  if (connectionError && !game) {
+    return (
+      <main id="main-content" className="multiplayer-state-card" role="alert">
+        <p className="eyebrow">CONNEXION IMPOSSIBLE</p>
+        <h1>Le salon ne répond pas</h1>
+        <p>{connectionError}</p>
+        <div className="multiplayer-state-actions">
+          <button className="primary-action" type="button" onClick={reconnect}>Réessayer</button>
+          <Link className="secondary-action" href="/">Retour à l’accueil</Link>
+        </div>
+      </main>
+    );
+  }
 
   if (status === "connecting") {
     return (
-      <main className="app-loading" aria-busy="true">
-        <p>Connexion au salon {roomId}…</p>
+      <main id="main-content" className="app-loading" aria-busy="true">
+        <p role="status">Connexion à la partie {roomId}…</p>
       </main>
     );
   }
 
   if (status === "room_full") {
     return (
-      <main className="app-loading">
-        <p>🚫 Ce salon est complet. Deux joueurs sont déjà connectés.</p>
-        <Link href="/" style={{ marginTop: 16, color: "var(--accent)" }}>Retour à l&apos;accueil</Link>
+      <main id="main-content" className="multiplayer-state-card">
+        <p className="eyebrow">SALON COMPLET</p>
+        <h1>Deux amis jouent déjà ici</h1>
+        <p>Crée une nouvelle partie privée depuis l’accueil.</p>
+        <Link className="primary-action" href="/">Retour à l’accueil</Link>
       </main>
     );
   }
 
   if (status === "waiting") {
     return (
-      <main className="game-shell">
-        <header className="game-header">
+      <main id="main-content" className="game-shell">
+        <header className="game-header waiting-header">
           <Link className="game-logo" href="/">YAZZY</Link>
-          <div className="match-score">
-            <span className="match-player" data-active={true}>
-              <i className="turn-dot" /> Toi
-            </span>
-            <span className="score-separator">·</span>
-            <span className="match-player" data-active={false}>
-              <i className="turn-dot" /> En attente…
-            </span>
-          </div>
+          <span className="mode-label">PARTIE PRIVÉE</span>
           <Link className="quit-link" href="/">Quitter</Link>
         </header>
 
-        <div className="game-content" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 24, padding: "40px 16px" }}>
-          <div style={{ fontSize: 48 }}>🎲</div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--ink)", margin: 0 }}>En attente de ton adversaire</h2>
-          <p style={{ fontSize: 14, color: "var(--ink-soft)", margin: 0, textAlign: "center" }}>
-            Partage ce lien à ton ami pour qu&apos;il rejoigne la partie.
-          </p>
-          <div style={{ width: "100%", maxWidth: 400 }}>
-            <input
-              type="text"
-              readOnly
-              value={inviteLink}
-              style={{
-                width: "100%",
-                padding: 12,
-                borderRadius: 8,
-                border: "1px solid var(--line)",
-                background: "var(--surface)",
-                fontFamily: "monospace",
-                fontSize: 14,
-                cursor: "pointer",
-                boxSizing: "border-box",
-              }}
-              onClick={(e) => {
-                e.currentTarget.select();
-                handleCopyLink();
-              }}
-            />
-            <button
-              className="primary"
-              style={{ width: "100%", marginTop: 8 }}
-              onClick={handleCopyLink}
-            >
-              📋 Copier le lien
-            </button>
+        <section className="waiting-room" aria-labelledby="waiting-title">
+          <span className="waiting-dice" aria-hidden="true">•••</span>
+          <p className="eyebrow">SALON {roomId}</p>
+          <h1 id="waiting-title">Invite ton ami</h1>
+          <p>Envoie-lui ce lien. La partie commencera automatiquement dès qu’il l’ouvrira.</p>
+          <div className="invite-field">
+            <label htmlFor="invite-link">Lien privé</label>
+            <input id="invite-link" type="text" readOnly value={inviteLink} onFocus={(event) => event.currentTarget.select()} />
+            <button className="primary-action" type="button" onClick={handleCopyLink}>Copier le lien</button>
           </div>
-          <div className="spinner" style={{ marginTop: 16, fontSize: 24 }}>⏳</div>
-        </div>
+          <p className="copy-status" role="status">{copyStatus || "Aucune inscription nécessaire"}</p>
+          <p className="waiting-status" role="status"><i aria-hidden="true" /> En attente de ton ami…</p>
+        </section>
       </main>
     );
   }
 
-  if (!game || !localState || !opponentState) {
-    return (
-      <main className="app-loading" aria-busy="true">
-        <p>Chargement de la partie…</p>
-      </main>
-    );
+  if (!game || !localState || !opponentState || !localRole) {
+    return <main id="main-content" className="app-loading" aria-busy="true"><p>Chargement de la partie…</p></main>;
   }
+
+  const rematchRequested = game.rematchReady.includes(localRole);
+  const connectionNotice = !isConnected
+    ? "Ta connexion est interrompue. Reconnexion en cours…"
+    : !opponentOnline
+      ? "Ton ami est déconnecté. La partie reprendra à son retour."
+      : null;
 
   return (
-    <main className="game-shell">
+    <main id="main-content" className="game-shell">
       <header className="game-header">
         <Link className="game-logo" href="/">YAZZY</Link>
-        <div className="match-score">
+        <span className="mode-label">AMI</span>
+        <div className="match-score" aria-label={isMyTurn ? "C’est ton tour" : "C’est le tour de ton ami"}>
           <span className="match-player" data-active={isMyTurn}>
-            <i className="turn-dot" /> Toi
+            <i className="turn-dot" aria-hidden="true" /> Toi
           </span>
-          <span className="score-separator">·</span>
-          <span className="match-player" data-active={!isMyTurn}>
-            <i className="turn-dot" style={opponentOnline ? {} : { opacity: 0.3 }} /> Adv {!opponentOnline && <small style={{ fontSize: 10, opacity: 0.5 }}>(hors ligne)</small>}
+          <span className="score-separator" aria-hidden="true">·</span>
+          <span className="match-player" data-active={!isMyTurn} data-online={opponentOnline}>
+            <i className="turn-dot" aria-hidden="true" /> Ami
           </span>
         </div>
         <Link className="quit-link" href="/">Quitter</Link>
       </header>
 
+      {connectionNotice ? <p className="connection-notice" role="status">{connectionNotice}</p> : null}
+
       {status === "finished" ? (
         <FinishedGame
           game={game}
-          localRole={localRole ?? undefined}
+          localRole={localRole}
           onRematch={rematch}
+          rematchRequested={rematchRequested}
         />
       ) : (
         <div className="game-content">
-          {!opponentOnline && (
-            <div style={{ gridColumn: "1 / -1", padding: 12, background: "var(--surface-muted)", border: "1px solid var(--line)", borderRadius: 12, textAlign: "center" }}>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--ink-soft)" }}>
-                ⚠️ Ton adversaire est déconnecté. Il peut revenir à tout moment.
-              </p>
-            </div>
-          )}
-
           <ScoreCard
-            label="Feuille de score"
+            label="Feuille de score : toi et ton ami"
             playerLabel="Toi"
-            opponentLabel="Adv"
+            opponentLabel="Ami"
             humanScores={localState.scores}
             botScores={opponentState.scores}
             dice={localState.dice}
-            selected={isMyTurn ? selectedCategory : null}
-            canSelect={isMyTurn && localState.rollNumber > 0 && !isRolling}
-            isReadOnly={!isMyTurn}
-            isCalculating={isMyTurn && isCalculating}
+            selected={canAct ? selectedCategory : null}
+            canSelect={canAct && localState.rollNumber > 0 && !isRolling && !isCalculatingForDice}
+            isReadOnly={!canAct}
+            isCalculating={canAct && isCalculatingForDice}
             onSelect={setSelectedCategory}
             onScore={handleScore}
             targetEvaluation={selectedEvaluation}
@@ -216,48 +222,27 @@ export function MultiplayerClient({ roomId }: { roomId: string }) {
               rollNumber={localState.rollNumber}
               selectedCategory={selectedCategory}
               isRolling={isRolling}
-              isCalculating={isCalculating}
+              isCalculating={isCalculatingForDice}
+              isDisabled={!canAct}
               onToggleDie={toggleHeld}
               onRoll={handleRoll}
             />
           ) : (
-            <div style={{ padding: 40, textAlign: "center", color: "var(--ink-soft)", background: "var(--surface)", borderRadius: 12, border: "1px solid var(--line)" }}>
-              {opponentState.dice.length > 0 ? (
-                <>
-                  <p style={{ fontWeight: 600, marginBottom: 12 }}>Tour de ton adversaire</p>
-                  <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                    {opponentState.dice.map((die, i) => (
-                      <span
-                        key={i}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: 40,
-                          height: 40,
-                          borderRadius: 8,
-                          background: opponentState.held[i] ? "var(--accent)" : "var(--surface-muted)",
-                          color: opponentState.held[i] ? "white" : "var(--ink)",
-                          fontWeight: 700,
-                          fontSize: 18,
-                          border: "1px solid var(--line)",
-                        }}
-                      >
-                        {die}
-                      </span>
-                    ))}
-                  </div>
-                  <p style={{ fontSize: 12, marginTop: 8, opacity: 0.6 }}>
-                    Lancer {opponentState.rollNumber}/3
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="spinner" style={{ marginBottom: 16, fontSize: 32 }}>🎲</div>
-                  <p style={{ fontWeight: 600 }}>Au tour de ton adversaire...</p>
-                </>
-              )}
-            </div>
+            <section className="opponent-turn-panel" aria-labelledby="opponent-turn-title" aria-live="polite">
+              <p className="eyebrow">TOUR DE TON AMI</p>
+              <h2 id="opponent-turn-title">
+                {opponentState.rollNumber > 0 ? `Lancer ${opponentState.rollNumber} sur 3` : "Il choisit son lancer…"}
+              </h2>
+              <DiceTray
+                dice={opponentState.dice}
+                held={opponentState.held}
+                rollNumber={opponentState.rollNumber}
+                rolling={false}
+                disabled
+                label="Les dés de ton ami"
+              />
+              <p>Tu vois ses dés et ses choix en direct.</p>
+            </section>
           )}
         </div>
       )}
