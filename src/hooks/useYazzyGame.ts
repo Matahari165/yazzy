@@ -20,7 +20,6 @@ const BOT_ANIMATION_MS = 260;
 export function useYazzyGame() {
   const [game, setGame] = useState<GameState>(() => createGame("bot", "strategist"));
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [isCoachEnabled, setIsCoachEnabled] = useState(false);
   const botTimerRef = useRef<number | null>(null);
   const botWorkerRef = useRef<Worker | null>(null);
   const botRequestIdRef = useRef(0);
@@ -151,10 +150,6 @@ export function useYazzyGame() {
     setGame(createGame("bot", botLevel));
   }, [clearBotTimer, game.botLevel]);
 
-  const toggleCoach = useCallback(() => {
-    setIsCoachEnabled((prev) => !prev);
-  }, []);
-
   useEffect(() => () => clearBotTimer(), [clearBotTimer]);
 
   return {
@@ -167,8 +162,6 @@ export function useYazzyGame() {
     isFinished: isGameFinished(game),
     isBotAnimating: game.activePlayer === "bot" && game.botTurn.status !== "idle",
     hasLoaded,
-    isCoachEnabled,
-    toggleCoach,
   };
 }
 

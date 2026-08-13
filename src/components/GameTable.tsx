@@ -22,7 +22,7 @@ export function DiceTray({ dice, held, rollNumber, rolling, disabled, finalResul
               key={index}
               value={value}
               index={index}
-              held={held[index]}
+              held={rollNumber < 3 && held[index]}
               disabled={disabled || rollNumber >= 3}
               finalResult={finalResult ?? rollNumber >= 3}
               rolling={rolling}
@@ -40,7 +40,6 @@ type GameTableProps = {
   rollNumber: number;
   selectedCategory: CategoryId | null;
   isRolling: boolean;
-  isCalculating: boolean;
   isDisabled?: boolean;
   onToggleDie: (index: number) => void;
   onRoll: () => void;
@@ -52,23 +51,22 @@ export function GameTable({
   rollNumber,
   selectedCategory,
   isRolling,
-  isCalculating,
   isDisabled = false,
   onToggleDie,
   onRoll,
 }: GameTableProps) {
   const heldCount = held.filter(Boolean).length;
-  const canRoll = rollNumber < 3 && !(rollNumber > 0 && heldCount === 5) && !isRolling && !isCalculating && !isDisabled;
+  const canRoll = rollNumber < 3 && !(rollNumber > 0 && heldCount === 5) && !isRolling && !isDisabled;
   const actionLabel = rollNumber === 0 ? "Lancer" : "Relancer";
   const usedRolls = Math.min(rollNumber, 3);
   const remainingRolls = 3 - usedRolls;
-  const mustScore = usedRolls >= 3 || (usedRolls > 0 && heldCount === 5);
+  const canShowRollButton = usedRolls < 3 && heldCount < 5;
   const rollStatus = usedRolls === 0
     ? "Trois lancers disponibles"
     : `${usedRolls} lancer${usedRolls > 1 ? "s" : ""} utilisé${usedRolls > 1 ? "s" : ""}, ${remainingRolls} disponible${remainingRolls !== 1 ? "s" : ""}`;
 
   return (
-    <section className="game-table" aria-label="Zone de lancer" aria-busy={isCalculating}>
+    <section className="game-table" aria-label="Zone de lancer">
 
       <DiceTray
         dice={dice}
@@ -86,13 +84,11 @@ export function GameTable({
             <i key={rollIndex} data-used={rollIndex < usedRolls} aria-hidden="true" />
           ))}
         </span>
-        {mustScore ? (
-          <div className="roll-complete" role="status">Choisis une case</div>
-        ) : (
+        {canShowRollButton ? (
           <button className={selectedCategory ? "secondary-action" : "primary-action"} type="button" disabled={!canRoll} onClick={onRoll}>
-            {isRolling ? "Les dés roulent…" : isCalculating ? "Calcul…" : actionLabel}
+            {isRolling ? "Les dés roulent…" : actionLabel}
           </button>
-        )}
+        ) : null}
       </div>
     </section>
   );

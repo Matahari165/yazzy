@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FinishedGame } from "@/components/FinishedGame";
 import { DiceTray, GameTable } from "@/components/GameTable";
 import { ScoreCard } from "@/components/ScoreCard";
-import { CATEGORY_IDS, type CategoryId } from "@/domain/yatzy";
+import type { CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
-import { useProbabilityEngine } from "@/hooks/useProbabilityEngine";
 
 export function MultiplayerClient({ roomId }: { roomId: string }) {
   const {
@@ -48,23 +47,8 @@ export function MultiplayerClient({ roomId }: { roomId: string }) {
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
   }, []);
 
-  const openCategories = useMemo(
-    () => CATEGORY_IDS.filter((category) => localState?.scores[category] === undefined),
-    [localState?.scores],
-  );
-
-  const { evaluations, isCalculating } = useProbabilityEngine(
-    openCategories,
-    localState?.dice ?? [],
-    Math.max(0, 3 - (localState?.rollNumber ?? 0)),
-  );
-  const isCalculatingForDice = Boolean(localState?.dice.length === 5 && isCalculating);
-  const selectedEvaluation = selectedCategory
-    ? evaluations.find((evaluation) => evaluation.category === selectedCategory)
-    : undefined;
-
   const handleRoll = () => {
-    if (!canAct || isRolling || isCalculatingForDice || !localState || localState.rollNumber >= 3) return;
+    if (!canAct || isRolling || !localState || localState.rollNumber >= 3) return;
     if (localState.rollNumber > 0 && localState.held.every(Boolean)) return;
     roll();
     setIsRolling(true);
@@ -77,15 +61,15 @@ export function MultiplayerClient({ roomId }: { roomId: string }) {
   };
 
   const handleScore = () => {
-    if (!selectedCategory || !canAct || isRolling || isCalculatingForDice) return;
+    if (!selectedCategory || !canAct || isRolling) return;
     score(selectedCategory);
     setSelectedCategory(null);
   };
 
   useGameKeyboard({
-    disabled: status !== "playing" || !canAct || isRolling || isCalculatingForDice,
+    disabled: status !== "playing" || !canAct || isRolling,
     canRoll: Boolean(localState && localState.rollNumber < 3 && !localState.held.every(Boolean)),
-    canScore: selectedCategory !== null && !isRolling && !isCalculatingForDice,
+    canScore: selectedCategory !== null && !isRolling,
     onRoll: handleRoll,
     onScore: handleScore,
     onToggleDie: toggleHeld,
@@ -207,12 +191,10 @@ export function MultiplayerClient({ roomId }: { roomId: string }) {
             botScores={opponentState.scores}
             dice={localState.dice}
             selected={canAct ? selectedCategory : null}
-            canSelect={canAct && localState.rollNumber > 0 && !isRolling && !isCalculatingForDice}
+            canSelect={canAct && localState.rollNumber > 0 && !isRolling}
             isReadOnly={!canAct}
-            isCalculating={canAct && isCalculatingForDice}
             onSelect={setSelectedCategory}
             onScore={handleScore}
-            targetEvaluation={selectedEvaluation}
           />
 
           {isMyTurn ? (
@@ -222,7 +204,6 @@ export function MultiplayerClient({ roomId }: { roomId: string }) {
               rollNumber={localState.rollNumber}
               selectedCategory={selectedCategory}
               isRolling={isRolling}
-              isCalculating={isCalculatingForDice}
               isDisabled={!canAct}
               onToggleDie={toggleHeld}
               onRoll={handleRoll}

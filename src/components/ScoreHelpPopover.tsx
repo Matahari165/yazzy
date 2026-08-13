@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { formatHoldAction, type CategoryEvaluation } from "@/domain/probability";
+import { generalProbability } from "@/domain/probability";
 import type { CategoryDefinition } from "@/domain/yatzy";
 
 type ScoreHelpPopoverProps = {
@@ -9,8 +9,6 @@ type ScoreHelpPopoverProps = {
   category: CategoryDefinition;
   placement: "above" | "below";
   scoreText: string;
-  coachEvaluation?: CategoryEvaluation;
-  targetEvaluation?: CategoryEvaluation;
   scoreAction?: () => void;
   scorePoints?: number | null;
   onClose: () => void;
@@ -27,8 +25,6 @@ export function ScoreHelpPopover({
   category,
   placement,
   scoreText,
-  coachEvaluation,
-  targetEvaluation,
   scoreAction,
   scorePoints,
   onClose,
@@ -96,34 +92,29 @@ export function ScoreHelpPopover({
         </button>
       </header>
 
-      {targetEvaluation && (
-        <div style={{ padding: '0 12px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 13, color: 'var(--ink-soft)' }}>Chance de marquer</span>
-          <strong style={{ fontSize: 14 }}>{percent.format(targetEvaluation.successProbability)}</strong>
-        </div>
-      )}
-
       <dl className="score-help-details">
         <div>
           <dt>Réalisation</dt>
           <dd>{category.rule}</dd>
         </div>
-        <div>
-          <dt>Calcul</dt>
-          <dd>{category.scoring}</dd>
+        <div className="score-help-calculation">
+          <div>
+            <dt>Calcul</dt>
+            <dd>{category.scoring}</dd>
+          </div>
+          <div>
+            <dt>Max points</dt>
+            <dd>{category.maximumScore}</dd>
+          </div>
         </div>
         <div className="score-help-result">
-          <dt>Score</dt>
+          <dt>Score actuel</dt>
           <dd>{scoreText}</dd>
         </div>
-        {coachEvaluation && coachEvaluation.category === category.id && (
-          <div className="score-help-result" style={{ marginTop: 8, gridColumn: "1 / -1", background: 'var(--surface-muted)' }}>
-            <dt style={{ color: 'var(--green)' }}>💡 Conseil du Coach</dt>
-            <dd style={{ fontSize: 13, textAlign: 'left', marginTop: 4, fontFamily: 'var(--font-body)' }}>
-              {formatHoldAction(coachEvaluation.bestHoldForExpectedScore)}.
-            </dd>
-          </div>
-        )}
+        <div className="score-help-result">
+          <dt>Probabilité générale (3 lancers)</dt>
+          <dd>{percent.format(generalProbability(category.id))}</dd>
+        </div>
       </dl>
       {scoreAction && scorePoints !== null && scorePoints !== undefined && (
         <div style={{ marginTop: 8, padding: '0 12px 12px' }}>

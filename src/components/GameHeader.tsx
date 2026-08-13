@@ -3,7 +3,7 @@ import type { GameState } from "@/domain/game";
 import { getBotPolicy } from "@/domain/bots";
 import { totalScore } from "@/domain/yatzy";
 
-export function GameHeader({ game, isCoachEnabled, onToggleCoach }: { game: GameState, isCoachEnabled?: boolean, onToggleCoach?: () => void }) {
+export function GameHeader({ game }: { game: GameState }) {
   const humanTotal = totalScore(game.human.scores);
   const botTotal = totalScore(game.bot.scores);
   const isHumanTurn = game.activePlayer === "human";
@@ -11,11 +11,7 @@ export function GameHeader({ game, isCoachEnabled, onToggleCoach }: { game: Game
   return (
     <header className="game-header">
       <Link className="game-logo" href="/" aria-label="Yazzy, revenir à l’accueil">YAZZY</Link>
-      {onToggleCoach ? (
-         <button onClick={onToggleCoach} style={{ background: isCoachEnabled ? 'var(--green-soft)' : 'var(--surface-muted)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '4px 8px', color: isCoachEnabled ? 'var(--green)' : 'var(--ink-soft)', fontSize: 11, fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 150ms' }} aria-pressed={isCoachEnabled}>
-           💡 Coach {isCoachEnabled ? "ON" : "OFF"}
-         </button>
-      ) : game.mode === "bot" && game.botLevel ? (
+      {game.mode === "bot" && game.botLevel ? (
          <span className="mode-label">BOT · {getBotPolicy(game.botLevel).label}</span>
       ) : (
          <span className="mode-label">MULTI</span>

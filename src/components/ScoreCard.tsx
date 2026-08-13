@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from "react";
 import { CATEGORIES, scoreDice, type CategoryDefinition, type CategoryId, type Dice, totalScore } from "@/domain/yatzy";
-import type { CategoryEvaluation } from "@/domain/probability";
 import { ScoreHelpPopover } from "./ScoreHelpPopover";
 
 const VISUAL_HINTS: Partial<Record<CategoryId, string>> = {
@@ -24,16 +23,10 @@ type ScoreCardProps = {
   botScores: Partial<Record<CategoryId, number>>;
   dice: Dice;
   selected: CategoryId | null;
-  recommended?: CategoryId;
-  coachEvaluation?: CategoryEvaluation;
-  isCoachEnabled?: boolean;
-  onToggleCoach?: () => void;
   canSelect: boolean;
   isReadOnly?: boolean;
-  isCalculating?: boolean;
   onSelect?: (category: CategoryId | null) => void;
   onScore?: () => void;
-  targetEvaluation?: CategoryEvaluation;
 };
 
 function formatPoints(score: number) {
@@ -61,16 +54,10 @@ export function ScoreCard({
   botScores,
   dice,
   selected,
-  recommended,
-  coachEvaluation,
-  isCoachEnabled,
-  onToggleCoach,
   canSelect,
   isReadOnly = false,
-  isCalculating = false,
   onSelect,
   onScore,
-  targetEvaluation,
 }: ScoreCardProps) {
   const [explainedCategory, setExplainedCategory] = useState<CategoryId | null>(null);
   const upperScore = (humanScores.ones ?? 0) + (humanScores.twos ?? 0) + (humanScores.threes ?? 0) + (humanScores.fours ?? 0) + (humanScores.fives ?? 0) + (humanScores.sixes ?? 0);
@@ -80,7 +67,7 @@ export function ScoreCard({
   }, [onSelect]);
 
   return (
-    <section className="score-card" aria-label={label} aria-busy={isCalculating}>
+    <section className="score-card" aria-label={label}>
       <div className="score-legend" aria-hidden="true">
         <span>{playerLabel}</span>
         <span>{opponentLabel}</span>
@@ -93,10 +80,9 @@ export function ScoreCard({
           const botScore = botScores[category.id];
           const filled = score !== undefined;
           const isSelected = selected === category.id;
-          const isRecommended = recommended === category.id && !filled && !isReadOnly;
           const scoreWithDice = dice.length === 5 ? scoreDice(category.id, dice) : null;
           const currentScore = filled ? score : scoreWithDice !== null && canSelect ? scoreWithDice : null;
-          const stateLabel = filled ? "case inscrite" : isSelected ? "case sélectionnée" : isRecommended ? "case conseillée" : "case libre";
+          const stateLabel = filled ? "case inscrite" : isSelected ? "case sélectionnée" : "case libre";
           const isExplained = explainedCategory === category.id;
           const scoreText = getScoreText(category, score, scoreWithDice);
 
@@ -112,7 +98,6 @@ export function ScoreCard({
                 className="score-row"
                 data-filled={filled}
                 data-selected={isSelected}
-                data-recommended={isRecommended}
                 type="button"
                 aria-pressed={isSelected}
                 aria-haspopup="dialog"
@@ -123,7 +108,7 @@ export function ScoreCard({
               >
                 <span className="score-category">
                   {category.label}
-                  {VISUAL_HINTS[category.id] && <span style={{ display: 'block', fontSize: 13, color: 'var(--ink-soft)', fontWeight: 'normal', letterSpacing: '0.15em', marginTop: 1 }}>{VISUAL_HINTS[category.id]}</span>}
+                  {VISUAL_HINTS[category.id] && <span className="score-category-hint">{VISUAL_HINTS[category.id]}</span>}
                 </span>
                 <strong className="score-value" aria-hidden="true">{currentScore === null ? "" : currentScore}</strong>
                 <strong className="score-value score-value-bot" aria-hidden="true">{botScore === undefined ? "" : botScore}</strong>
@@ -134,8 +119,6 @@ export function ScoreCard({
                   category={category}
                   placement={index >= CATEGORIES.length - 5 ? "above" : "below"}
                   scoreText={scoreText}
-                  coachEvaluation={coachEvaluation}
-                  targetEvaluation={targetEvaluation}
                   scoreAction={(!filled && !isReadOnly && canSelect && onScore) ? () => { closeExplanation(); onScore(); } : undefined}
                   scorePoints={currentScore}
                   onClose={closeExplanation}

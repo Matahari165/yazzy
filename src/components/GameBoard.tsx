@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { CATEGORY_BY_ID, CATEGORY_IDS, scoreDice, totalScore, type CategoryId } from "@/domain/yatzy";
+import { useEffect, useRef, useState } from "react";
+import type { CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
-import { useProbabilityEngine } from "@/hooks/useProbabilityEngine";
 import { useYazzyGame } from "@/hooks/useYazzyGame";
 import { FinishedGame } from "./FinishedGame";
 import { BotTurnPanel, GameTable } from "./GameTable";
@@ -11,32 +10,10 @@ import { GameHeader } from "./GameHeader";
 import { ScoreCard } from "./ScoreCard";
 
 export function GameBoard() {
-  const { game, roll, toggleHeld, score, skipBotAnimation, isFinished, hasLoaded, isCoachEnabled, toggleCoach } = useYazzyGame();
+  const { game, roll, toggleHeld, score, skipBotAnimation, isFinished, hasLoaded } = useYazzyGame();
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [isRolling, setIsRolling] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const rollTimerRef = useRef<number | null>(null);
-
-  const openCategories = useMemo(
-    () => CATEGORY_IDS.filter((category) => game.human.scores[category] === undefined),
-    [game.human.scores],
-  );
-  const engineDice = game.activePlayer === "human" ? game.human.dice : [];
-  const { evaluations, isCalculating, calculationError } = useProbabilityEngine(
-    openCategories,
-    engineDice,
-    Math.max(0, 3 - game.human.rollNumber),
-  );
-  const bestEvaluation = evaluations.reduce(
-    (best, evaluation) => (!best || evaluation.expectedScore > best.expectedScore ? evaluation : best),
-    evaluations[0],
-  );
-  const selectedEvaluation = selectedCategory
-    ? evaluations.find((evaluation) => evaluation.category === selectedCategory)
-    : undefined;
-  const selectedPoints = selectedCategory && game.human.dice.length === 5
-    ? scoreDice(selectedCategory, game.human.dice)
-    : 0;
 
   useEffect(() => () => {
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
@@ -49,7 +26,7 @@ export function GameBoard() {
   }, [isFinished]);
 
   const handleRoll = () => {
-    if (game.activePlayer !== "human" || isRolling || isCalculating || game.human.rollNumber >= 3) return;
+    if (game.activePlayer !== "human" || isRolling || game.human.rollNumber >= 3) return;
     if (game.human.rollNumber > 0 && game.human.held.every(Boolean)) return;
     roll();
     setIsRolling(true);
@@ -62,17 +39,15 @@ export function GameBoard() {
   };
 
   const handleScore = () => {
-    if (!selectedCategory || game.activePlayer !== "human" || isRolling || isCalculating) return;
-    const points = scoreDice(selectedCategory, game.human.dice);
-    setFeedback(`${CATEGORY_BY_ID[selectedCategory].label} · ${points} point${points > 1 ? "s" : ""}.`);
+    if (!selectedCategory || game.activePlayer !== "human" || isRolling) return;
     score(selectedCategory);
     setSelectedCategory(null);
   };
 
   useGameKeyboard({
-    disabled: !hasLoaded || game.activePlayer !== "human" || isRolling || isCalculating,
+    disabled: !hasLoaded || game.activePlayer !== "human" || isRolling,
     canRoll: game.human.rollNumber < 3 && !game.human.held.every(Boolean),
-    canScore: selectedCategory !== null && !isRolling && !isCalculating,
+    canScore: selectedCategory !== null && !isRolling,
     onRoll: handleRoll,
     onScore: handleScore,
     onToggleDie: toggleHeld,
@@ -84,7 +59,7 @@ export function GameBoard() {
 
   return (
     <main id="main-content" className="game-shell">
-      <GameHeader game={game} isCoachEnabled={isCoachEnabled} onToggleCoach={toggleCoach} />
+      <GameHeader game={game} />
       {isFinished ? (
         <FinishedGame game={game} />
       ) : (
@@ -95,16 +70,10 @@ export function GameBoard() {
             botScores={game.bot.scores}
             dice={game.human.dice}
             selected={game.activePlayer === "human" ? selectedCategory : null}
-            recommended={game.activePlayer === "human" && isCoachEnabled ? bestEvaluation?.category : undefined}
-            coachEvaluation={bestEvaluation}
-            isCoachEnabled={isCoachEnabled}
-            onToggleCoach={toggleCoach}
-            canSelect={game.activePlayer === "human" && game.human.rollNumber > 0 && !isRolling && !isCalculating}
+            canSelect={game.activePlayer === "human" && game.human.rollNumber > 0 && !isRolling}
             isReadOnly={game.activePlayer === "bot"}
-            isCalculating={game.activePlayer === "human" && isCalculating}
             onSelect={setSelectedCategory}
             onScore={handleScore}
-            targetEvaluation={selectedEvaluation}
           />
 
           {game.activePlayer === "human" ? (
@@ -114,7 +83,6 @@ export function GameBoard() {
               rollNumber={game.human.rollNumber}
               selectedCategory={selectedCategory}
               isRolling={isRolling}
-              isCalculating={isCalculating}
               onToggleDie={toggleHeld}
               onRoll={handleRoll}
             />

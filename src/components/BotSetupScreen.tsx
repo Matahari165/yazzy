@@ -61,7 +61,6 @@ export function BotSetupScreen() {
         </div>
 
         <button className="primary-action setup-submit" type="button" onClick={requestStart}>Commencer</button>
-        <p className="setup-note">Tu peux toujours revenir à l’accueil sans quitter ta partie.</p>
       </section>
 
       <ConfirmOverwriteDialog

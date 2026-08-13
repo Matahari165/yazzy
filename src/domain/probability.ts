@@ -12,7 +12,6 @@ export type CategoryEvaluation = {
   currentScore: number;
   successProbability: number;
   expectedScore: number;
-  bestHoldForSuccess: DiceCounts;
   bestHoldForExpectedScore: DiceCounts;
   precision: "exact";
 };
@@ -106,7 +105,6 @@ function solve(category: CategoryId, counts: DiceCounts, remainingRolls: number)
     const result = {
       successProbability: score > 0 ? 1 : 0,
       expectedScore: score,
-      bestHoldForSuccess: counts,
       bestHoldForExpectedScore: counts,
     };
     solveCache.set(key, result);
@@ -115,7 +113,6 @@ function solve(category: CategoryId, counts: DiceCounts, remainingRolls: number)
 
   let bestSuccess = -1;
   let bestExpected = -1;
-  let bestSuccessHold = counts;
   let bestExpectedHold = counts;
 
   for (const hold of uniqueHolds(counts)) {
@@ -129,10 +126,8 @@ function solve(category: CategoryId, counts: DiceCounts, remainingRolls: number)
       expected += outcome.probability * child.expectedScore;
     }
 
-    if (success > bestSuccess + comparisonTolerance ||
-        (Math.abs(success - bestSuccess) <= comparisonTolerance && countHeld(hold) > countHeld(bestSuccessHold))) {
+    if (success > bestSuccess + comparisonTolerance) {
       bestSuccess = success;
-      bestSuccessHold = hold;
     }
     if (expected > bestExpected + comparisonTolerance ||
         (Math.abs(expected - bestExpected) <= comparisonTolerance && countHeld(hold) > countHeld(bestExpectedHold))) {
@@ -144,7 +139,6 @@ function solve(category: CategoryId, counts: DiceCounts, remainingRolls: number)
   const result = {
     successProbability: clampProbability(bestSuccess),
     expectedScore: bestExpected,
-    bestHoldForSuccess: bestSuccessHold,
     bestHoldForExpectedScore: bestExpectedHold,
   };
   solveCache.set(key, result);
@@ -164,6 +158,22 @@ export function evaluateCategory(
     ...solved,
     precision: "exact",
   };
+}
+
+const generalProbabilityCache = new Map<CategoryId, number>();
+
+/**
+ * Probabilité exacte de réussir une catégorie sur un tour complet,
+ * en partant de zéro avec au plus trois lancers et les meilleures
+ * conservations possibles pour cette catégorie.
+ */
+export function generalProbability(category: CategoryId): number {
+  const cached = generalProbabilityCache.get(category);
+  if (cached !== undefined) return cached;
+
+  const probability = evaluateCategory(category, [], 3).successProbability;
+  generalProbabilityCache.set(category, probability);
+  return probability;
 }
 
 export function evaluateHoldChoice(
@@ -190,11 +200,4 @@ export function evaluateHoldChoice(
 export function formatDiceCounts(counts: DiceCounts): string {
   const dice = countsToDice(counts);
   return dice.length ? dice.join("–") : "aucun dé";
-}
-
-export function formatHoldAction(counts: DiceCounts): string {
-  const dice = countsToDice(counts);
-  if (dice.length === 0) return "Relance tout";
-  if (dice.length === 5) return "Garde les cinq dés";
-  return `Garde ${dice.join("–")}`;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateCategory, formatHoldAction, rollOutcomes } from "./probability";
+import { evaluateCategory, generalProbability, rollOutcomes } from "./probability";
 import { CATEGORY_IDS, countsToDice, scoreDice } from "./yatzy";
 
 describe("moteur de probabilités exactes", () => {
@@ -27,10 +27,13 @@ describe("moteur de probabilités exactes", () => {
     expect(result.expectedScore).toBe(0);
   });
 
-  it("formule naturellement les conseils de conservation", () => {
-    expect(formatHoldAction([0, 0, 0, 0, 0, 0])).toBe("Relance tout");
-    expect(formatHoldAction([0, 0, 0, 2, 0, 0])).toBe("Garde 4–4");
-    expect(formatHoldAction([1, 1, 1, 1, 1, 0])).toBe("Garde les cinq dés");
+  it("calcule une probabilité générale stable pour chaque catégorie", () => {
+    for (const category of CATEGORY_IDS) {
+      const probability = generalProbability(category);
+      expect(probability).toBeGreaterThan(0);
+      expect(probability).toBeLessThanOrEqual(1);
+      expect(generalProbability(category)).toBe(probability);
+    }
   });
 
   it("respecte les invariants de toutes les cases et de tous les jets", () => {
