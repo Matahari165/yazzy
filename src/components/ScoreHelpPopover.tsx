@@ -102,18 +102,20 @@ export function ScoreHelpPopover({
             <dt>Calcul</dt>
             <dd>{category.scoring}</dd>
           </div>
-          <div>
-            <dt>Max points</dt>
-            <dd>{category.maximumScore}</dd>
+          <div className="score-help-metrics">
+            <div>
+              <dt>Max points</dt>
+              <dd>{category.maximumScore}</dd>
+            </div>
+            <div>
+              <dt>Probabilité</dt>
+              <dd>{percent.format(generalProbability(category.id))}</dd>
+            </div>
           </div>
         </div>
         <div className="score-help-result">
           <dt>Score actuel</dt>
           <dd>{scoreText}</dd>
-        </div>
-        <div className="score-help-result">
-          <dt>Probabilité générale (3 lancers)</dt>
-          <dd>{percent.format(generalProbability(category.id))}</dd>
         </div>
       </dl>
       {scoreAction && scorePoints !== null && scorePoints !== undefined && (

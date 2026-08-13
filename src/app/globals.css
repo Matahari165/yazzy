@@ -502,7 +502,9 @@ h3 { font-size: 18px; line-height: 1.2; }
 .score-help-details { display: grid; gap: 10px; margin: 0; }
 .score-help-details div { display: grid; gap: 2px; }
 .score-help-calculation { display: grid !important; grid-template-columns: minmax(0, 1fr) auto; gap: 16px !important; align-items: start; }
-.score-help-calculation > div:last-child { min-width: 76px; text-align: right; }
+.score-help-metrics { display: flex !important; flex-wrap: nowrap; gap: 14px; min-width: 0; text-align: right; }
+.score-help-metrics > div { min-width: 0; }
+.score-help-metrics dd { white-space: nowrap; }
 .score-help-details dt { color: var(--ink-soft); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 .score-help-details dd { margin: 0; color: var(--ink); font-size: 13px; line-height: 1.4; }
 .score-help-details .score-help-result { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 2px; padding: 9px 10px; background: var(--green-soft); border-radius: var(--radius-sm); }
