@@ -13,7 +13,7 @@ Yazzy est une application web de Yatzy nordique qui explique les probabilités e
 - feuille de score lisible, sans grille noire ni colonne de probabilités répétée ;
 - dés avec état textuel Gardé / À relancer / Résultat final ;
 - animation courte des faces finales, dés gardés immobiles et mouvement réduit respecté ;
-- partie privée à deux par lien, sans compte, avec serveur PartyKit autoritaire ;
+- partie privée à deux par code court ou par lien, sans compte, avec serveur PartyKit autoritaire ;
 - pause et reprise automatiques si un joueur se déconnecte ;
 - revanche lancée uniquement après l’accord des deux joueurs.
 
@@ -38,7 +38,7 @@ Ouvrir ensuite [http://localhost:3000](http://localhost:3000). Le serveur multij
 
 ## Activer le mode en ligne
 
-PartyKit convient à ce petit jeu : son offre individuelle est gratuite et ses salons temporaires évitent d’ajouter une base de données ou des comptes.
+PartyKit convient à ce petit jeu : son offre individuelle est gratuite, avec un stockage effacé toutes les 24 heures, et ses salons temporaires évitent d’ajouter une base de données ou des comptes.
 
 1. Déployer le serveur avec `pnpm party:deploy`.
 2. Copier l’hôte renvoyé dans `NEXT_PUBLIC_PARTYKIT_HOST`, comme dans `.env.example`.

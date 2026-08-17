@@ -5,6 +5,11 @@ import usePartySocket from "partysocket/react";
 import type { MultiplayerGameState } from "../domain/multiplayer";
 import type { ServerMessage, ClientAction } from "../domain/protocol";
 import type { CategoryId } from "../domain/yatzy";
+import {
+  IS_MULTIPLAYER_AVAILABLE,
+  MULTIPLAYER_UNAVAILABLE_MESSAGE,
+  PARTYKIT_HOST,
+} from "../lib/multiplayerConfig";
 
 function getPlayerId(): string {
   if (typeof window === "undefined") return "";
@@ -16,7 +21,13 @@ function getPlayerId(): string {
   return id;
 }
 
-export type MultiplayerStatus = "connecting" | "waiting" | "playing" | "finished" | "room_full";
+export type MultiplayerStatus =
+  | "connecting"
+  | "waiting"
+  | "playing"
+  | "finished"
+  | "room_full"
+  | "unavailable";
 
 export function useMultiplayerGame(roomId: string) {
   const [game, setGame] = useState<MultiplayerGameState | null>(null);
@@ -24,14 +35,17 @@ export function useMultiplayerGame(roomId: string) {
   const [opponentOnline, setOpponentOnline] = useState(false);
   const [serverStatus, setServerStatus] = useState<MultiplayerStatus>("connecting");
   const [isConnected, setIsConnected] = useState(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(
+    IS_MULTIPLAYER_AVAILABLE ? null : MULTIPLAYER_UNAVAILABLE_MESSAGE,
+  );
 
   const playerId = getPlayerId();
 
   const socket = usePartySocket({
-    host: process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999",
+    host: PARTYKIT_HOST,
     room: roomId,
     query: { playerId },
+    enabled: IS_MULTIPLAYER_AVAILABLE,
     onOpen: () => {
       setIsConnected(true);
       setConnectionError(null);
@@ -89,12 +103,13 @@ export function useMultiplayerGame(roomId: string) {
   }, [socket]);
 
   const reconnect = useCallback(() => {
+    if (!IS_MULTIPLAYER_AVAILABLE) return;
     setConnectionError(null);
     socket.reconnect();
   }, [socket]);
 
-  let status: MultiplayerStatus = serverStatus;
-  if (status !== "room_full") {
+  let status: MultiplayerStatus = IS_MULTIPLAYER_AVAILABLE ? serverStatus : "unavailable";
+  if (status !== "room_full" && status !== "unavailable") {
     if (!game) {
       status = "connecting";
     } else {

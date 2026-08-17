@@ -4,13 +4,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { isFinished, type GameState } from "@/domain/game";
+import {
+  generateRoomCode,
+  isRoomCode,
+  normalizeRoomCode,
+} from "@/domain/roomCode";
 import { CATEGORY_IDS } from "@/domain/yatzy";
 import { readStoredGame } from "@/lib/gameStorage";
+import { IS_MULTIPLAYER_AVAILABLE } from "@/lib/multiplayerConfig";
 
 export function HomeScreen() {
   const router = useRouter();
   const [savedGame, setSavedGame] = useState<GameState | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [roomCode, setRoomCode] = useState("");
+  const [roomCodeError, setRoomCodeError] = useState("");
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -23,8 +31,20 @@ export function HomeScreen() {
   const canResume = hasLoaded && savedGame !== null && !isFinished(savedGame);
 
   const startMultiplayer = () => {
-    const roomId = crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase();
-    router.push(`/play/${roomId}`);
+    router.push(`/play/${generateRoomCode()}`);
+  };
+
+  const joinMultiplayer = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const normalizedCode = normalizeRoomCode(roomCode);
+
+    if (!isRoomCode(normalizedCode)) {
+      setRoomCodeError("Saisis les 6 caractères du code envoyé par ton ami.");
+      return;
+    }
+
+    setRoomCodeError("");
+    router.push(`/play/${normalizedCode}`);
   };
 
   return (
@@ -46,13 +66,56 @@ export function HomeScreen() {
             </Link>
           ) : null}
           <Link className="primary-action" href="/bot">Jouer contre un bot</Link>
-          <button className="primary-action" type="button" onClick={startMultiplayer}>
+          <button
+            className="primary-action"
+            type="button"
+            onClick={startMultiplayer}
+            disabled={!IS_MULTIPLAYER_AVAILABLE}
+          >
             <span>Jouer avec un ami</span>
-            <small>Lien privé · en ligne</small>
+            <small>Créer un code privé</small>
           </button>
+          <form className="lobby-code-form" onSubmit={joinMultiplayer} noValidate>
+            <label htmlFor="room-code">Rejoindre avec un code</label>
+            <div>
+              <input
+                id="room-code"
+                name="room-code"
+                type="text"
+                value={roomCode}
+                onChange={(event) => {
+                  setRoomCode(normalizeRoomCode(event.currentTarget.value));
+                  setRoomCodeError("");
+                }}
+                placeholder="ABCD23"
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                inputMode="text"
+                maxLength={6}
+                aria-describedby={roomCodeError ? "room-code-error" : undefined}
+                aria-invalid={roomCodeError ? true : undefined}
+                disabled={!IS_MULTIPLAYER_AVAILABLE}
+              />
+              <button
+                className="secondary-action"
+                type="submit"
+                disabled={!IS_MULTIPLAYER_AVAILABLE}
+              >
+                Rejoindre
+              </button>
+            </div>
+            {roomCodeError ? (
+              <p id="room-code-error" className="form-error" role="alert">{roomCodeError}</p>
+            ) : null}
+          </form>
         </div>
 
-        <p className="lobby-footnote">Aucune inscription nécessaire. Les parties en ligne sont privées et temporaires.</p>
+        <p className="lobby-footnote">
+          {IS_MULTIPLAYER_AVAILABLE
+            ? "Aucune inscription nécessaire. Les parties en ligne sont privées et temporaires."
+            : "Le mode entre amis doit encore être activé sur cette version de Yazzy."}
+        </p>
       </section>
     </main>
   );

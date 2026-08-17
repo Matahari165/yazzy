@@ -85,6 +85,29 @@ export function MultiplayerClient({ roomId }: { roomId: string }) {
     }
   };
 
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(roomId);
+      setCopyStatus("Code copié");
+    } catch {
+      setCopyStatus("Copie manuellement le code affiché");
+    }
+  };
+
+  if (status === "unavailable") {
+    return (
+      <main id="main-content" className="multiplayer-state-card" role="alert">
+        <p className="eyebrow">MODE EN LIGNE INDISPONIBLE</p>
+        <h1>Les parties privées ne sont pas encore activées</h1>
+        <p>{connectionError}</p>
+        <div className="multiplayer-state-actions">
+          <Link className="primary-action" href="/bot">Jouer contre un bot</Link>
+          <Link className="secondary-action" href="/">Retour à l’accueil</Link>
+        </div>
+      </main>
+    );
+  }
+
   if (connectionError && !game) {
     return (
       <main id="main-content" className="multiplayer-state-card" role="alert">
@@ -129,13 +152,20 @@ export function MultiplayerClient({ roomId }: { roomId: string }) {
 
         <section className="waiting-room" aria-labelledby="waiting-title">
           <span className="waiting-dice" aria-hidden="true">•••</span>
-          <p className="eyebrow">SALON {roomId}</p>
+          <p className="eyebrow">PARTIE PRIVÉE</p>
           <h1 id="waiting-title">Invite ton ami</h1>
-          <p>Envoie-lui ce lien. La partie commencera automatiquement dès qu’il l’ouvrira.</p>
+          <p>Envoie-lui ce code. La partie commencera automatiquement dès qu’il l’aura saisi.</p>
+          <div className="room-code-block">
+            <span>Code de la partie</span>
+            <strong>{roomId}</strong>
+          </div>
+          <div className="invite-actions">
+            <button className="primary-action" type="button" onClick={handleCopyCode}>Copier le code</button>
+            <button className="secondary-action" type="button" onClick={handleCopyLink}>Copier le lien</button>
+          </div>
           <div className="invite-field">
-            <label htmlFor="invite-link">Lien privé</label>
+            <label htmlFor="invite-link">Lien privé à partager</label>
             <input id="invite-link" type="text" readOnly value={inviteLink} onFocus={(event) => event.currentTarget.select()} />
-            <button className="primary-action" type="button" onClick={handleCopyLink}>Copier le lien</button>
           </div>
           <p className="copy-status" role="status">{copyStatus || "Aucune inscription nécessaire"}</p>
           <p className="waiting-status" role="status"><i aria-hidden="true" /> En attente de ton ami…</p>
