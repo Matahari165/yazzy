@@ -9,7 +9,15 @@ import {
   startRematch,
   toggleHeldDie,
 } from "./multiplayer";
-import { parseClientAction } from "./protocol";
+import {
+  applyPlayerAction,
+  connectGuest,
+  createHostedGame,
+  disconnectGuest,
+  gameForStorage,
+  restoreHostedGame,
+} from "./multiplayerHost";
+import { parseClientActionValue } from "./protocol";
 import { CATEGORY_IDS } from "./yatzy";
 
 describe("règles multijoueur", () => {
@@ -91,8 +99,44 @@ describe("règles multijoueur", () => {
 
 describe("protocole multijoueur", () => {
   it("refuse les catégories et indices inventés", () => {
-    expect(parseClientAction('{"type":"SCORE","category":"chance"}')).toBeNull();
-    expect(parseClientAction('{"type":"HOLD","index":5}')).toBeNull();
-    expect(parseClientAction('{"type":"HOLD","index":1.5}')).toBeNull();
+    expect(parseClientActionValue({ type: "SCORE", category: "chance" })).toBeNull();
+    expect(parseClientActionValue({ type: "HOLD", index: 5 })).toBeNull();
+    expect(parseClientActionValue({ type: "HOLD", index: 1.5 })).toBeNull();
+  });
+});
+
+describe("hôte pair-à-pair", () => {
+  it("ouvre la partie au premier invité et conserve sa place à la reconnexion", () => {
+    const hosted = createHostedGame("AMIS12");
+    const connected = connectGuest(hosted, "peer-a");
+    const disconnected = disconnectGuest(connected, "peer-a");
+    const reconnected = connectGuest(disconnected, "peer-b");
+
+    expect(connected.status).toBe("playing");
+    expect(disconnected.player2?.connectionId).toBeNull();
+    expect(reconnected.player2?.connectionId).toBe("peer-b");
+    expect(reconnected.player2?.state).toEqual(connected.player2?.state);
+  });
+
+  it("valide les actions de l’invité dans le moteur de l’hôte", () => {
+    let game = connectGuest(createHostedGame("AMIS12"), "peer-a");
+    game = applyPlayerAction(game, "player1", { type: "ROLL" }, () => 6);
+    game = applyPlayerAction(game, "player1", { type: "SCORE", category: "sixes" }, () => 1);
+
+    expect(game.player1?.state.scores.sixes).toBe(30);
+    expect(game.activePlayer).toBe("player2");
+
+    const guestRoll = applyPlayerAction(game, "player2", { type: "ROLL" }, () => 4);
+    expect(guestRoll.player2?.state.dice).toEqual([4, 4, 4, 4, 4]);
+  });
+
+  it("neutralise les anciennes connexions dans la sauvegarde locale", () => {
+    const connected = connectGuest(createHostedGame("AMIS12"), "peer-a");
+    const stored = gameForStorage(connected);
+    const restored = restoreHostedGame(stored, "AMIS12");
+
+    expect(stored.player2?.connectionId).toBeNull();
+    expect(restored.player1?.connectionId).toBe("local-host");
+    expect(restored.player2?.connectionId).toBeNull();
   });
 });

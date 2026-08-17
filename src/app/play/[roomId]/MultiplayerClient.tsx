@@ -9,7 +9,7 @@ import type { CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 
-export function MultiplayerClient({ roomId }: { roomId: string }) {
+export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: boolean }) {
   const {
     game,
     localRole,
@@ -25,7 +25,7 @@ export function MultiplayerClient({ roomId }: { roomId: string }) {
     isMyTurn,
     localPlayer,
     opponentPlayer,
-  } = useMultiplayerGame(roomId);
+  } = useMultiplayerGame(roomId, isHost);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
@@ -94,20 +94,6 @@ export function MultiplayerClient({ roomId }: { roomId: string }) {
     }
   };
 
-  if (status === "unavailable") {
-    return (
-      <main id="main-content" className="multiplayer-state-card" role="alert">
-        <p className="eyebrow">MODE EN LIGNE INDISPONIBLE</p>
-        <h1>Les parties privées ne sont pas encore activées</h1>
-        <p>{connectionError}</p>
-        <div className="multiplayer-state-actions">
-          <Link className="primary-action" href="/bot">Jouer contre un bot</Link>
-          <Link className="secondary-action" href="/">Retour à l’accueil</Link>
-        </div>
-      </main>
-    );
-  }
-
   if (connectionError && !game) {
     return (
       <main id="main-content" className="multiplayer-state-card" role="alert">
@@ -168,7 +154,15 @@ export function MultiplayerClient({ roomId }: { roomId: string }) {
             <input id="invite-link" type="text" readOnly value={inviteLink} onFocus={(event) => event.currentTarget.select()} />
           </div>
           <p className="copy-status" role="status">{copyStatus || "Aucune inscription nécessaire"}</p>
-          <p className="waiting-status" role="status"><i aria-hidden="true" /> En attente de ton ami…</p>
+          {connectionError ? (
+            <div className="multiplayer-state-actions" role="alert">
+              <p>{connectionError}</p>
+              <button className="secondary-action" type="button" onClick={reconnect}>Réessayer</button>
+            </div>
+          ) : (
+            <p className="waiting-status" role="status"><i aria-hidden="true" /> En attente de ton ami…</p>
+          )}
+          <p>Garde cet onglet ouvert pendant la partie.</p>
         </section>
       </main>
     );

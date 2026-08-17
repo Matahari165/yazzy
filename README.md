@@ -13,7 +13,8 @@ Yazzy est une application web de Yatzy nordique qui explique les probabilités e
 - feuille de score lisible, sans grille noire ni colonne de probabilités répétée ;
 - dés avec état textuel Gardé / À relancer / Résultat final ;
 - animation courte des faces finales, dés gardés immobiles et mouvement réduit respecté ;
-- partie privée à deux par code court ou par lien, sans compte, avec serveur PartyKit autoritaire ;
+- partie privée à deux par code court ou par lien, sans compte ni serveur à configurer ;
+- connexion WebRTC chiffrée directement entre les deux joueurs, avec l’hôte responsable des règles ;
 - pause et reprise automatiques si un joueur se déconnecte ;
 - revanche lancée uniquement après l’accord des deux joueurs.
 
@@ -25,26 +26,18 @@ Prérequis : Node.js 22 ou plus récent et pnpm.
 
 ```bash
 pnpm install
-pnpm party
-```
-
-Dans un second terminal :
-
-```bash
 pnpm dev
 ```
 
-Ouvrir ensuite [http://localhost:3000](http://localhost:3000). Le serveur multijoueur local utilise le port `1999`.
+Ouvrir ensuite [http://localhost:3000](http://localhost:3000).
 
-## Activer le mode en ligne
+## Jouer avec un ami
 
-PartyKit convient à ce petit jeu : son offre individuelle est gratuite, avec un stockage effacé toutes les 24 heures, et ses salons temporaires évitent d’ajouter une base de données ou des comptes.
+1. Cliquer sur « Jouer avec un ami ».
+2. Envoyer le code ou le lien affiché.
+3. Garder l’onglet de l’hôte ouvert pendant la partie.
 
-1. Déployer le serveur avec `pnpm party:deploy`.
-2. Copier l’hôte renvoyé dans `NEXT_PUBLIC_PARTYKIT_HOST`, comme dans `.env.example`.
-3. Ajouter la même variable à l’hébergement Next.js, puis reconstruire l’application.
-
-Le déploiement PartyKit et la configuration de l’hébergement sont des opérations externes distinctes du code de cette branche.
+Yazzy utilise WebRTC via Trystero. Le code de partie sert aussi de secret partagé pour établir une connexion chiffrée. Les actions de l’invité sont validées par l’hôte avant d’être appliquées. La partie est conservée localement chez l’hôte pour permettre une reconnexion, mais elle n’est pas synchronisée dans une base de données : si l’hôte ferme définitivement son navigateur ou efface ses données, la partie ne peut pas continuer.
 
 ## Vérifier le projet
 

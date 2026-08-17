@@ -11,7 +11,6 @@ import {
 } from "@/domain/roomCode";
 import { CATEGORY_IDS } from "@/domain/yatzy";
 import { readStoredGame } from "@/lib/gameStorage";
-import { IS_MULTIPLAYER_AVAILABLE } from "@/lib/multiplayerConfig";
 
 export function HomeScreen() {
   const router = useRouter();
@@ -31,7 +30,7 @@ export function HomeScreen() {
   const canResume = hasLoaded && savedGame !== null && !isFinished(savedGame);
 
   const startMultiplayer = () => {
-    router.push(`/play/${generateRoomCode()}`);
+    router.push(`/play/${generateRoomCode()}?host=1`);
   };
 
   const joinMultiplayer = (event: React.FormEvent<HTMLFormElement>) => {
@@ -70,7 +69,6 @@ export function HomeScreen() {
             className="primary-action"
             type="button"
             onClick={startMultiplayer}
-            disabled={!IS_MULTIPLAYER_AVAILABLE}
           >
             <span>Jouer avec un ami</span>
             <small>Créer un code privé</small>
@@ -95,13 +93,8 @@ export function HomeScreen() {
                 maxLength={6}
                 aria-describedby={roomCodeError ? "room-code-error" : undefined}
                 aria-invalid={roomCodeError ? true : undefined}
-                disabled={!IS_MULTIPLAYER_AVAILABLE}
               />
-              <button
-                className="secondary-action"
-                type="submit"
-                disabled={!IS_MULTIPLAYER_AVAILABLE}
-              >
+              <button className="secondary-action" type="submit">
                 Rejoindre
               </button>
             </div>
@@ -112,9 +105,7 @@ export function HomeScreen() {
         </div>
 
         <p className="lobby-footnote">
-          {IS_MULTIPLAYER_AVAILABLE
-            ? "Aucune inscription nécessaire. Les parties en ligne sont privées et temporaires."
-            : "Le mode entre amis doit encore être activé sur cette version de Yazzy."}
+          Aucune inscription nécessaire. Les parties en ligne sont privées et temporaires.
         </p>
       </section>
     </main>

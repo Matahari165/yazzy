@@ -110,6 +110,59 @@ export function isCategoryId(value: string): value is CategoryId {
   return CATEGORY_IDS.includes(value as CategoryId);
 }
 
+function isPlayerState(value: unknown): value is MultiplayerPlayerState {
+  if (!value || typeof value !== "object") return false;
+  const state = value as Partial<MultiplayerPlayerState>;
+  const scores = state.scores;
+
+  return Boolean(
+    Array.isArray(state.dice) &&
+      (state.dice.length === 0 || state.dice.length === 5) &&
+      state.dice.every((die) => Number.isInteger(die) && die >= 1 && die <= 6) &&
+      Array.isArray(state.held) &&
+      state.held.length === 5 &&
+      state.held.every((held) => typeof held === "boolean") &&
+      Number.isInteger(state.rollNumber) &&
+      state.rollNumber! >= 0 &&
+      state.rollNumber! <= 3 &&
+      scores &&
+      typeof scores === "object" &&
+      Object.entries(scores).every(
+        ([category, score]) =>
+          isCategoryId(category) && typeof score === "number" && Number.isFinite(score),
+      ),
+  );
+}
+
+function isPlayerSlot(value: unknown): value is PlayerSlot | null {
+  if (value === null) return true;
+  if (!value || typeof value !== "object") return false;
+  const slot = value as Partial<PlayerSlot>;
+  return Boolean(
+    typeof slot.playerId === "string" &&
+      (slot.connectionId === null || typeof slot.connectionId === "string") &&
+      isPlayerState(slot.state),
+  );
+}
+
+export function isMultiplayerGameState(value: unknown): value is MultiplayerGameState {
+  if (!value || typeof value !== "object") return false;
+  const game = value as Partial<MultiplayerGameState>;
+  return Boolean(
+    typeof game.roomId === "string" &&
+      (game.status === "waiting" || game.status === "playing" || game.status === "finished") &&
+      isPlayerSlot(game.player1) &&
+      isPlayerSlot(game.player2) &&
+      (game.activePlayer === "player1" || game.activePlayer === "player2") &&
+      Number.isInteger(game.turn) &&
+      game.turn! >= 1 &&
+      game.turn! <= CATEGORY_IDS.length + 1 &&
+      Array.isArray(game.rematchReady) &&
+      game.rematchReady.every((role) => role === "player1" || role === "player2") &&
+      new Set(game.rematchReady).size === game.rematchReady.length,
+  );
+}
+
 export function isGameFinished(game: MultiplayerGameState): boolean {
   if (!game.player1 || !game.player2) return false;
   return CATEGORY_IDS.every(
