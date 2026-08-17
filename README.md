@@ -14,7 +14,7 @@ Yazzy est une application web de Yatzy nordique qui explique les probabilités e
 - dés avec état textuel Gardé / À relancer / Résultat final ;
 - animation courte des faces finales, dés gardés immobiles et mouvement réduit respecté ;
 - partie privée à deux par code court ou par lien, sans compte ni serveur à configurer ;
-- connexion WebRTC chiffrée directement entre les deux joueurs, avec l’hôte responsable des règles ;
+- salon temporaire synchronisé par Vercel, afin de fonctionner même sur les réseaux qui bloquent WebRTC ;
 - pause et reprise automatiques si un joueur se déconnecte ;
 - revanche lancée uniquement après l’accord des deux joueurs.
 
@@ -37,7 +37,7 @@ Ouvrir ensuite [http://localhost:3000](http://localhost:3000).
 2. Envoyer le code ou le lien affiché.
 3. Garder l’onglet de l’hôte ouvert pendant la partie.
 
-Yazzy utilise WebRTC via Trystero. Le code de partie sert aussi de secret partagé pour établir une connexion chiffrée. Les actions de l’invité sont validées par l’hôte avant d’être appliquées. La partie est conservée localement chez l’hôte pour permettre une reconnexion, mais elle n’est pas synchronisée dans une base de données : si l’hôte ferme définitivement son navigateur ou efface ses données, la partie ne peut pas continuer.
+Les actions des deux joueurs sont validées par le moteur de jeu côté serveur. Le salon est conservé temporairement dans le cache régional Vercel jusqu’à six heures après sa dernière évolution. Les navigateurs interrogent le salon à intervalle court : aucun compte, aucune clé et aucune connexion directe entre les appareils ne sont nécessaires.
 
 ## Vérifier le projet
 

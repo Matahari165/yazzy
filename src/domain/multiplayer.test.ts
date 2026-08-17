@@ -13,9 +13,6 @@ import {
   applyPlayerAction,
   connectGuest,
   createHostedGame,
-  disconnectGuest,
-  gameForStorage,
-  restoreHostedGame,
 } from "./multiplayerHost";
 import { parseClientActionValue } from "./protocol";
 import { CATEGORY_IDS } from "./yatzy";
@@ -105,15 +102,13 @@ describe("protocole multijoueur", () => {
   });
 });
 
-describe("hôte pair-à-pair", () => {
-  it("ouvre la partie au premier invité et conserve sa place à la reconnexion", () => {
+describe("moteur de salon privé", () => {
+  it("ouvre la partie au premier invité et conserve sa feuille de score", () => {
     const hosted = createHostedGame("AMIS12");
     const connected = connectGuest(hosted, "peer-a");
-    const disconnected = disconnectGuest(connected, "peer-a");
-    const reconnected = connectGuest(disconnected, "peer-b");
+    const reconnected = connectGuest(connected, "peer-b");
 
     expect(connected.status).toBe("playing");
-    expect(disconnected.player2?.connectionId).toBeNull();
     expect(reconnected.player2?.connectionId).toBe("peer-b");
     expect(reconnected.player2?.state).toEqual(connected.player2?.state);
   });
@@ -130,13 +125,4 @@ describe("hôte pair-à-pair", () => {
     expect(guestRoll.player2?.state.dice).toEqual([4, 4, 4, 4, 4]);
   });
 
-  it("neutralise les anciennes connexions dans la sauvegarde locale", () => {
-    const connected = connectGuest(createHostedGame("AMIS12"), "peer-a");
-    const stored = gameForStorage(connected);
-    const restored = restoreHostedGame(stored, "AMIS12");
-
-    expect(stored.player2?.connectionId).toBeNull();
-    expect(restored.player1?.connectionId).toBe("local-host");
-    expect(restored.player2?.connectionId).toBeNull();
-  });
 });

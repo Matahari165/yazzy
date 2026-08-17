@@ -1,0 +1,143 @@
+import { describe, expect, it } from "vitest";
+import { parseRoomCommand } from "../domain/multiplayerRoomProtocol";
+import {
+  handleRoomCommand,
+  type MultiplayerRoomStore,
+  type StoredRoom,
+} from "./multiplayerRoomService";
+import type { MultiplayerRole } from "../domain/multiplayer";
+import type { DieValue } from "../domain/yatzy";
+
+const HOST_TOKEN = "11111111-1111-4111-8111-111111111111";
+const GUEST_TOKEN = "22222222-2222-4222-8222-222222222222";
+const OTHER_TOKEN = "33333333-3333-4333-8333-333333333333";
+const ACTION_ID = "44444444-4444-4444-8444-444444444444";
+
+class MemoryRoomStore implements MultiplayerRoomStore {
+  room: StoredRoom | null = null;
+  presence = new Map<MultiplayerRole, number>();
+
+  async getRoom() {
+    return this.room;
+  }
+
+  async setRoom(_roomId: string, room: StoredRoom) {
+    this.room = structuredClone(room);
+  }
+
+  async getPresence(_roomId: string, role: MultiplayerRole) {
+    return this.presence.get(role) ?? null;
+  }
+
+  async setPresence(_roomId: string, role: MultiplayerRole, timestamp: number) {
+    this.presence.set(role, timestamp);
+  }
+}
+
+async function command(
+  store: MemoryRoomStore,
+  body: Parameters<typeof handleRoomCommand>[0]["command"],
+  now: number,
+  die: DieValue = 6,
+) {
+  return handleRoomCommand({
+    roomId: "AMIS12",
+    command: body,
+    store,
+    now,
+    rollDie: () => die,
+  });
+}
+
+describe("service de salon privé", () => {
+  it("synchronise une action du serveur entre les deux joueurs", async () => {
+    const store = new MemoryRoomStore();
+    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN }, 1_000);
+    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN }, 1_001);
+    const action = await command(store, {
+      type: "ACTION",
+      role: "player1",
+      token: HOST_TOKEN,
+      actionId: ACTION_ID,
+      action: { type: "ROLL" },
+    }, 1_002);
+    const guestSync = await command(store, {
+      type: "SYNC",
+      role: "player2",
+      token: GUEST_TOKEN,
+    }, 1_003);
+
+    expect(action.status).toBe(200);
+    expect(guestSync.status).toBe(200);
+    if (guestSync.body.ok) {
+      expect(guestSync.body.game.player1?.state.dice).toEqual([6, 6, 6, 6, 6]);
+      expect(guestSync.body.version).toBe(2);
+    }
+  });
+
+  it("refuse un troisième joueur tant que l’invité est actif", async () => {
+    const store = new MemoryRoomStore();
+    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN }, 1_000);
+    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN }, 1_001);
+    const thirdPlayer = await command(store, {
+      type: "CONNECT",
+      role: "player2",
+      token: OTHER_TOKEN,
+    }, 1_002);
+
+    expect(thirdPlayer.status).toBe(409);
+    expect(thirdPlayer.body).toMatchObject({ ok: false, code: "ROOM_FULL" });
+  });
+
+  it("autorise une reprise depuis un autre navigateur après une déconnexion", async () => {
+    const store = new MemoryRoomStore();
+    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN }, 1_000);
+    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN }, 1_001);
+    const resumed = await command(store, {
+      type: "CONNECT",
+      role: "player2",
+      token: OTHER_TOKEN,
+    }, 10_500);
+
+    expect(resumed.status).toBe(200);
+    expect(store.room?.guestToken).toBe(OTHER_TOKEN);
+    expect(store.room?.game.player2?.state.scores).toEqual({});
+  });
+
+  it("n’applique pas deux fois la même action réseau", async () => {
+    const store = new MemoryRoomStore();
+    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN }, 1_000);
+    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN }, 1_001);
+    const first = await command(store, {
+      type: "ACTION",
+      role: "player1",
+      token: HOST_TOKEN,
+      actionId: ACTION_ID,
+      action: { type: "ROLL" },
+    }, 1_002, 6);
+    const duplicate = await command(store, {
+      type: "ACTION",
+      role: "player1",
+      token: HOST_TOKEN,
+      actionId: ACTION_ID,
+      action: { type: "ROLL" },
+    }, 1_003, 1);
+
+    expect(first.body).toMatchObject({ ok: true, version: 2 });
+    expect(duplicate.body).toMatchObject({ ok: true, version: 2 });
+    expect(store.room?.game.player1?.state.dice).toEqual([6, 6, 6, 6, 6]);
+  });
+});
+
+describe("validation des commandes de salon", () => {
+  it("refuse les jetons et actions fabriqués", () => {
+    expect(parseRoomCommand({ type: "SYNC", role: "player1", token: "court" })).toBeNull();
+    expect(parseRoomCommand({
+      type: "ACTION",
+      role: "player2",
+      token: GUEST_TOKEN,
+      actionId: ACTION_ID,
+      action: { type: "HOLD", index: 9 },
+    })).toBeNull();
+  });
+});
