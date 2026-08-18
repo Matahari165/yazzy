@@ -4,8 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { MultiplayerGameState, MultiplayerRole } from "../domain/multiplayer";
 import {
   isRoomResponse,
+  type ReactionEmoji,
   type RoomCommand,
   type RoomFailure,
+  type RoomReaction,
   type RoomSuccess,
 } from "../domain/multiplayerRoomProtocol";
 import type { ClientAction } from "../domain/protocol";
@@ -69,13 +71,14 @@ export type MultiplayerStatus =
   | "finished"
   | "room_full";
 
-export function useMultiplayerGame(roomId: string, isHost: boolean) {
+export function useMultiplayerGame(roomId: string, isHost: boolean, playerName: string | null) {
   const [game, setGame] = useState<MultiplayerGameState | null>(null);
   const [localRole, setLocalRole] = useState<MultiplayerRole | null>(null);
   const [opponentOnline, setOpponentOnline] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [roomFull, setRoomFull] = useState(false);
+  const [latestReaction, setLatestReaction] = useState<RoomReaction | null>(null);
   const [connectionAttempt, setConnectionAttempt] = useState(0);
 
   const tokenRef = useRef<string | null>(null);
@@ -90,12 +93,15 @@ export function useMultiplayerGame(roomId: string, isHost: boolean) {
     }
     setLocalRole(response.yourRole);
     setOpponentOnline(response.opponentOnline);
+    setLatestReaction(response.latestReaction);
     setIsConnected(true);
     setConnectionError(null);
     setRoomFull(false);
   }, []);
 
   useEffect(() => {
+    if (!playerName) return;
+
     let cancelled = false;
     let pollTimer: number | null = null;
     let consecutiveFailures = 0;
@@ -111,7 +117,7 @@ export function useMultiplayerGame(roomId: string, isHost: boolean) {
 
     const poll = async () => {
       try {
-        const response = await sendRoomCommand(roomId, { type: "SYNC", role, token });
+        const response = await sendRoomCommand(roomId, { type: "SYNC", role, token, playerName });
         if (cancelled) return;
         if (response.ok) {
           consecutiveFailures = 0;
@@ -137,7 +143,7 @@ export function useMultiplayerGame(roomId: string, isHost: boolean) {
 
     const connect = async (attempt = 0): Promise<void> => {
       try {
-        const response = await sendRoomCommand(roomId, { type: "CONNECT", role, token });
+        const response = await sendRoomCommand(roomId, { type: "CONNECT", role, token, playerName });
         if (cancelled) return;
         if (response.ok) {
           applySuccess(response);
@@ -173,7 +179,7 @@ export function useMultiplayerGame(roomId: string, isHost: boolean) {
       window.clearTimeout(startTimer);
       if (pollTimer !== null) window.clearTimeout(pollTimer);
     };
-  }, [applySuccess, connectionAttempt, isHost, roomId]);
+  }, [applySuccess, connectionAttempt, isHost, playerName, roomId]);
 
   const dispatch = useCallback(async (action: ClientAction) => {
     const role = roleRef.current;
@@ -214,6 +220,31 @@ export function useMultiplayerGame(roomId: string, isHost: boolean) {
     void dispatch({ type: "SCORE", category });
   }, [dispatch]);
   const rematch = useCallback(() => void dispatch({ type: "REMATCH" }), [dispatch]);
+  const sendReaction = useCallback(async (emoji: ReactionEmoji) => {
+    const role = roleRef.current;
+    const token = tokenRef.current;
+    if (!role || !token) return;
+
+    try {
+      const response = await sendRoomCommand(roomId, {
+        type: "REACTION",
+        role,
+        token,
+        reactionId: crypto.randomUUID(),
+        emoji,
+      });
+      if (response.ok) {
+        applySuccess(response);
+      } else if (response.code === "OPPONENT_OFFLINE") {
+        setOpponentOnline(false);
+      } else {
+        setConnectionError(connectionMessage(response));
+      }
+    } catch {
+      setIsConnected(false);
+      setConnectionError("La réaction n’a pas été envoyée. Yazzy va tenter de se reconnecter.");
+    }
+  }, [applySuccess, roomId]);
   const reconnect = useCallback(() => {
     setConnectionError(null);
     setConnectionAttempt((attempt) => attempt + 1);
@@ -242,9 +273,11 @@ export function useMultiplayerGame(roomId: string, isHost: boolean) {
     toggleHeld,
     score,
     rematch,
+    sendReaction,
     reconnect,
     isMyTurn,
     localPlayer,
     opponentPlayer,
+    latestReaction,
   };
 }

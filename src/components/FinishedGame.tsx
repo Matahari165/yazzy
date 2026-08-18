@@ -9,9 +9,19 @@ type FinishedGameProps = {
   localRole?: "player1" | "player2";
   onRematch?: () => void;
   rematchRequested?: boolean;
+  localName?: string;
+  opponentName?: string;
 };
 
-export function FinishedGame({ game, localPlayerId = "human", localRole, onRematch, rematchRequested = false }: FinishedGameProps) {
+export function FinishedGame({
+  game,
+  localPlayerId = "human",
+  localRole,
+  onRematch,
+  rematchRequested = false,
+  localName = "Toi",
+  opponentName = "Ami",
+}: FinishedGameProps) {
   const isMultiplayer = "player1" in game;
 
   let localPoints: number;
@@ -32,7 +42,8 @@ export function FinishedGame({ game, localPlayerId = "human", localRole, onRemat
   const isTie = localPoints === opponentPoints;
   const isWinner = localPoints > opponentPoints;
 
-  const opponentLabel = isMultiplayer ? "Ami" : "Bot";
+  const opponentLabel = isMultiplayer ? opponentName : "Bot";
+  const playerLabel = isMultiplayer ? localName : "Toi";
 
   return (
     <section className="finished-card" tabIndex={-1} aria-labelledby="finished-title">
@@ -43,13 +54,13 @@ export function FinishedGame({ game, localPlayerId = "human", localRole, onRemat
           : isWinner
             ? "Bravo, tu as gagné !"
             : isMultiplayer
-              ? "Ton ami a gagné !"
+              ? `${opponentName} a gagné !`
               : "Le bot a gagné !"}
       </h1>
       <div className="finished-scoreboard">
         <div data-winner={isWinner}>
           <strong>{localPoints}</strong>
-          <span>Toi</span>
+          <span>{playerLabel}</span>
         </div>
         <div data-winner={!isWinner && !isTie}>
           <strong>{opponentPoints}</strong>
@@ -59,7 +70,7 @@ export function FinishedGame({ game, localPlayerId = "human", localRole, onRemat
       <div className="finished-actions">
         {isMultiplayer && onRematch ? (
           <button className="primary-action" type="button" disabled={rematchRequested} onClick={onRematch}>
-            {rematchRequested ? "En attente de ton ami…" : "Proposer une revanche"}
+            {rematchRequested ? `En attente de ${opponentName}…` : "Proposer une revanche"}
           </button>
         ) : (
           <Link className="primary-action" href="/bot">Rejouer</Link>

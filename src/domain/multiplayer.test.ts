@@ -42,8 +42,8 @@ describe("règles multijoueur", () => {
     const player = freshPlayerState({ ones: 2 });
     player.dice = [1, 1, 2, 3, 4];
     player.rollNumber = 1;
-    game.player1 = { playerId: "a", connectionId: "a", state: player };
-    game.player2 = { playerId: "b", connectionId: "b", state: freshPlayerState() };
+    game.player1 = { playerId: "a", name: "Alice", connectionId: "a", state: player };
+    game.player2 = { playerId: "b", name: "Bob", connectionId: "b", state: freshPlayerState() };
 
     expect(scoreCategory(player, "ones")).toBe(player);
     expect(scoreActiveCategory(game, "player1", "ones")).toBe(game);
@@ -53,8 +53,8 @@ describe("règles multijoueur", () => {
   it("attend l'accord des deux joueurs avant une revanche", () => {
     const game = createMultiplayerGame("AMIS12");
     game.status = "finished";
-    game.player1 = { playerId: "a", connectionId: "a", state: freshPlayerState({ ones: 5 }) };
-    game.player2 = { playerId: "b", connectionId: "b", state: freshPlayerState({ ones: 4 }) };
+    game.player1 = { playerId: "a", name: "Alice", connectionId: "a", state: freshPlayerState({ ones: 5 }) };
+    game.player2 = { playerId: "b", name: "Bob", connectionId: "b", state: freshPlayerState({ ones: 4 }) };
 
     const oneReady = requestRematch(game, "player1");
     expect(startRematch(oneReady)).toBe(oneReady);
@@ -78,8 +78,8 @@ describe("règles multijoueur", () => {
     player1.rollNumber = 1;
     player2.dice = [5, 5, 5, 5, 5];
     player2.rollNumber = 1;
-    game.player1 = { playerId: "a", connectionId: "a", state: player1 };
-    game.player2 = { playerId: "b", connectionId: "b", state: player2 };
+    game.player1 = { playerId: "a", name: "Alice", connectionId: "a", state: player1 };
+    game.player2 = { playerId: "b", name: "Bob", connectionId: "b", state: player2 };
     game.turn = CATEGORY_IDS.length;
 
     const afterPlayer1 = scoreActiveCategory(game, "player1", "yatzy");
@@ -104,17 +104,18 @@ describe("protocole multijoueur", () => {
 
 describe("moteur de salon privé", () => {
   it("ouvre la partie au premier invité et conserve sa feuille de score", () => {
-    const hosted = createHostedGame("AMIS12");
-    const connected = connectGuest(hosted, "peer-a");
-    const reconnected = connectGuest(connected, "peer-b");
+    const hosted = createHostedGame("AMIS12", "Alice");
+    const connected = connectGuest(hosted, "Bob", "peer-a");
+    const reconnected = connectGuest(connected, "Bobby", "peer-b");
 
     expect(connected.status).toBe("playing");
     expect(reconnected.player2?.connectionId).toBe("peer-b");
+    expect(reconnected.player2?.name).toBe("Bobby");
     expect(reconnected.player2?.state).toEqual(connected.player2?.state);
   });
 
   it("valide les actions de l’invité dans le moteur de l’hôte", () => {
-    let game = connectGuest(createHostedGame("AMIS12"), "peer-a");
+    let game = connectGuest(createHostedGame("AMIS12", "Alice"), "Bob", "peer-a");
     game = applyPlayerAction(game, "player1", { type: "ROLL" }, () => 6);
     game = applyPlayerAction(game, "player1", { type: "SCORE", category: "sixes" }, () => 1);
 

@@ -4,16 +4,34 @@ import {
   type MultiplayerRole,
 } from "./multiplayer";
 import { parseClientActionValue, type ClientAction } from "./protocol";
+import { isPlayerName } from "./playerName";
+
+export const REACTION_EMOJIS = ["👏", "🔥", "😂", "😮", "🎲", "💛"] as const;
+export type ReactionEmoji = (typeof REACTION_EMOJIS)[number];
+
+export type RoomReaction = {
+  id: string;
+  role: MultiplayerRole;
+  emoji: ReactionEmoji;
+  sentAt: number;
+};
 
 export type RoomCommand =
-  | { type: "CONNECT"; role: MultiplayerRole; token: string }
-  | { type: "SYNC"; role: MultiplayerRole; token: string }
+  | { type: "CONNECT"; role: MultiplayerRole; token: string; playerName: string }
+  | { type: "SYNC"; role: MultiplayerRole; token: string; playerName: string }
   | {
       type: "ACTION";
       role: MultiplayerRole;
       token: string;
       actionId: string;
       action: ClientAction;
+    }
+  | {
+      type: "REACTION";
+      role: MultiplayerRole;
+      token: string;
+      reactionId: string;
+      emoji: ReactionEmoji;
     };
 
 export type RoomErrorCode =
@@ -31,6 +49,7 @@ export type RoomSuccess = {
   yourRole: MultiplayerRole;
   opponentOnline: boolean;
   version: number;
+  latestReaction: RoomReaction | null;
 };
 
 export type RoomFailure = {
@@ -59,6 +78,22 @@ function isRoomErrorCode(value: unknown): value is RoomErrorCode {
   return typeof value === "string" && ROOM_ERROR_CODES.includes(value as RoomErrorCode);
 }
 
+function isReactionEmoji(value: unknown): value is ReactionEmoji {
+  return typeof value === "string" && REACTION_EMOJIS.includes(value as ReactionEmoji);
+}
+
+export function isRoomReaction(value: unknown): value is RoomReaction {
+  if (!value || typeof value !== "object") return false;
+  const reaction = value as Partial<RoomReaction>;
+  return Boolean(
+    isPlayerToken(reaction.id) &&
+      isRole(reaction.role) &&
+      isReactionEmoji(reaction.emoji) &&
+      typeof reaction.sentAt === "number" &&
+      Number.isFinite(reaction.sentAt),
+  );
+}
+
 export function isPlayerToken(value: unknown): value is string {
   return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(value);
 }
@@ -68,8 +103,8 @@ export function parseRoomCommand(value: unknown): RoomCommand | null {
   const data = value as Record<string, unknown>;
   if (!isRole(data.role) || !isPlayerToken(data.token)) return null;
 
-  if (data.type === "CONNECT" || data.type === "SYNC") {
-    return { type: data.type, role: data.role, token: data.token };
+  if ((data.type === "CONNECT" || data.type === "SYNC") && isPlayerName(data.playerName)) {
+    return { type: data.type, role: data.role, token: data.token, playerName: data.playerName };
   }
 
   if (data.type === "ACTION" && isPlayerToken(data.actionId)) {
@@ -83,6 +118,16 @@ export function parseRoomCommand(value: unknown): RoomCommand | null {
         action,
       };
     }
+  }
+
+  if (data.type === "REACTION" && isPlayerToken(data.reactionId) && isReactionEmoji(data.emoji)) {
+    return {
+      type: "REACTION",
+      role: data.role,
+      token: data.token,
+      reactionId: data.reactionId,
+      emoji: data.emoji,
+    };
   }
 
   return null;
@@ -103,6 +148,8 @@ export function isRoomResponse(value: unknown): value is RoomResponse {
       isRole(response.yourRole) &&
       typeof response.opponentOnline === "boolean" &&
       Number.isInteger(response.version) &&
-      response.version! >= 0,
+      response.version! >= 0 &&
+      "latestReaction" in response &&
+      (response.latestReaction === null || isRoomReaction(response.latestReaction)),
   );
 }

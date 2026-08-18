@@ -6,16 +6,19 @@ import {
   type StoredRoom,
 } from "./multiplayerRoomService";
 import type { MultiplayerRole } from "../domain/multiplayer";
+import type { RoomReaction } from "../domain/multiplayerRoomProtocol";
 import type { DieValue } from "../domain/yatzy";
 
 const HOST_TOKEN = "11111111-1111-4111-8111-111111111111";
 const GUEST_TOKEN = "22222222-2222-4222-8222-222222222222";
 const OTHER_TOKEN = "33333333-3333-4333-8333-333333333333";
 const ACTION_ID = "44444444-4444-4444-8444-444444444444";
+const REACTION_ID = "55555555-5555-4555-8555-555555555555";
 
 class MemoryRoomStore implements MultiplayerRoomStore {
   room: StoredRoom | null = null;
   presence = new Map<MultiplayerRole, number>();
+  reaction: RoomReaction | null = null;
 
   async getRoom() {
     return this.room;
@@ -31,6 +34,14 @@ class MemoryRoomStore implements MultiplayerRoomStore {
 
   async setPresence(_roomId: string, role: MultiplayerRole, timestamp: number) {
     this.presence.set(role, timestamp);
+  }
+
+  async getReaction() {
+    return this.reaction;
+  }
+
+  async setReaction(_roomId: string, reaction: RoomReaction) {
+    this.reaction = structuredClone(reaction);
   }
 }
 
@@ -52,8 +63,8 @@ async function command(
 describe("service de salon privé", () => {
   it("synchronise une action du serveur entre les deux joueurs", async () => {
     const store = new MemoryRoomStore();
-    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN }, 1_000);
-    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN }, 1_001);
+    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN, playerName: "Alice" }, 1_000);
+    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN, playerName: "Bob" }, 1_001);
     const action = await command(store, {
       type: "ACTION",
       role: "player1",
@@ -65,6 +76,7 @@ describe("service de salon privé", () => {
       type: "SYNC",
       role: "player2",
       token: GUEST_TOKEN,
+      playerName: "Bob",
     }, 1_003);
 
     expect(action.status).toBe(200);
@@ -77,12 +89,13 @@ describe("service de salon privé", () => {
 
   it("refuse un troisième joueur tant que l’invité est actif", async () => {
     const store = new MemoryRoomStore();
-    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN }, 1_000);
-    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN }, 1_001);
+    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN, playerName: "Alice" }, 1_000);
+    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN, playerName: "Bob" }, 1_001);
     const thirdPlayer = await command(store, {
       type: "CONNECT",
       role: "player2",
       token: OTHER_TOKEN,
+      playerName: "Charlie",
     }, 1_002);
 
     expect(thirdPlayer.status).toBe(409);
@@ -91,12 +104,13 @@ describe("service de salon privé", () => {
 
   it("autorise une reprise depuis un autre navigateur après une déconnexion", async () => {
     const store = new MemoryRoomStore();
-    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN }, 1_000);
-    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN }, 1_001);
+    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN, playerName: "Alice" }, 1_000);
+    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN, playerName: "Bob" }, 1_001);
     const resumed = await command(store, {
       type: "CONNECT",
       role: "player2",
       token: OTHER_TOKEN,
+      playerName: "Charlie",
     }, 10_500);
 
     expect(resumed.status).toBe(200);
@@ -106,8 +120,8 @@ describe("service de salon privé", () => {
 
   it("n’applique pas deux fois la même action réseau", async () => {
     const store = new MemoryRoomStore();
-    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN }, 1_000);
-    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN }, 1_001);
+    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN, playerName: "Alice" }, 1_000);
+    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN, playerName: "Bob" }, 1_001);
     const first = await command(store, {
       type: "ACTION",
       role: "player1",
@@ -127,11 +141,50 @@ describe("service de salon privé", () => {
     expect(duplicate.body).toMatchObject({ ok: true, version: 2 });
     expect(store.room?.game.player1?.state.dice).toEqual([6, 6, 6, 6, 6]);
   });
+
+  it("transmet une réaction live sans modifier la partie", async () => {
+    const store = new MemoryRoomStore();
+    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN, playerName: "Alice" }, 1_000);
+    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN, playerName: "Bob" }, 1_001);
+    const beforeGame = structuredClone(store.room?.game);
+
+    const reaction = await command(store, {
+      type: "REACTION",
+      role: "player1",
+      token: HOST_TOKEN,
+      reactionId: REACTION_ID,
+      emoji: "👏",
+    }, 1_002);
+    const guestSync = await command(store, {
+      type: "SYNC",
+      role: "player2",
+      token: GUEST_TOKEN,
+      playerName: "Bob",
+    }, 1_003);
+    const expiredSync = await command(store, {
+      type: "SYNC",
+      role: "player2",
+      token: GUEST_TOKEN,
+      playerName: "Bob",
+    }, 6_003);
+
+    expect(reaction.body).toMatchObject({
+      ok: true,
+      latestReaction: { id: REACTION_ID, role: "player1", emoji: "👏" },
+    });
+    expect(guestSync.body).toMatchObject({
+      ok: true,
+      latestReaction: { id: REACTION_ID, role: "player1", emoji: "👏" },
+    });
+    expect(expiredSync.body).toMatchObject({ ok: true, latestReaction: null });
+    expect(store.room?.game).toEqual(beforeGame);
+    expect(store.reaction).toMatchObject({ id: REACTION_ID, emoji: "👏" });
+  });
 });
 
 describe("validation des commandes de salon", () => {
   it("refuse les jetons et actions fabriqués", () => {
-    expect(parseRoomCommand({ type: "SYNC", role: "player1", token: "court" })).toBeNull();
+    expect(parseRoomCommand({ type: "SYNC", role: "player1", token: "court", playerName: "Alice" })).toBeNull();
     expect(parseRoomCommand({
       type: "ACTION",
       role: "player2",

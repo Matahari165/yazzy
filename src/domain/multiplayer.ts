@@ -1,4 +1,5 @@
 import { type CategoryId, type DieValue, scoreDice, CATEGORY_IDS } from "./yatzy";
+import { isPlayerName } from "./playerName";
 
 export type MultiplayerRole = "player1" | "player2";
 
@@ -11,6 +12,7 @@ export type MultiplayerPlayerState = {
 
 export type PlayerSlot = {
   playerId: string;
+  name: string;
   connectionId: string | null;
   state: MultiplayerPlayerState;
 };
@@ -140,6 +142,7 @@ function isPlayerSlot(value: unknown): value is PlayerSlot | null {
   const slot = value as Partial<PlayerSlot>;
   return Boolean(
     typeof slot.playerId === "string" &&
+      isPlayerName(slot.name) &&
       (slot.connectionId === null || typeof slot.connectionId === "string") &&
       isPlayerState(slot.state),
   );

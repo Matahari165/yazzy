@@ -17,12 +17,13 @@ const HOST_CONNECTION_ID = "local-host";
 const GUEST_PLAYER_ID = "guest";
 export const GUEST_CONNECTION_ID = "server-guest";
 
-export function createHostedGame(roomId: string): MultiplayerGameState {
+export function createHostedGame(roomId: string, playerName = "Joueur 1"): MultiplayerGameState {
   const game = createMultiplayerGame(roomId);
   return {
     ...game,
     player1: {
       playerId: HOST_PLAYER_ID,
+      name: playerName,
       connectionId: HOST_CONNECTION_ID,
       state: freshPlayerState(),
     },
@@ -31,12 +32,14 @@ export function createHostedGame(roomId: string): MultiplayerGameState {
 
 export function connectGuest(
   game: MultiplayerGameState,
+  playerName = "Joueur 2",
   connectionId = GUEST_CONNECTION_ID,
 ): MultiplayerGameState {
   const player2 = game.player2
-    ? { ...game.player2, playerId: GUEST_PLAYER_ID, connectionId }
+    ? { ...game.player2, playerId: GUEST_PLAYER_ID, name: playerName, connectionId }
     : {
         playerId: GUEST_PLAYER_ID,
+        name: playerName,
         connectionId,
         state: freshPlayerState(),
       };

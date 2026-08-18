@@ -25,6 +25,8 @@ type ScoreCardProps = {
   selected: CategoryId | null;
   canSelect: boolean;
   isReadOnly?: boolean;
+  activeColumn?: "player" | "opponent";
+  showBonusSummary?: boolean;
   onSelect?: (category: CategoryId | null) => void;
   onScore?: () => void;
 };
@@ -56,6 +58,8 @@ export function ScoreCard({
   selected,
   canSelect,
   isReadOnly = false,
+  activeColumn,
+  showBonusSummary = true,
   onSelect,
   onScore,
 }: ScoreCardProps) {
@@ -69,10 +73,10 @@ export function ScoreCard({
   return (
     <section className="score-card" aria-label={label}>
       <div className="score-legend" aria-hidden="true">
-        <span>{playerLabel}</span>
-        <span>{opponentLabel}</span>
-        <span className="score-legend-repeat">{playerLabel}</span>
-        <span className="score-legend-repeat">{opponentLabel}</span>
+        <span data-active={activeColumn === "player"}>{playerLabel}</span>
+        <span data-active={activeColumn === "opponent"}>{opponentLabel}</span>
+        <span className="score-legend-repeat" data-active={activeColumn === "player"}>{playerLabel}</span>
+        <span className="score-legend-repeat" data-active={activeColumn === "opponent"}>{opponentLabel}</span>
       </div>
       <div className="score-list" role="list" aria-label={label}>
         {CATEGORIES.map((category, index) => {
@@ -96,7 +100,7 @@ export function ScoreCard({
               <button
                 id={`score-row-${category.id}`}
                 className="score-row"
-                data-filled={filled}
+                data-actionable={!filled && !isReadOnly && canSelect}
                 data-selected={isSelected}
                 type="button"
                 aria-pressed={isSelected}
@@ -110,8 +114,20 @@ export function ScoreCard({
                   {category.label}
                   {VISUAL_HINTS[category.id] && <span className="score-category-hint">{VISUAL_HINTS[category.id]}</span>}
                 </span>
-                <strong className="score-value" aria-hidden="true">{currentScore === null ? "" : currentScore}</strong>
-                <strong className="score-value score-value-bot" aria-hidden="true">{botScore === undefined ? "" : botScore}</strong>
+                <strong
+                  className="score-value"
+                  data-state={filled ? "filled" : currentScore !== null && canSelect ? "preview" : "empty"}
+                  aria-hidden="true"
+                >
+                  {currentScore === null ? "" : currentScore}
+                </strong>
+                <strong
+                  className="score-value score-value-bot"
+                  data-state={botScore === undefined ? "empty" : "filled"}
+                  aria-hidden="true"
+                >
+                  {botScore === undefined ? "" : botScore}
+                </strong>
               </button>
               {isExplained ? (
                 <ScoreHelpPopover
@@ -129,16 +145,17 @@ export function ScoreCard({
         })}
       </div>
 
-      <footer className="bonus-summary">
-        <div>
-          <span>Bonus</span>
-          <strong>{Math.min(63, upperScore)} / 63</strong>
-        </div>
-        <progress max={63} value={Math.min(63, upperScore)} aria-label="Progression du bonus supérieur" />
-      </footer>
+      {showBonusSummary ? (
+        <footer className="bonus-summary">
+          <div>
+            <span>Bonus</span>
+            <strong>{Math.min(63, upperScore)} / 63</strong>
+          </div>
+        </footer>
+      ) : null}
       <div className="total-row">
-        <span style={{ fontSize: 16, fontWeight: 800 }}>Total</span>
-        <strong className="score-value" style={{ color: 'var(--ink)' }}>{totalScore(humanScores)}</strong>
+        <span className="total-label">Total</span>
+        <strong className="score-value total-score-value">{totalScore(humanScores)}</strong>
         <strong className="score-value score-value-bot">{totalScore(botScores)}</strong>
       </div>
     </section>

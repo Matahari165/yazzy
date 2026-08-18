@@ -3,13 +3,17 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { FinishedGame } from "@/components/FinishedGame";
-import { DiceTray, GameTable } from "@/components/GameTable";
+import { GameTable } from "@/components/GameTable";
+import { MultiplayerNameGate } from "@/components/MultiplayerNameGate";
+import { MultiplayerReactions } from "@/components/MultiplayerReactions";
 import { ScoreCard } from "@/components/ScoreCard";
+import { normalizePlayerName, PLAYER_NAME_STORAGE_KEY } from "@/domain/playerName";
 import type { CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 
 export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: boolean }) {
+  const [playerName, setPlayerName] = useState<string | null>(null);
   const {
     game,
     localRole,
@@ -25,12 +29,21 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
     isMyTurn,
     localPlayer,
     opponentPlayer,
-  } = useMultiplayerGame(roomId, isHost);
+    latestReaction,
+    sendReaction,
+  } = useMultiplayerGame(roomId, isHost, playerName);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
   const [copyStatus, setCopyStatus] = useState("");
   const rollTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setPlayerName(normalizePlayerName(localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? ""));
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, []);
 
   const localState = localPlayer?.state;
   const opponentState = opponentPlayer?.state;
@@ -94,6 +107,19 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
     }
   };
 
+  const handlePlayerName = (name: string) => {
+    localStorage.setItem(PLAYER_NAME_STORAGE_KEY, name);
+    setPlayerName(name);
+  };
+
+  if (playerName === null) {
+    return <main id="main-content" className="app-loading" aria-busy="true"><p>Préparation de la partie…</p></main>;
+  }
+
+  if (!playerName) {
+    return <MultiplayerNameGate onSave={handlePlayerName} />;
+  }
+
   if (connectionError && !game) {
     return (
       <main id="main-content" className="multiplayer-state-card" role="alert">
@@ -132,7 +158,7 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
       <main id="main-content" className="game-shell">
         <header className="game-header waiting-header">
           <Link className="game-logo" href="/">YAZZY</Link>
-          <span className="mode-label">PARTIE PRIVÉE</span>
+          <span className="mode-label">{playerName}</span>
           <Link className="quit-link" href="/">Quitter</Link>
         </header>
 
@@ -173,27 +199,36 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
   }
 
   const rematchRequested = game.rematchReady.includes(localRole);
+  const localName = localPlayer.name;
+  const opponentName = opponentPlayer.name;
   const connectionNotice = !isConnected
     ? "Ta connexion est interrompue. Reconnexion en cours…"
     : !opponentOnline
-      ? "Ton ami est déconnecté. La partie reprendra à son retour."
+      ? `${opponentName} est déconnecté·e. La partie reprendra à son retour.`
       : null;
 
   return (
     <main id="main-content" className="game-shell">
-      <header className="game-header">
+      <header className="game-header multiplayer-game-header">
         <Link className="game-logo" href="/">YAZZY</Link>
-        <span className="mode-label">AMI</span>
-        <div className="match-score" aria-label={isMyTurn ? "C’est ton tour" : "C’est le tour de ton ami"}>
+        <div className="match-score" aria-label={isMyTurn ? `À ${localName} de jouer` : `À ${opponentName} de jouer`}>
           <span className="match-player" data-active={isMyTurn}>
-            <i className="turn-dot" aria-hidden="true" /> Toi
+            <i className="turn-dot" aria-hidden="true" /> {localName}
           </span>
           <span className="score-separator" aria-hidden="true">·</span>
           <span className="match-player" data-active={!isMyTurn} data-online={opponentOnline}>
-            <i className="turn-dot" aria-hidden="true" /> Ami
+            <i className="turn-dot" aria-hidden="true" /> {opponentName}
           </span>
         </div>
-        <Link className="quit-link" href="/">Quitter</Link>
+        <MultiplayerReactions
+          disabled={!isConnected || !opponentOnline}
+          latestReaction={latestReaction}
+          localRole={localRole}
+          localName={localName}
+          opponentName={opponentName}
+          onSend={sendReaction}
+        />
+        <Link className="quit-link multiplayer-quit-link" href="/" aria-label="Quitter la partie"><span aria-hidden="true">×</span></Link>
       </header>
 
       {connectionNotice ? <p className="connection-notice" role="status">{connectionNotice}</p> : null}
@@ -204,51 +239,39 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
           localRole={localRole}
           onRematch={rematch}
           rematchRequested={rematchRequested}
+          localName={localName}
+          opponentName={opponentName}
         />
       ) : (
         <div className="game-content">
           <ScoreCard
-            label="Feuille de score : toi et ton ami"
-            playerLabel="Toi"
-            opponentLabel="Ami"
+            label={`Feuille de score : ${localName} et ${opponentName}`}
+            playerLabel={localName}
+            opponentLabel={opponentName}
             humanScores={localState.scores}
             botScores={opponentState.scores}
             dice={localState.dice}
             selected={canAct ? selectedCategory : null}
             canSelect={canAct && localState.rollNumber > 0 && !isRolling}
             isReadOnly={!canAct}
+            activeColumn={isMyTurn ? "player" : "opponent"}
+            showBonusSummary={false}
             onSelect={setSelectedCategory}
             onScore={handleScore}
           />
 
-          {isMyTurn ? (
-            <GameTable
-              dice={localState.dice}
-              held={localState.held}
-              rollNumber={localState.rollNumber}
-              selectedCategory={selectedCategory}
-              isRolling={isRolling}
-              isDisabled={!canAct}
-              onToggleDie={toggleHeld}
-              onRoll={handleRoll}
-            />
-          ) : (
-            <section className="opponent-turn-panel" aria-labelledby="opponent-turn-title" aria-live="polite">
-              <p className="eyebrow">TOUR DE TON AMI</p>
-              <h2 id="opponent-turn-title">
-                {opponentState.rollNumber > 0 ? `Lancer ${opponentState.rollNumber} sur 3` : "Il choisit son lancer…"}
-              </h2>
-              <DiceTray
-                dice={opponentState.dice}
-                held={opponentState.held}
-                rollNumber={opponentState.rollNumber}
-                rolling={false}
-                disabled
-                label="Les dés de ton ami"
-              />
-              <p>Tu vois ses dés et ses choix en direct.</p>
-            </section>
-          )}
+          <GameTable
+            dice={isMyTurn ? localState.dice : opponentState.dice}
+            held={isMyTurn ? localState.held : opponentState.held}
+            rollNumber={isMyTurn ? localState.rollNumber : opponentState.rollNumber}
+            selectedCategory={isMyTurn ? selectedCategory : null}
+            isRolling={isMyTurn ? isRolling : false}
+            isDisabled={!canAct}
+            isObserver={!isMyTurn}
+            label={isMyTurn ? `Les dés de ${localName}` : `Les dés de ${opponentName}`}
+            onToggleDie={toggleHeld}
+            onRoll={handleRoll}
+          />
         </div>
       )}
     </main>

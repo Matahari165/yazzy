@@ -41,6 +41,8 @@ type GameTableProps = {
   selectedCategory: CategoryId | null;
   isRolling: boolean;
   isDisabled?: boolean;
+  isObserver?: boolean;
+  label?: string;
   onToggleDie: (index: number) => void;
   onRoll: () => void;
 };
@@ -52,6 +54,8 @@ export function GameTable({
   selectedCategory,
   isRolling,
   isDisabled = false,
+  isObserver = false,
+  label = "Tes cinq dés",
   onToggleDie,
   onRoll,
 }: GameTableProps) {
@@ -66,7 +70,7 @@ export function GameTable({
     : `${usedRolls} lancer${usedRolls > 1 ? "s" : ""} utilisé${usedRolls > 1 ? "s" : ""}, ${remainingRolls} disponible${remainingRolls !== 1 ? "s" : ""}`;
 
   return (
-    <section className="game-table" aria-label="Zone de lancer">
+    <section className="game-table" data-observer={isObserver} aria-label={isObserver ? `${label}, action en cours` : "Zone de lancer"}>
 
       <DiceTray
         dice={dice}
@@ -74,7 +78,7 @@ export function GameTable({
         rollNumber={rollNumber}
         rolling={isRolling}
         disabled={isRolling || isDisabled}
-        label="Tes cinq dés"
+        label={label}
         onToggle={onToggleDie}
       />
 
@@ -84,11 +88,13 @@ export function GameTable({
             <i key={rollIndex} data-used={rollIndex < usedRolls} aria-hidden="true" />
           ))}
         </span>
-        {canShowRollButton ? (
+        {isObserver ? (
+          <span className="opponent-activity" aria-hidden="true"><i /><i /><i /></span>
+        ) : canShowRollButton ? (
           <button className={selectedCategory ? "secondary-action" : "primary-action"} type="button" disabled={!canRoll} onClick={onRoll}>
             {isRolling ? "Les dés roulent…" : actionLabel}
           </button>
-        ) : null}
+        ) : <span className="roll-control-spacer" aria-hidden="true" />}
       </div>
     </section>
   );

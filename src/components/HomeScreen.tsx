@@ -10,6 +10,11 @@ import {
   normalizeRoomCode,
 } from "@/domain/roomCode";
 import { CATEGORY_IDS } from "@/domain/yatzy";
+import {
+  normalizePlayerName,
+  PLAYER_NAME_MAX_LENGTH,
+  PLAYER_NAME_STORAGE_KEY,
+} from "@/domain/playerName";
 import { readStoredGame } from "@/lib/gameStorage";
 
 export function HomeScreen() {
@@ -18,10 +23,13 @@ export function HomeScreen() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [roomCode, setRoomCode] = useState("");
   const [roomCodeError, setRoomCodeError] = useState("");
+  const [playerName, setPlayerName] = useState("");
+  const [playerNameError, setPlayerNameError] = useState("");
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setSavedGame(readStoredGame());
+      setPlayerName(normalizePlayerName(localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? ""));
       setHasLoaded(true);
     }, 0);
     return () => window.clearTimeout(timeout);
@@ -29,12 +37,26 @@ export function HomeScreen() {
 
   const canResume = hasLoaded && savedGame !== null && !isFinished(savedGame);
 
+  const savePlayerName = () => {
+    const normalizedName = normalizePlayerName(playerName);
+    if (!normalizedName) {
+      setPlayerNameError("Choisis un pseudo pour la partie.");
+      return null;
+    }
+    localStorage.setItem(PLAYER_NAME_STORAGE_KEY, normalizedName);
+    setPlayerName(normalizedName);
+    setPlayerNameError("");
+    return normalizedName;
+  };
+
   const startMultiplayer = () => {
+    if (!savePlayerName()) return;
     router.push(`/play/${generateRoomCode()}?host=1`);
   };
 
   const joinMultiplayer = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!savePlayerName()) return;
     const normalizedCode = normalizeRoomCode(roomCode);
 
     if (!isRoomCode(normalizedCode)) {
@@ -65,6 +87,32 @@ export function HomeScreen() {
             </Link>
           ) : null}
           <Link className="primary-action" href="/bot">Jouer contre un bot</Link>
+          <div className="player-name-field">
+            <label htmlFor="player-name">Ton pseudo en multijoueur</label>
+            <input
+              id="player-name"
+              name="player-name"
+              type="text"
+              value={playerName}
+              onChange={(event) => {
+                setPlayerName(event.currentTarget.value.slice(0, PLAYER_NAME_MAX_LENGTH));
+                setPlayerNameError("");
+              }}
+              onBlur={() => {
+                const normalizedName = normalizePlayerName(playerName);
+                setPlayerName(normalizedName);
+                if (normalizedName) localStorage.setItem(PLAYER_NAME_STORAGE_KEY, normalizedName);
+              }}
+              placeholder="Ex. Alex"
+              autoComplete="nickname"
+              maxLength={PLAYER_NAME_MAX_LENGTH}
+              aria-describedby={playerNameError ? "player-name-error" : undefined}
+              aria-invalid={playerNameError ? true : undefined}
+            />
+            {playerNameError ? (
+              <p id="player-name-error" className="form-error" role="alert">{playerNameError}</p>
+            ) : null}
+          </div>
           <button
             className="primary-action"
             type="button"

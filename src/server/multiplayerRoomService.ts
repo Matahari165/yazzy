@@ -8,13 +8,16 @@ import type {
   RoomCommand,
   RoomErrorCode,
   RoomFailure,
+  RoomReaction,
   RoomSuccess,
 } from "../domain/multiplayerRoomProtocol";
 import type { DieValue } from "../domain/yatzy";
 
 export const ROOM_TTL_SECONDS = 6 * 60 * 60;
 export const PRESENCE_TTL_SECONDS = 20;
+export const REACTION_TTL_SECONDS = 10;
 const ONLINE_WINDOW_MS = 8_000;
+const REACTION_WINDOW_MS = 5_000;
 
 export type StoredRoom = {
   game: MultiplayerGameState;
@@ -29,6 +32,8 @@ export type MultiplayerRoomStore = {
   setRoom(roomId: string, room: StoredRoom): Promise<void>;
   getPresence(roomId: string, role: MultiplayerRole): Promise<number | null>;
   setPresence(roomId: string, role: MultiplayerRole, timestamp: number): Promise<void>;
+  getReaction(roomId: string): Promise<RoomReaction | null>;
+  setReaction(roomId: string, reaction: RoomReaction): Promise<void>;
 };
 
 export type RoomServiceResult =
@@ -66,6 +71,7 @@ async function success(
   now: number,
 ): Promise<RoomServiceResult> {
   await store.setPresence(roomId, role, now);
+  const latestReaction = await store.getReaction(roomId);
   return {
     status: 200,
     body: {
@@ -74,8 +80,21 @@ async function success(
       yourRole: role,
       opponentOnline: await presenceStatus(store, roomId, role, now),
       version: room.version,
+      latestReaction: latestReaction && now - latestReaction.sentAt <= REACTION_WINDOW_MS
+        ? latestReaction
+        : null,
     },
   };
+}
+
+function updatePlayerName(
+  game: MultiplayerGameState,
+  role: MultiplayerRole,
+  playerName: string,
+): MultiplayerGameState {
+  const player = game[role];
+  if (!player || player.name === playerName) return game;
+  return { ...game, [role]: { ...player, name: playerName } };
 }
 
 export async function handleRoomCommand({
@@ -96,7 +115,7 @@ export async function handleRoomCommand({
   if (command.type === "CONNECT" && command.role === "player1") {
     if (!room) {
       room = {
-        game: createHostedGame(roomId),
+        game: createHostedGame(roomId, command.playerName),
         hostToken: command.token,
         guestToken: null,
         version: 0,
@@ -105,6 +124,12 @@ export async function handleRoomCommand({
       await store.setRoom(roomId, room);
     } else if (room.hostToken !== command.token) {
       return failure(409, "ROOM_TAKEN", "Ce code appartient déjà à une autre partie.");
+    } else {
+      const nextGame = updatePlayerName(room.game, command.role, command.playerName);
+      if (nextGame !== room.game) {
+        room = { ...room, game: nextGame, version: room.version + 1 };
+        await store.setRoom(roomId, room);
+      }
     }
     return success(store, roomId, room, command.role, now);
   }
@@ -121,7 +146,7 @@ export async function handleRoomCommand({
       }
     }
 
-    const nextGame = connectGuest(room.game);
+    const nextGame = connectGuest(room.game, command.playerName);
     room = {
       ...room,
       game: nextGame,
@@ -134,6 +159,32 @@ export async function handleRoomCommand({
 
   if (tokenFor(room, command.role) !== command.token) {
     return failure(403, "ACCESS_DENIED", "Cette place de joueur n’est pas disponible.");
+  }
+
+  if (command.type === "SYNC") {
+    const nextGame = updatePlayerName(room.game, command.role, command.playerName);
+    if (nextGame !== room.game) {
+      room = { ...room, game: nextGame, version: room.version + 1 };
+      await store.setRoom(roomId, room);
+    }
+  }
+
+  if (command.type === "REACTION") {
+    const opponentOnline = await presenceStatus(store, roomId, command.role, now);
+    if (!opponentOnline) {
+      await store.setPresence(roomId, command.role, now);
+      return failure(409, "OPPONENT_OFFLINE", "Ton ami doit être connecté pour réagir.");
+    }
+
+    const latestReaction = await store.getReaction(roomId);
+    if (latestReaction?.id !== command.reactionId) {
+      await store.setReaction(roomId, {
+        id: command.reactionId,
+        role: command.role,
+        emoji: command.emoji,
+        sentAt: now,
+      });
+    }
   }
 
   if (command.type === "ACTION") {
