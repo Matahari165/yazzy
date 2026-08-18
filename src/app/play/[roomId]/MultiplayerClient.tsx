@@ -250,11 +250,11 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
             humanScores={localState.scores}
             botScores={opponentState.scores}
             dice={localState.dice}
+            opponentDice={opponentState.dice}
             selected={canAct ? selectedCategory : null}
             canSelect={canAct && localState.rollNumber > 0 && !isRolling}
             isReadOnly={!canAct}
             activeColumn={isMyTurn ? "player" : "opponent"}
-            showBonusSummary={false}
             onSelect={setSelectedCategory}
             onScore={handleScore}
           />

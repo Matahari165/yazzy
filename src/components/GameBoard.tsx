@@ -72,6 +72,7 @@ export function GameBoard() {
             selected={game.activePlayer === "human" ? selectedCategory : null}
             canSelect={game.activePlayer === "human" && game.human.rollNumber > 0 && !isRolling}
             isReadOnly={game.activePlayer === "bot"}
+            activeColumn={game.activePlayer === "human" ? "player" : "opponent"}
             onSelect={setSelectedCategory}
             onScore={handleScore}
           />

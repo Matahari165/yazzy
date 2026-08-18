@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CATEGORIES, CATEGORY_IDS, bestCombinationLabel, scoreDice, totalScore, upperSubtotal, type DieValue } from "./yatzy";
+import { CATEGORIES, CATEGORY_IDS, bestCombinationLabel, scoreDice, totalScore, type DieValue } from "./yatzy";
 
 describe("Yatzy nordique — scores", () => {
   it("joue avec 14 cases, sans Chance", () => {
@@ -33,10 +33,11 @@ describe("Yatzy nordique — scores", () => {
     expect(scoreDice("fullHouse", [5, 5, 5, 5, 5])).toBe(0);
   });
 
-  it("ajoute le bonus supérieur à partir de 63", () => {
+  it("additionne les cases sans bonus supérieur", () => {
     const scores = { ones: 3, twos: 6, threes: 9, fours: 12, fives: 15, sixes: 18 };
-    expect(upperSubtotal(scores)).toBe(63);
-    expect(totalScore(scores)).toBe(113);
+    expect(totalScore({ ...scores, ones: 2 })).toBe(62);
+    expect(totalScore(scores)).toBe(63);
+    expect(totalScore({ ...scores, pair: 1 })).toBe(64);
   });
 
   it("décrit la meilleure combinaison visible", () => {

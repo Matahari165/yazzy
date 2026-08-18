@@ -17,7 +17,7 @@ Implémenté et vérifié :
 - état v3 à deux joueurs : joueur actif, dés, scores, tour et état du tour bot ;
 - sauvegarde locale versionnée `yazzy.game.v3`, sans suppression de l’ancienne clé ;
 - probabilités exactes affichées uniquement dans le panneau de décision de la case sélectionnée ;
-- dés avec libellés Gardé, À relancer et Résultat final ;
+- dés sélectionnés par un changement visuel, sans libellé sous chaque dé ;
 - animation courte des faces finales, dés gardés immobiles et mouvement réduit ;
 - interface de plateau claire vérifiée à 320, 375, 390 et 430 px, en paysage et sur une largeur Mac ;
 - raccourcis clavier `⌥1` à `⌥5`, `⌥R` et `⌥S` ;
@@ -26,7 +26,7 @@ Implémenté et vérifié :
 
 Non implémenté :
 
-- stratégie optimale de la feuille complète et bonus intégré au conseil ; le Stratège actuel reste une heuristique ;
+- stratégie optimale de la feuille complète ; le Stratège actuel reste une heuristique ;
 - explication détaillée des décisions du bot ;
 - bilan pédagogique de fin de partie ;
 - PWA hors ligne ;
@@ -119,7 +119,7 @@ Une partie comprend 14 tours. À chaque tour :
 | Full | un brelan et une paire de valeurs différentes | somme des cinq dés |
 | Yatzy | cinq dés identiques | 50 |
 
-Bonus supérieur : 50 points si le total des cases As à Six atteint au moins 63.
+Le total est la somme directe des 14 cases : aucun bonus supérieur n'est appliqué.
 
 Le moteur de règles doit néanmoins être configurable. Une future variante Yahtzee ne doit pas nécessiter de réécrire l'interface ou le moteur de jeu.
 
@@ -133,7 +133,7 @@ Pour une case, Yazzy peut afficher :
 
 - **Probabilité de réussite** : chance d'obtenir une combinaison qui marque plus de zéro dans cette case, en suivant la meilleure stratégie de conservation pour cette case.
 - **Score attendu de la case** : moyenne des points que cette case rapporterait après les relances restantes.
-- **Valeur attendue du coup** : effet moyen de la décision sur le score final de la partie, bonus compris.
+- **Valeur attendue du coup** : effet moyen de la décision sur le score final de la partie.
 - **Probabilité avec ton choix** : chance obtenue en gardant les dés réellement sélectionnés par le joueur.
 - **Meilleure probabilité possible** : chance obtenue avec la meilleure sélection de dés si le seul objectif est cette case.
 
@@ -179,7 +179,7 @@ Chaque retour suit le même ordre :
 3. **Intuition** — une phrase simple.
 4. **Comparaison** — ton choix contre le meilleur choix.
 5. **Calcul** — formule et cas comptés, ouvert à la demande.
-6. **Contexte** — effet éventuel du bonus ou des cases déjà remplies.
+6. **Contexte** — effet éventuel des cases déjà remplies.
 
 Le ton reste factuel et encourageant. Éviter « erreur », « mauvais coup » et les messages répétitifs.
 
@@ -276,7 +276,7 @@ Le produit doit afficher la nature de chaque résultat :
 - `Estimation` : simulation ou approximation, avec nombre d'itérations et marge d'erreur ;
 - `Indisponible` : le moteur ne sait pas répondre proprement.
 
-La probabilité de compléter une case pendant le tour peut être exacte. L'optimisation parfaite de toute une partie est beaucoup plus coûteuse : 14 cases créent déjà `2^14 = 16 384` configurations, auxquelles s'ajoutent le bonus supérieur, les 252 combinaisons de dés et le numéro du lancer. La V1 ne devra pas qualifier une stratégie globale d'« exacte » tant que le calcul exhaustif et ses tests ne le prouvent pas.
+La probabilité de compléter une case pendant le tour peut être exacte. L'optimisation parfaite de toute une partie est beaucoup plus coûteuse : 14 cases créent déjà `2^14 = 16 384` configurations, auxquelles s'ajoutent les 252 combinaisons de dés et le numéro du lancer. La V1 ne devra pas qualifier une stratégie globale d'« exacte » tant que le calcul exhaustif et ses tests ne le prouvent pas.
 
 ## 7. Moteur de décision
 
@@ -335,12 +335,12 @@ Tous les niveaux utilisent exactement le même générateur de dés et les même
 
 - utilise les probabilités exactes du tour ;
 - maximise surtout le score attendu immédiat ;
-- comprend mal le bonus supérieur et les sacrifices de fin de partie ;
+- comprend mal les sacrifices de fin de partie ;
 - est donc cohérent mais stratégiquement myope.
 
 ### Niveau 3 — Stratège
 
-- tient compte des cases restantes et du bonus supérieur ;
+- tient compte des cases restantes ;
 - maximise le score final attendu avec le meilleur moteur validé disponible ;
 - utilise une table exacte si elle existe, sinon une approximation explicitement documentée ;
 - ne reçoit aucun avantage sur les lancers.
@@ -408,7 +408,7 @@ Ordre vertical validé :
 1. marque, scores des deux joueurs, tour et joueur actif ;
 2. feuille de score avec nom, score et état ;
 3. panneau contextuel unique pour la case sélectionnée ;
-4. cinq dés avec Gardé / À relancer / Résultat final ;
+4. cinq dés dont la sélection est indiquée visuellement, sans libellé sous les faces ;
 5. une action principale « Lancer », « Relancer » ou « Inscrire ».
 
 Sur Mac, la feuille et le pupitre sont présentés dans deux colonnes. Sur les téléphones très courts, seule la liste des scores défile ; les dés et l’action restent visibles.
@@ -452,7 +452,7 @@ Il peut aussi afficher le score réel, le score attendu au départ, l'écart cum
 
 - partie solo complète ;
 - lancer, sélection, relance, arrêt anticipé et score ;
-- grille de 14 cases et bonus ;
+- grille de 14 cases sans bonus ;
 - probabilités exactes du tour ;
 - explication simple et formule ;
 - sauvegarde locale et reprise ;
@@ -581,7 +581,7 @@ L'état visible est reconstruit à partir de ces événements. Cela facilite la 
 
 - un test par exemple officiel de chaque case ;
 - tests des cas ambigus : carré compté comme paire, deux paires différentes, full avec valeurs différentes, score zéro ;
-- test du bonus à 62, 63 et 64 ;
+- test que le total reste la somme directe des cases, notamment à 62, 63 et 64 ;
 - test d'une partie complète et de l'impossibilité de remplir deux fois une case.
 
 ### Mathématiques

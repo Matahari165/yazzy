@@ -192,16 +192,8 @@ export function scoreDice(category: CategoryId, dice: Dice): number {
   }
 }
 
-export function upperSubtotal(scores: Partial<Record<CategoryId, number>>): number {
-  return CATEGORIES.filter((category) => category.section === "upper").reduce(
-    (sum, category) => sum + (scores[category.id] ?? 0),
-    0,
-  );
-}
-
 export function totalScore(scores: Partial<Record<CategoryId, number>>): number {
-  const subtotal = Object.values(scores).reduce<number>((sum, score) => sum + (score ?? 0), 0);
-  return subtotal + (upperSubtotal(scores) >= 63 ? 50 : 0);
+  return Object.values(scores).reduce<number>((sum, score) => sum + (score ?? 0), 0);
 }
 
 export function bestCombinationLabel(dice: Dice): string | null {

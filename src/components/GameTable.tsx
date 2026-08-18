@@ -83,10 +83,8 @@ export function GameTable({
       />
 
       <div className="roll-controls">
-        <span className="roll-indicator" role="img" aria-label={rollStatus}>
-          {[0, 1, 2].map((rollIndex) => (
-            <i key={rollIndex} data-used={rollIndex < usedRolls} aria-hidden="true" />
-          ))}
+        <span className="roll-indicator" aria-label={rollStatus}>
+          <strong>{usedRolls}</strong><span aria-hidden="true">/</span><span aria-hidden="true">3</span>
         </span>
         {isObserver ? (
           <span className="opponent-activity" aria-hidden="true"><i /><i /><i /></span>

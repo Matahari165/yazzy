@@ -22,11 +22,11 @@ type ScoreCardProps = {
   humanScores: Partial<Record<CategoryId, number>>;
   botScores: Partial<Record<CategoryId, number>>;
   dice: Dice;
+  opponentDice?: Dice;
   selected: CategoryId | null;
   canSelect: boolean;
   isReadOnly?: boolean;
   activeColumn?: "player" | "opponent";
-  showBonusSummary?: boolean;
   onSelect?: (category: CategoryId | null) => void;
   onScore?: () => void;
 };
@@ -55,16 +55,15 @@ export function ScoreCard({
   humanScores,
   botScores,
   dice,
+  opponentDice = [],
   selected,
   canSelect,
   isReadOnly = false,
   activeColumn,
-  showBonusSummary = true,
   onSelect,
   onScore,
 }: ScoreCardProps) {
   const [explainedCategory, setExplainedCategory] = useState<CategoryId | null>(null);
-  const upperScore = (humanScores.ones ?? 0) + (humanScores.twos ?? 0) + (humanScores.threes ?? 0) + (humanScores.fours ?? 0) + (humanScores.fives ?? 0) + (humanScores.sixes ?? 0);
   const closeExplanation = useCallback(() => {
     setExplainedCategory(null);
     onSelect?.(null);
@@ -82,8 +81,14 @@ export function ScoreCard({
           const botScore = botScores[category.id];
           const filled = score !== undefined;
           const isSelected = selected === category.id;
-          const scoreWithDice = dice.length === 5 ? scoreDice(category.id, dice) : null;
+          const scoreWithDice = dice.length === 5 && activeColumn !== "opponent"
+            ? scoreDice(category.id, dice)
+            : null;
+          const opponentScoreWithDice = opponentDice.length === 5 && activeColumn === "opponent"
+            ? scoreDice(category.id, opponentDice)
+            : null;
           const currentScore = filled ? score : scoreWithDice !== null && canSelect ? scoreWithDice : null;
+          const currentOpponentScore = botScore ?? opponentScoreWithDice;
           const stateLabel = filled ? "case inscrite" : isSelected ? "case sélectionnée" : "case libre";
           const isExplained = explainedCategory === category.id;
           const scoreText = getScoreText(category, score, scoreWithDice);
@@ -105,7 +110,7 @@ export function ScoreCard({
                 aria-haspopup="dialog"
                 aria-expanded={isExplained}
                 aria-controls={isExplained ? `score-help-${category.id}` : undefined}
-                aria-label={`${category.label}, ${playerLabel.toLowerCase()} : ${filled ? `${score} points inscrits` : currentScore === null ? "aucun score affiché" : `${currentScore} points possibles`}, ${opponentLabel.toLowerCase()} : ${botScore === undefined ? "aucun score inscrit" : `${botScore} points inscrits`}. ${stateLabel}. Ouvrir l’explication.`}
+                aria-label={`${category.label}, ${playerLabel.toLowerCase()} : ${filled ? `${score} points inscrits` : currentScore === null ? "aucun score affiché" : `${currentScore} points possibles`}, ${opponentLabel.toLowerCase()} : ${botScore !== undefined ? `${botScore} points inscrits` : opponentScoreWithDice !== null ? `${opponentScoreWithDice} points possibles` : "aucun score affiché"}. ${stateLabel}. Ouvrir l’explication.`}
                 onClick={handleClick}
               >
                 <span className="score-category">
@@ -121,10 +126,10 @@ export function ScoreCard({
                 </strong>
                 <strong
                   className="score-value score-value-bot"
-                  data-state={botScore === undefined ? "empty" : "filled"}
+                  data-state={botScore !== undefined ? "filled" : opponentScoreWithDice !== null ? "preview" : "empty"}
                   aria-hidden="true"
                 >
-                  {botScore === undefined ? "" : botScore}
+                  {currentOpponentScore === null || currentOpponentScore === undefined ? "" : currentOpponentScore}
                 </strong>
               </button>
               {isExplained ? (
@@ -143,14 +148,6 @@ export function ScoreCard({
         })}
       </div>
 
-      {showBonusSummary ? (
-        <footer className="bonus-summary">
-          <div>
-            <span>Bonus</span>
-            <strong>{Math.min(63, upperScore)} / 63</strong>
-          </div>
-        </footer>
-      ) : null}
       <div className="total-row">
         <span className="total-label">Total</span>
         <strong className="score-value total-score-value">{totalScore(humanScores)}</strong>

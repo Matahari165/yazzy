@@ -7,11 +7,11 @@ Yazzy est une application web de Yatzy nordique qui explique les probabilités e
 - accueil explicite, choix du bot puis partie sur `/`, `/bot` et `/game` ;
 - trois niveaux de bot séparés : Découverte, Calculateur et Stratège ;
 - même générateur de dés équitables pour tous les niveaux ;
-- scores des 14 cases nordiques et bonus supérieur ;
+- scores des 14 cases nordiques, sans bonus supérieur ;
 - probabilités exactes affichées uniquement dans le panneau de décision de la case sélectionnée ;
 - sauvegarde locale versionnée `yazzy.game.v3`, sans suppression automatique de l’ancienne sauvegarde ;
 - feuille de score lisible, sans grille noire ni colonne de probabilités répétée ;
-- dés avec état textuel Gardé / À relancer / Résultat final ;
+- dés sélectionnés par un changement visuel, sans libellé sous chaque dé ;
 - animation courte des faces finales, dés gardés immobiles et mouvement réduit respecté ;
 - partie privée à deux par code court ou par lien, sans compte ni serveur à configurer ;
 - salon temporaire synchronisé par Vercel, afin de fonctionner même sur les réseaux qui bloquent WebRTC ;
