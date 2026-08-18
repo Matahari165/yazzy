@@ -75,8 +75,6 @@ export function ScoreCard({
       <div className="score-legend" aria-hidden="true">
         <span data-active={activeColumn === "player"}>{playerLabel}</span>
         <span data-active={activeColumn === "opponent"}>{opponentLabel}</span>
-        <span className="score-legend-repeat" data-active={activeColumn === "player"}>{playerLabel}</span>
-        <span className="score-legend-repeat" data-active={activeColumn === "opponent"}>{opponentLabel}</span>
       </div>
       <div className="score-list" role="list" aria-label={label}>
         {CATEGORIES.map((category, index) => {

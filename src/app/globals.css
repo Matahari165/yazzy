@@ -503,8 +503,8 @@ h3 { font-size: 18px; line-height: 1.2; }
 
 .reaction-control { position: relative; z-index: 20; flex: none; }
 .reaction-trigger {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   padding: 0;
@@ -621,31 +621,46 @@ h3 { font-size: 18px; line-height: 1.2; }
 .finished-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-soft); }
 .score-card { overflow: visible; }
 .score-legend {
-  min-height: 32px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 32px 32px;
-  gap: 8px;
-  align-items: end;
-  padding: 6px 14px 4px;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 4px 12px;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  text-align: right;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   background: var(--surface-muted);
   border-bottom: 1px solid var(--board-border);
 }
-.score-legend span:first-child { grid-column: 2; }
-.score-legend span:nth-child(odd) { color: var(--coral-deep); }
-.score-legend span:nth-child(even) { color: var(--green); }
-.score-legend span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.score-legend span[data-active="true"] {
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
+.score-legend span {
+  min-width: 0;
+  max-width: 42%;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.score-legend-repeat { display: none; }
+.score-legend span::before {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  content: "";
+  border: 1px solid currentColor;
+  border-radius: 4px;
+}
+.score-legend span:first-child { color: var(--coral-deep); }
+.score-legend span:first-child::before { background: var(--score-player-cell); }
+.score-legend span:nth-child(2) { color: var(--green); }
+.score-legend span:nth-child(2)::before { background: var(--score-opponent-cell); }
+.score-legend span[data-active="true"] {
+  color: var(--ink);
+  font-weight: 900;
+}
+.score-legend span[data-active="true"]::before { box-shadow: 0 0 0 2px rgb(37 41 43 / 11%); }
 .score-list { display: grid; gap: 1px; background: var(--board-border); }
 .score-list-item { position: relative; min-width: 0; }
 .score-row {
@@ -790,7 +805,7 @@ h3 { font-size: 18px; line-height: 1.2; }
 .die-button { min-width: 64px; min-height: 82px; }
 .die-placeholder { position: relative; display: grid; place-items: center; }
 .die-placeholder::before { width: 62px; height: 62px; content: ""; background: rgb(255 255 255 / 48%); border: 2px dashed var(--board-border); border-radius: 12px; }
-.die-button { position: relative; display: grid; place-items: start center; padding: 6px 2px 16px; color: var(--ink); background: transparent; border: 0; border-radius: var(--radius-sm); transition: background-color 150ms ease, transform 180ms ease; }
+.die-button { position: relative; display: grid; place-items: start center; padding: 4px 2px 14px; color: var(--ink); background: transparent; border: 0; border-radius: var(--radius-sm); transition: background-color 150ms ease, transform 180ms ease; }
 .die-button::after {
   position: absolute;
   bottom: 1px;
@@ -843,9 +858,13 @@ h3 { font-size: 18px; line-height: 1.2; }
   35% { opacity: 1; transform: translateY(-3px); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .waiting-status i,
   .multiplayer-game-header .match-player[data-active="true"] .turn-dot,
   .game-table[data-observer="true"]::before,
-  .opponent-activity i { animation: none; }
+  .opponent-activity i,
+  .reaction-picker,
+  .reaction-toast,
+  .score-help-popover { animation: none; }
   .opponent-activity i { opacity: 0.72; }
 }
 .bot-turn-panel { display: grid; gap: 12px; padding: 16px; background: var(--green-soft); }
@@ -883,17 +902,16 @@ h3 { font-size: 18px; line-height: 1.2; }
   .match-player { gap: 3px; }
   .match-player strong { font-size: 15px; }
   .multiplayer-game-header { gap: 4px; margin-bottom: 5px; }
-  .multiplayer-game-header .game-logo { font-size: 18px; }
-  .multiplayer-game-header .match-score { gap: 2px; }
-  .multiplayer-game-header .match-player { max-width: 84px; padding-inline: 4px; }
+  .multiplayer-game-header .game-logo { display: none; }
+  .multiplayer-game-header .match-score { flex: 1; justify-content: center; gap: 2px; margin-left: 0; }
+  .multiplayer-game-header .match-player { max-width: 100px; padding-inline: 5px; }
   .reaction-trigger,
-  .multiplayer-quit-link { width: 40px; min-width: 40px; }
+  .multiplayer-quit-link { width: 44px; min-width: 44px; }
   .quit-link { padding-inline: 8px; font-size: 12px; }
   .game-content { min-height: 0; display: grid; flex: 1; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; align-items: stretch; gap: 8px; overflow: hidden; }
   .score-card { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
   .score-list { min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(44px, auto); flex: 1; overflow-y: auto; overscroll-behavior: contain; }
-  .score-legend { min-height: 28px; grid-template-columns: minmax(0, 1fr) 26px 26px minmax(0, 1fr) 26px 26px; gap: 6px; padding: 4px 10px 2px; }
-  .score-legend-repeat { display: block; }
+  .score-legend { min-height: 28px; gap: 10px; padding: 3px 10px; }
   .score-row { min-height: 44px; gap: 6px; padding: 4px 10px; }
   .score-category { font-size: 15px; }
   .score-value { min-width: 26px; min-height: 28px; font-size: 16px; }
@@ -915,7 +933,7 @@ h3 { font-size: 18px; line-height: 1.2; }
   .decision-points { font-size: 20px; }
   .dice-tray { grid-template-columns: repeat(5, minmax(48px, 1fr)); gap: 5px; padding: 8px 4px; }
   .die-placeholder,
-  .die-button { min-width: 44px; min-height: 64px; }
+  .die-button { min-width: 44px; min-height: 70px; }
   .die-placeholder::before,
   .die-face { width: 48px; height: 48px; }
   .die-placeholder::before { border-radius: 10px; }
@@ -966,6 +984,7 @@ h3 { font-size: 18px; line-height: 1.2; }
   .game-content { min-height: 0; display: grid; flex: 1; grid-template-columns: minmax(0, 1fr) minmax(300px, 0.85fr); gap: 12px; overflow: hidden; }
   .score-card { min-height: 0; display: flex; flex-direction: column; }
   .score-list { min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; overflow-y: auto; }
+  .score-list::after { min-height: 44px; content: ""; background: var(--score-combo-surface); }
   .score-row { min-height: 44px; gap: 4px; padding: 5px 8px; }
   .score-category { font-size: 13px; }
   .score-value { min-width: 20px; font-size: 15px; }
@@ -984,7 +1003,7 @@ h3 { font-size: 18px; line-height: 1.2; }
   .decision-panel { padding: 12px; }
   .dice-tray { gap: 4px; }
   .die-placeholder,
-  .die-button { min-width: 44px; min-height: 52px; }
+  .die-button { min-width: 44px; min-height: 60px; }
   .die-placeholder::before,
   .die-face { width: 42px; height: 42px; }
   .die-face { padding: 5px; }

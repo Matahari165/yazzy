@@ -179,7 +179,7 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
             <label htmlFor="invite-link">Lien privé à partager</label>
             <input id="invite-link" type="text" readOnly value={inviteLink} onFocus={(event) => event.currentTarget.select()} />
           </div>
-          <p className="copy-status" role="status">{copyStatus || "Aucune inscription nécessaire"}</p>
+          {copyStatus ? <p className="copy-status" role="status">{copyStatus}</p> : null}
           {connectionError ? (
             <div className="multiplayer-state-actions" role="alert">
               <p>{connectionError}</p>
@@ -188,7 +188,6 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
           ) : (
             <p className="waiting-status" role="status"><i aria-hidden="true" /> En attente de ton ami…</p>
           )}
-          <p>Garde cet onglet ouvert pendant la partie.</p>
         </section>
       </main>
     );
