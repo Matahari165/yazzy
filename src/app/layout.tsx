@@ -6,6 +6,12 @@ import "./game-responsive.css";
 export const metadata: Metadata = {
   title: "Yazzy",
   description: "Le Yatzy qui explique chaque probabilité et chaque décision.",
+  applicationName: "Yazzy",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Yazzy",
+  },
 };
 
 export const viewport: Viewport = {
