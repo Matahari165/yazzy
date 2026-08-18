@@ -7,10 +7,28 @@ import { GameTable } from "@/components/GameTable";
 import { MultiplayerNameGate } from "@/components/MultiplayerNameGate";
 import { MultiplayerReactions } from "@/components/MultiplayerReactions";
 import { ScoreCard } from "@/components/ScoreCard";
-import { normalizePlayerName, PLAYER_NAME_STORAGE_KEY } from "@/domain/playerName";
-import type { CategoryId } from "@/domain/yatzy";
+import type { RoomActionEvent } from "@/domain/multiplayerRoomProtocol";
+import { CATEGORY_BY_ID, type CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
+import { readStoredPlayerName, writeStoredPlayerName } from "@/lib/playerNameStorage";
+
+function replayAnnouncement(event: RoomActionEvent, opponentName: string): string {
+  const playerState = event.game[event.role]?.state;
+  if (event.action.type === "ROLL") {
+    const dice = playerState?.dice.join(", ") ?? "";
+    const rollNumber = playerState?.rollNumber ?? 0;
+    return `${opponentName} a lancé les dés, lancer ${rollNumber} sur 3 : ${dice}.`;
+  }
+  if (event.action.type === "HOLD") {
+    const isHeld = playerState?.held[event.action.index];
+    return `${opponentName} ${isHeld ? "garde" : "relâche"} le dé ${event.action.index + 1}.`;
+  }
+  if (event.action.type === "SCORE") {
+    return `${opponentName} inscrit ${CATEGORY_BY_ID[event.action.category].label}.`;
+  }
+  return `${opponentName} propose une nouvelle partie.`;
+}
 
 export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: boolean }) {
   const [playerName, setPlayerName] = useState<string | null>(null);
@@ -31,6 +49,9 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
     opponentPlayer,
     latestReaction,
     sendReaction,
+    isReplayingOpponentRoll,
+    replayedOpponentEvent,
+    replayGapDetected,
   } = useMultiplayerGame(roomId, isHost, playerName);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [isRolling, setIsRolling] = useState(false);
@@ -40,7 +61,7 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      setPlayerName(normalizePlayerName(localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? ""));
+      setPlayerName(readStoredPlayerName());
     }, 0);
     return () => window.clearTimeout(timeout);
   }, []);
@@ -108,8 +129,7 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
   };
 
   const handlePlayerName = (name: string) => {
-    localStorage.setItem(PLAYER_NAME_STORAGE_KEY, name);
-    setPlayerName(name);
+    setPlayerName(writeStoredPlayerName(name));
   };
 
   if (playerName === null) {
@@ -211,11 +231,10 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
       <header className="game-header multiplayer-game-header">
         <Link className="game-logo" href="/">YAZZY</Link>
         <div className="match-score" aria-label={isMyTurn ? `À ${localName} de jouer` : `À ${opponentName} de jouer`}>
-          <span className="match-player" data-active={isMyTurn}>
+          <span className="match-player" data-active={isMyTurn} data-score-column="player">
             <i className="turn-dot" aria-hidden="true" /> {localName}
           </span>
-          <span className="score-separator" aria-hidden="true">·</span>
-          <span className="match-player" data-active={!isMyTurn} data-online={opponentOnline}>
+          <span className="match-player" data-active={!isMyTurn} data-score-column="opponent" data-online={opponentOnline}>
             <i className="turn-dot" aria-hidden="true" /> {opponentName}
           </span>
         </div>
@@ -231,6 +250,13 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
       </header>
 
       {connectionNotice ? <p className="connection-notice" role="status">{connectionNotice}</p> : null}
+      <p className="sr-only" role="status" aria-live="polite">
+        {replayGapDetected
+          ? "Certaines étapes n’ont pas pu être rejouées. La partie est maintenant synchronisée."
+          : replayedOpponentEvent
+            ? replayAnnouncement(replayedOpponentEvent, opponentName)
+            : ""}
+      </p>
 
       {status === "finished" ? (
         <FinishedGame
@@ -264,7 +290,7 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
             held={isMyTurn ? localState.held : opponentState.held}
             rollNumber={isMyTurn ? localState.rollNumber : opponentState.rollNumber}
             selectedCategory={isMyTurn ? selectedCategory : null}
-            isRolling={isMyTurn ? isRolling : false}
+            isRolling={isMyTurn ? isRolling : isReplayingOpponentRoll}
             isDisabled={!canAct}
             isObserver={!isMyTurn}
             label={isMyTurn ? `Les dés de ${localName}` : `Les dés de ${opponentName}`}

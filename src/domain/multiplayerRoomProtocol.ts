@@ -16,9 +16,23 @@ export type RoomReaction = {
   sentAt: number;
 };
 
+export type RoomActionEvent = {
+  actionId: string;
+  role: MultiplayerRole;
+  version: number;
+  action: ClientAction;
+  game: MultiplayerGameState;
+};
+
 export type RoomCommand =
   | { type: "CONNECT"; role: MultiplayerRole; token: string; playerName: string }
-  | { type: "SYNC"; role: MultiplayerRole; token: string; playerName: string }
+  | {
+      type: "SYNC";
+      role: MultiplayerRole;
+      token: string;
+      playerName: string;
+      afterVersion: number;
+    }
   | {
       type: "ACTION";
       role: MultiplayerRole;
@@ -49,6 +63,8 @@ export type RoomSuccess = {
   yourRole: MultiplayerRole;
   opponentOnline: boolean;
   version: number;
+  events: RoomActionEvent[];
+  eventsTruncated: boolean;
   latestReaction: RoomReaction | null;
 };
 
@@ -98,13 +114,41 @@ export function isPlayerToken(value: unknown): value is string {
   return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(value);
 }
 
+export function isRoomActionEvent(value: unknown): value is RoomActionEvent {
+  if (!value || typeof value !== "object") return false;
+  const event = value as Partial<RoomActionEvent>;
+  return Boolean(
+    isPlayerToken(event.actionId) &&
+      isRole(event.role) &&
+      Number.isInteger(event.version) &&
+      event.version! >= 0 &&
+      parseClientActionValue(event.action) &&
+      isMultiplayerGameState(event.game),
+  );
+}
+
 export function parseRoomCommand(value: unknown): RoomCommand | null {
   if (!value || typeof value !== "object") return null;
   const data = value as Record<string, unknown>;
   if (!isRole(data.role) || !isPlayerToken(data.token)) return null;
 
-  if ((data.type === "CONNECT" || data.type === "SYNC") && isPlayerName(data.playerName)) {
+  if (data.type === "CONNECT" && isPlayerName(data.playerName)) {
     return { type: data.type, role: data.role, token: data.token, playerName: data.playerName };
+  }
+
+  if (
+    data.type === "SYNC" &&
+    isPlayerName(data.playerName) &&
+    Number.isInteger(data.afterVersion) &&
+    (data.afterVersion as number) >= -1
+  ) {
+    return {
+      type: data.type,
+      role: data.role,
+      token: data.token,
+      playerName: data.playerName,
+      afterVersion: data.afterVersion as number,
+    };
   }
 
   if (data.type === "ACTION" && isPlayerToken(data.actionId)) {
@@ -141,15 +185,26 @@ export function isRoomResponse(value: unknown): value is RoomResponse {
     return isRoomErrorCode(response.code) && typeof response.message === "string";
   }
 
+  const successResponse = response as Partial<RoomSuccess>;
+  const events = successResponse.events;
+  const hasOrderedEvents = Array.isArray(events) && events.every(
+    (event, index) =>
+      isRoomActionEvent(event) &&
+      event.version <= successResponse.version! &&
+      (index === 0 || events[index - 1].version < event.version),
+  );
+
   return Boolean(
-    response.ok === true &&
-      "game" in response &&
-      isMultiplayerGameState(response.game) &&
-      isRole(response.yourRole) &&
-      typeof response.opponentOnline === "boolean" &&
-      Number.isInteger(response.version) &&
-      response.version! >= 0 &&
-      "latestReaction" in response &&
-      (response.latestReaction === null || isRoomReaction(response.latestReaction)),
+    successResponse.ok === true &&
+      "game" in successResponse &&
+      isMultiplayerGameState(successResponse.game) &&
+      isRole(successResponse.yourRole) &&
+      typeof successResponse.opponentOnline === "boolean" &&
+      Number.isInteger(successResponse.version) &&
+      successResponse.version! >= 0 &&
+      hasOrderedEvents &&
+      typeof successResponse.eventsTruncated === "boolean" &&
+      "latestReaction" in successResponse &&
+      (successResponse.latestReaction === null || isRoomReaction(successResponse.latestReaction)),
   );
 }

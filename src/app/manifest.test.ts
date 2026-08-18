@@ -10,4 +10,31 @@ describe("web app manifest", () => {
       display: "standalone",
     });
   });
+
+  it("uses the Yazzy palette and installable PNG icons", () => {
+    expect(manifest()).toMatchObject({
+      background_color: "#f7f1e8",
+      theme_color: "#ed896e",
+      icons: [
+        {
+          src: "/icons/yazzy-192.png",
+          sizes: "192x192",
+          type: "image/png",
+          purpose: "any",
+        },
+        {
+          src: "/icons/yazzy-512.png",
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "any",
+        },
+        {
+          src: "/icons/yazzy-maskable-512.png",
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "maskable",
+        },
+      ],
+    });
+  });
 });

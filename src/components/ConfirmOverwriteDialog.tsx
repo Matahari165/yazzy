@@ -40,7 +40,7 @@ export function ConfirmOverwriteDialog({ open, onCancel, onConfirm }: ConfirmOve
       <div className="confirm-dialog-card">
         <p className="eyebrow">NOUVELLE PARTIE</p>
         <h2 id="overwrite-title">Remplacer la partie actuelle ?</h2>
-        <p id="overwrite-description">La partie enregistrée sera remplacée par cette nouvelle partie. L’ancienne sauvegarde v1 n’est jamais supprimée.</p>
+        <p id="overwrite-description">La partie en cours sera remplacée par cette nouvelle partie.</p>
         <div className="confirm-dialog-actions">
           <button className="secondary-action" type="button" onClick={onCancel}>Garder la partie</button>
           <button className="primary-action" type="button" ref={confirmRef} onClick={onConfirm}>Commencer</button>

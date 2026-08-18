@@ -13,9 +13,12 @@ import { CATEGORY_IDS } from "@/domain/yatzy";
 import {
   normalizePlayerName,
   PLAYER_NAME_MAX_LENGTH,
-  PLAYER_NAME_STORAGE_KEY,
 } from "@/domain/playerName";
 import { readStoredGame } from "@/lib/gameStorage";
+import {
+  readStoredPlayerName,
+  writeStoredPlayerName,
+} from "@/lib/playerNameStorage";
 
 export function HomeScreen() {
   const router = useRouter();
@@ -29,7 +32,7 @@ export function HomeScreen() {
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setSavedGame(readStoredGame());
-      setPlayerName(normalizePlayerName(localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? ""));
+      setPlayerName(readStoredPlayerName());
       setHasLoaded(true);
     }, 0);
     return () => window.clearTimeout(timeout);
@@ -43,7 +46,7 @@ export function HomeScreen() {
       setPlayerNameError("Choisis un pseudo pour la partie.");
       return null;
     }
-    localStorage.setItem(PLAYER_NAME_STORAGE_KEY, normalizedName);
+    writeStoredPlayerName(normalizedName);
     setPlayerName(normalizedName);
     setPlayerNameError("");
     return normalizedName;
@@ -101,7 +104,7 @@ export function HomeScreen() {
               onBlur={() => {
                 const normalizedName = normalizePlayerName(playerName);
                 setPlayerName(normalizedName);
-                if (normalizedName) localStorage.setItem(PLAYER_NAME_STORAGE_KEY, normalizedName);
+                if (normalizedName) writeStoredPlayerName(normalizedName);
               }}
               placeholder="Ex. Alex"
               autoComplete="nickname"
@@ -151,10 +154,6 @@ export function HomeScreen() {
             ) : null}
           </form>
         </div>
-
-        <p className="lobby-footnote">
-          Aucune inscription nécessaire. Les parties en ligne sont privées et temporaires.
-        </p>
       </section>
     </main>
   );

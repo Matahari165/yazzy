@@ -6,6 +6,13 @@
 
 Yazzy est un jeu de plateau moderne, léger et accueillant. Le score reste le centre du jeu ; les probabilités apparaissent seulement quand le joueur sélectionne une case. Chaque écran propose une action principale identifiable.
 
+## Marque
+
+- symbole : une tuile corail légèrement inclinée, avec trois points anthracite disposés en diagonale comme une face de dé ;
+- icône installable : le même symbole centré sur le fond crème, sans texte ;
+- traitement strictement plat, sans dégradé, ombre, biseau ni détail réaliste ;
+- le vert reste réservé aux dés gardés et aux confirmations, jamais à la décoration du logo.
+
 ## Palette
 
 | Rôle | Couleur | Variable |

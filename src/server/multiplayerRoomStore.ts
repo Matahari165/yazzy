@@ -3,10 +3,12 @@ import { isMultiplayerGameState } from "@/domain/multiplayer";
 import type { MultiplayerRole } from "@/domain/multiplayer";
 import {
   isPlayerToken,
+  isRoomActionEvent,
   isRoomReaction,
   type RoomReaction,
 } from "@/domain/multiplayerRoomProtocol";
 import {
+  MAX_ROOM_ACTION_EVENTS,
   PRESENCE_TTL_SECONDS,
   REACTION_TTL_SECONDS,
   ROOM_TTL_SECONDS,
@@ -48,29 +50,58 @@ function reactionKey(roomId: string): string {
   return `reaction:${roomId}`;
 }
 
-function isStoredRoom(value: unknown): value is StoredRoom {
-  if (!value || typeof value !== "object") return false;
+function normalizeStoredRoom(value: unknown): StoredRoom | null {
+  if (!value || typeof value !== "object") return null;
   const room = value as Partial<StoredRoom>;
-  return Boolean(
-    isMultiplayerGameState(room.game) &&
-      isPlayerToken(room.hostToken) &&
-      (room.guestToken === null || isPlayerToken(room.guestToken)) &&
-      Number.isInteger(room.version) &&
-      room.version! >= 0 &&
-      room.lastActionIds &&
-      typeof room.lastActionIds === "object" &&
-      Object.entries(room.lastActionIds).every(
-        ([role, actionId]) =>
-          (role === "player1" || role === "player2") && isPlayerToken(actionId),
-      ),
-  );
+  const actionEvents = room.actionEvents ?? [];
+  const actionEventFloorVersion = room.actionEventFloorVersion ?? -1;
+  if (
+    !isMultiplayerGameState(room.game) ||
+    !isPlayerToken(room.hostToken) ||
+    (room.guestToken !== null && !isPlayerToken(room.guestToken)) ||
+    !Number.isInteger(room.version) ||
+    room.version! < 0 ||
+    !room.lastActionIds ||
+    typeof room.lastActionIds !== "object" ||
+    !Object.entries(room.lastActionIds).every(
+      ([role, actionId]) =>
+        (role === "player1" || role === "player2") && isPlayerToken(actionId),
+    ) ||
+    !Array.isArray(actionEvents) ||
+    !Number.isInteger(actionEventFloorVersion) ||
+    actionEventFloorVersion < -1 ||
+    actionEventFloorVersion > room.version! ||
+    actionEvents.length > MAX_ROOM_ACTION_EVENTS ||
+    !actionEvents.every(
+      (event, index) =>
+        isRoomActionEvent(event) &&
+        event.version <= room.version! &&
+        event.game.roomId === room.game!.roomId &&
+        (index === 0 || actionEvents[index - 1].version < event.version),
+    ) ||
+    (actionEvents.length > 0 && actionEventFloorVersion >= actionEvents[0].version)
+  ) {
+    return null;
+  }
+
+  return {
+    game: room.game,
+    hostToken: room.hostToken,
+    guestToken: room.guestToken,
+    version: room.version!,
+    lastActionIds: room.lastActionIds,
+    actionEvents,
+    actionEventFloorVersion,
+  };
 }
 
 export const multiplayerRoomStore: MultiplayerRoomStore = {
   async getRoom(roomId) {
-    if (!isVercelRuntime()) return localState.rooms.get(roomId) ?? null;
-    const value = await cache.get(roomKey(roomId));
-    return isStoredRoom(value) && value.game.roomId === roomId ? value : null;
+    const value = isVercelRuntime()
+      ? await cache.get(roomKey(roomId))
+      : localState.rooms.get(roomId);
+    const room = normalizeStoredRoom(value);
+    return room?.game.roomId === roomId ? room : null;
   },
 
   async setRoom(roomId, room) {

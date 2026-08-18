@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { CATEGORIES, scoreDice, type CategoryDefinition, type CategoryId, type Dice, totalScore } from "@/domain/yatzy";
+import { CATEGORIES, scoreDice, type CategoryId, type Dice, totalScore } from "@/domain/yatzy";
 import { ScoreHelpPopover } from "./ScoreHelpPopover";
 
 const VISUAL_HINTS: Partial<Record<CategoryId, string>> = {
@@ -31,23 +31,6 @@ type ScoreCardProps = {
   onScore?: () => void;
 };
 
-function formatPoints(score: number) {
-  return `${score} point${score > 1 ? "s" : ""}`;
-}
-
-function getScoreText(
-  category: CategoryDefinition,
-  registeredScore: number | undefined,
-  scoreWithDice: number | null,
-) {
-  if (registeredScore !== undefined) {
-    return `${formatPoints(registeredScore)} inscrit${registeredScore > 1 ? "s" : ""}`;
-  }
-  if (scoreWithDice !== null) return `${formatPoints(scoreWithDice)} avec ces dés`;
-  if (category.fixedScore !== undefined) return `${formatPoints(category.fixedScore)} si réussie`;
-  return `Jusqu’à ${formatPoints(category.maximumScore)}`;
-}
-
 export function ScoreCard({
   label,
   playerLabel = "Toi",
@@ -71,10 +54,6 @@ export function ScoreCard({
 
   return (
     <section className="score-card" aria-label={label}>
-      <div className="score-legend" aria-hidden="true">
-        <span data-active={activeColumn === "player"}>{playerLabel}</span>
-        <span data-active={activeColumn === "opponent"}>{opponentLabel}</span>
-      </div>
       <div className="score-list" role="list" aria-label={label}>
         {CATEGORIES.map((category, index) => {
           const score = humanScores[category.id];
@@ -91,7 +70,6 @@ export function ScoreCard({
           const currentOpponentScore = botScore ?? opponentScoreWithDice;
           const stateLabel = filled ? "case inscrite" : isSelected ? "case sélectionnée" : "case libre";
           const isExplained = explainedCategory === category.id;
-          const scoreText = getScoreText(category, score, scoreWithDice);
 
           const handleClick = () => {
             if (!filled && !isReadOnly && canSelect) onSelect?.(category.id);
@@ -104,6 +82,7 @@ export function ScoreCard({
                 id={`score-row-${category.id}`}
                 className="score-row"
                 data-actionable={!filled && !isReadOnly && canSelect}
+                data-filled={filled}
                 data-selected={isSelected}
                 type="button"
                 aria-pressed={isSelected}
@@ -137,9 +116,7 @@ export function ScoreCard({
                   anchorId={`score-row-${category.id}`}
                   category={category}
                   placement={index >= CATEGORIES.length - 5 ? "above" : "below"}
-                  scoreText={scoreText}
                   scoreAction={(!filled && !isReadOnly && canSelect && onScore) ? () => { closeExplanation(); onScore(); } : undefined}
-                  scorePoints={currentScore}
                   onClose={closeExplanation}
                 />
               ) : null}

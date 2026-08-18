@@ -9,13 +9,26 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#fff8f4",
-    theme_color: "#f49a7a",
+    background_color: "#f7f1e8",
+    theme_color: "#ed896e",
     icons: [
       {
-        src: "/icon.jpg",
-        sizes: "1024x1024",
-        type: "image/jpeg",
+        src: "/icons/yazzy-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/yazzy-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/yazzy-maskable-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
       },
     ],
   };

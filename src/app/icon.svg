@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Yazzy">
+  <rect width="512" height="512" fill="#F7F1E8" />
+  <g transform="rotate(-4 256 256)">
+    <rect x="126" y="126" width="260" height="260" rx="76" fill="#ED896E" />
+    <circle cx="196" cy="196" r="24" fill="#25292B" />
+    <circle cx="256" cy="256" r="24" fill="#25292B" />
+    <circle cx="316" cy="316" r="24" fill="#25292B" />
+  </g>
+</svg>

@@ -5,6 +5,7 @@ import type { MultiplayerGameState, MultiplayerRole } from "../domain/multiplaye
 import {
   isRoomResponse,
   type ReactionEmoji,
+  type RoomActionEvent,
   type RoomCommand,
   type RoomFailure,
   type RoomReaction,
@@ -14,9 +15,35 @@ import type { ClientAction } from "../domain/protocol";
 import type { CategoryId } from "../domain/yatzy";
 
 const PLAYER_TOKEN_PREFIX = "yazzy.multiplayer.token.v2.";
-const POLL_INTERVAL_MS = 1_200;
+const POLL_INTERVAL_MS = 800;
 const REQUEST_TIMEOUT_MS = 8_000;
 const MAX_SILENT_FAILURES = 3;
+const REPLAY_ROLL_DELAY_MS = 420;
+const REPLAY_STEP_DELAY_MS = 260;
+
+type RoomResponseSource = "connect" | "sync" | "action" | "reaction";
+
+export function replayCursorAfterResponse(
+  currentCursor: number,
+  responseVersion: number,
+  source: RoomResponseSource,
+): number {
+  return source === "connect" || source === "sync"
+    ? Math.max(currentCursor, responseVersion)
+    : currentCursor;
+}
+
+export function shouldDisplayResponseImmediately(
+  eventCursor: number,
+  responseVersion: number,
+  source: RoomResponseSource,
+): boolean {
+  return source !== "reaction" || responseVersion <= eventCursor;
+}
+
+function replayDelay(event: RoomActionEvent): number {
+  return event.action.type === "ROLL" ? REPLAY_ROLL_DELAY_MS : REPLAY_STEP_DELAY_MS;
+}
 
 function playerToken(roomId: string, role: MultiplayerRole): string {
   const key = `${PLAYER_TOKEN_PREFIX}${roomId}.${role}`;
@@ -80,24 +107,96 @@ export function useMultiplayerGame(roomId: string, isHost: boolean, playerName: 
   const [roomFull, setRoomFull] = useState(false);
   const [latestReaction, setLatestReaction] = useState<RoomReaction | null>(null);
   const [connectionAttempt, setConnectionAttempt] = useState(0);
+  const [replayedOpponentEvent, setReplayedOpponentEvent] = useState<RoomActionEvent | null>(null);
+  const [replayGapDetected, setReplayGapDetected] = useState(false);
 
   const tokenRef = useRef<string | null>(null);
   const roleRef = useRef<MultiplayerRole | null>(null);
-  const versionRef = useRef(-1);
+  const canonicalVersionRef = useRef(-1);
+  const eventCursorRef = useRef(-1);
+  const canonicalGameRef = useRef<MultiplayerGameState | null>(null);
+  const replayQueueRef = useRef<RoomActionEvent[]>([]);
+  const replayTimerRef = useRef<number | null>(null);
+  const replayGenerationRef = useRef(0);
   const actionPendingRef = useRef(false);
 
-  const applySuccess = useCallback((response: RoomSuccess) => {
-    if (response.version >= versionRef.current) {
-      versionRef.current = response.version;
-      setGame(response.game);
+  const drainReplay = useCallback(function drainNextReplay() {
+    if (replayTimerRef.current !== null) return;
+    const nextEvent = replayQueueRef.current.shift();
+    if (!nextEvent) {
+      setReplayedOpponentEvent(null);
+      setGame(canonicalGameRef.current);
+      return;
     }
+
+    const generation = replayGenerationRef.current;
+    setReplayedOpponentEvent(nextEvent);
+    setGame(nextEvent.game);
+    replayTimerRef.current = window.setTimeout(() => {
+      replayTimerRef.current = null;
+      if (generation === replayGenerationRef.current) drainNextReplay();
+    }, replayDelay(nextEvent));
+  }, []);
+
+  const resetReplay = useCallback(() => {
+    replayGenerationRef.current += 1;
+    if (replayTimerRef.current !== null) {
+      window.clearTimeout(replayTimerRef.current);
+      replayTimerRef.current = null;
+    }
+    replayQueueRef.current = [];
+    setReplayedOpponentEvent(null);
+    setReplayGapDetected(false);
+    canonicalGameRef.current = null;
+    canonicalVersionRef.current = -1;
+    eventCursorRef.current = -1;
+  }, []);
+
+  const applySuccess = useCallback((response: RoomSuccess, source: RoomResponseSource) => {
+    if (response.version >= canonicalVersionRef.current) {
+      canonicalGameRef.current = response.game;
+      canonicalVersionRef.current = response.version;
+    }
+
+    if (source === "sync" && response.eventsTruncated) {
+      replayGenerationRef.current += 1;
+      if (replayTimerRef.current !== null) window.clearTimeout(replayTimerRef.current);
+      replayTimerRef.current = null;
+      replayQueueRef.current = [];
+      setReplayedOpponentEvent(null);
+      setReplayGapDetected(true);
+      setGame(response.game);
+    } else if (source === "sync") {
+      setReplayGapDetected(false);
+      const unseenEvents = response.events.filter((event) => event.version > eventCursorRef.current);
+      replayQueueRef.current.push(
+        ...unseenEvents.filter((event) => event.role !== response.yourRole),
+      );
+      if (replayTimerRef.current === null && replayQueueRef.current.length === 0) {
+        setGame(canonicalGameRef.current);
+      } else {
+        drainReplay();
+      }
+    } else if (
+      replayTimerRef.current === null &&
+      replayQueueRef.current.length === 0 &&
+      shouldDisplayResponseImmediately(eventCursorRef.current, response.version, source)
+    ) {
+      setGame(canonicalGameRef.current);
+    }
+
+    eventCursorRef.current = replayCursorAfterResponse(
+      eventCursorRef.current,
+      response.version,
+      source,
+    );
     setLocalRole(response.yourRole);
     setOpponentOnline(response.opponentOnline);
     setLatestReaction(response.latestReaction);
     setIsConnected(true);
     setConnectionError(null);
     setRoomFull(false);
-  }, []);
+  }, [drainReplay]);
 
   useEffect(() => {
     if (!playerName) return;
@@ -109,7 +208,7 @@ export function useMultiplayerGame(roomId: string, isHost: boolean, playerName: 
     const token = playerToken(roomId, role);
     roleRef.current = role;
     tokenRef.current = token;
-    versionRef.current = -1;
+    resetReplay();
 
     const schedulePoll = () => {
       if (!cancelled) pollTimer = window.setTimeout(poll, POLL_INTERVAL_MS);
@@ -117,11 +216,17 @@ export function useMultiplayerGame(roomId: string, isHost: boolean, playerName: 
 
     const poll = async () => {
       try {
-        const response = await sendRoomCommand(roomId, { type: "SYNC", role, token, playerName });
+        const response = await sendRoomCommand(roomId, {
+          type: "SYNC",
+          role,
+          token,
+          playerName,
+          afterVersion: eventCursorRef.current,
+        });
         if (cancelled) return;
         if (response.ok) {
           consecutiveFailures = 0;
-          applySuccess(response);
+          applySuccess(response, "sync");
         } else {
           consecutiveFailures += 1;
           if (consecutiveFailures >= MAX_SILENT_FAILURES) {
@@ -146,7 +251,7 @@ export function useMultiplayerGame(roomId: string, isHost: boolean, playerName: 
         const response = await sendRoomCommand(roomId, { type: "CONNECT", role, token, playerName });
         if (cancelled) return;
         if (response.ok) {
-          applySuccess(response);
+          applySuccess(response, "connect");
           schedulePoll();
           return;
         }
@@ -178,8 +283,9 @@ export function useMultiplayerGame(roomId: string, isHost: boolean, playerName: 
       cancelled = true;
       window.clearTimeout(startTimer);
       if (pollTimer !== null) window.clearTimeout(pollTimer);
+      resetReplay();
     };
-  }, [applySuccess, connectionAttempt, isHost, playerName, roomId]);
+  }, [applySuccess, connectionAttempt, isHost, playerName, resetReplay, roomId]);
 
   const dispatch = useCallback(async (action: ClientAction) => {
     const role = roleRef.current;
@@ -196,7 +302,7 @@ export function useMultiplayerGame(roomId: string, isHost: boolean, playerName: 
         action,
       });
       if (response.ok) {
-        applySuccess(response);
+        applySuccess(response, "action");
       } else if (response.code === "OPPONENT_OFFLINE") {
         setOpponentOnline(false);
       } else if (response.code === "ROOM_FULL") {
@@ -234,7 +340,7 @@ export function useMultiplayerGame(roomId: string, isHost: boolean, playerName: 
         emoji,
       });
       if (response.ok) {
-        applySuccess(response);
+        applySuccess(response, "reaction");
       } else if (response.code === "OPPONENT_OFFLINE") {
         setOpponentOnline(false);
       } else {
@@ -279,5 +385,8 @@ export function useMultiplayerGame(roomId: string, isHost: boolean, playerName: 
     localPlayer,
     opponentPlayer,
     latestReaction,
+    isReplayingOpponentRoll: replayedOpponentEvent?.action.type === "ROLL",
+    replayedOpponentEvent,
+    replayGapDetected,
   };
 }

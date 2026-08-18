@@ -6,6 +6,7 @@ import {
 } from "../domain/multiplayerHost";
 import type {
   RoomCommand,
+  RoomActionEvent,
   RoomErrorCode,
   RoomFailure,
   RoomReaction,
@@ -16,6 +17,7 @@ import type { DieValue } from "../domain/yatzy";
 export const ROOM_TTL_SECONDS = 6 * 60 * 60;
 export const PRESENCE_TTL_SECONDS = 20;
 export const REACTION_TTL_SECONDS = 10;
+export const MAX_ROOM_ACTION_EVENTS = 64;
 const ONLINE_WINDOW_MS = 8_000;
 const REACTION_WINDOW_MS = 5_000;
 
@@ -25,6 +27,8 @@ export type StoredRoom = {
   guestToken: string | null;
   version: number;
   lastActionIds: Partial<Record<MultiplayerRole, string>>;
+  actionEvents: RoomActionEvent[];
+  actionEventFloorVersion: number;
 };
 
 export type MultiplayerRoomStore = {
@@ -69,6 +73,8 @@ async function success(
   room: StoredRoom,
   role: MultiplayerRole,
   now: number,
+  events: RoomActionEvent[] = [],
+  eventsTruncated = false,
 ): Promise<RoomServiceResult> {
   await store.setPresence(roomId, role, now);
   const latestReaction = await store.getReaction(roomId);
@@ -80,6 +86,8 @@ async function success(
       yourRole: role,
       opponentOnline: await presenceStatus(store, roomId, role, now),
       version: room.version,
+      events,
+      eventsTruncated,
       latestReaction: latestReaction && now - latestReaction.sentAt <= REACTION_WINDOW_MS
         ? latestReaction
         : null,
@@ -120,6 +128,8 @@ export async function handleRoomCommand({
         guestToken: null,
         version: 0,
         lastActionIds: {},
+        actionEvents: [],
+        actionEventFloorVersion: -1,
       };
       await store.setRoom(roomId, room);
     } else if (room.hostToken !== command.token) {
@@ -196,18 +206,40 @@ export async function handleRoomCommand({
 
     if (room.lastActionIds[command.role] !== command.actionId) {
       const nextGame = applyPlayerAction(room.game, command.role, command.action, rollDie);
+      const nextVersion = nextGame === room.game ? room.version : room.version + 1;
+      const nextEvent: RoomActionEvent | null = nextGame === room.game
+        ? null
+        : {
+            actionId: command.actionId,
+            role: command.role,
+            version: nextVersion,
+            action: structuredClone(command.action),
+            game: structuredClone(nextGame),
+          };
+      const appendedEvents = nextEvent ? [...room.actionEvents, nextEvent] : room.actionEvents;
+      const overflow = Math.max(0, appendedEvents.length - MAX_ROOM_ACTION_EVENTS);
+      const droppedThroughVersion = overflow > 0
+        ? appendedEvents[overflow - 1].version
+        : room.actionEventFloorVersion;
       room = {
         ...room,
         game: nextGame,
-        version: nextGame === room.game ? room.version : room.version + 1,
+        version: nextVersion,
         lastActionIds: {
           ...room.lastActionIds,
           [command.role]: command.actionId,
         },
+        actionEvents: appendedEvents.slice(-MAX_ROOM_ACTION_EVENTS),
+        actionEventFloorVersion: Math.max(room.actionEventFloorVersion, droppedThroughVersion),
       };
       await store.setRoom(roomId, room);
     }
   }
 
-  return success(store, roomId, room, command.role, now);
+  const missedEvents = command.type === "SYNC"
+    ? room.actionEvents.filter((event) => event.version > command.afterVersion)
+    : [];
+  const eventsTruncated = command.type === "SYNC"
+    && command.afterVersion < room.actionEventFloorVersion;
+  return success(store, roomId, room, command.role, now, missedEvents, eventsTruncated);
 }

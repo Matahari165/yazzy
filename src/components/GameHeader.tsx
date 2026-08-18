@@ -21,12 +21,11 @@ export function GameHeader({ game }: { game: GameState }) {
         role="group"
         aria-label={`Score : toi ${humanTotal}, bot ${botTotal}. ${isHumanTurn ? "À toi de jouer." : "Le bot joue."}`}
       >
-        <span className="match-player" data-active={isHumanTurn} aria-hidden="true">
+        <span className="match-player" data-active={isHumanTurn} data-score-column="player" aria-hidden="true">
           <i className="turn-dot" aria-hidden="true" />
           Toi <strong>{humanTotal}</strong>
         </span>
-        <span className="score-separator" aria-hidden="true">·</span>
-        <span className="match-player" data-active={!isHumanTurn} aria-hidden="true">
+        <span className="match-player" data-active={!isHumanTurn} data-score-column="opponent" aria-hidden="true">
           <i className="turn-dot" aria-hidden="true" />
           Bot <strong>{botTotal}</strong>
         </span>

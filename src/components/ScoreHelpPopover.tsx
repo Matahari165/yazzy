@@ -8,9 +8,7 @@ type ScoreHelpPopoverProps = {
   anchorId: string;
   category: CategoryDefinition;
   placement: "above" | "below";
-  scoreText: string;
   scoreAction?: () => void;
-  scorePoints?: number | null;
   onClose: () => void;
 };
 
@@ -24,9 +22,7 @@ export function ScoreHelpPopover({
   anchorId,
   category,
   placement,
-  scoreText,
   scoreAction,
-  scorePoints,
   onClose,
 }: ScoreHelpPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -92,6 +88,12 @@ export function ScoreHelpPopover({
         </button>
       </header>
 
+      {scoreAction ? (
+        <button className="primary-action score-help-action" type="button" onClick={scoreAction}>
+          Sélectionner cette option
+        </button>
+      ) : null}
+
       <dl className="score-help-details">
         <div>
           <dt>Réalisation</dt>
@@ -113,22 +115,7 @@ export function ScoreHelpPopover({
             </div>
           </div>
         </div>
-        <div className="score-help-result">
-          <dt>Score actuel</dt>
-          <dd>{scoreText}</dd>
-        </div>
       </dl>
-      {scoreAction && scorePoints !== null && scorePoints !== undefined && (
-        <div style={{ marginTop: 8, padding: '0 12px 12px' }}>
-           <button 
-             onClick={scoreAction} 
-             className="primary-action" 
-             style={{ width: '100%', minHeight: 44, fontSize: 16 }}
-           >
-             Inscrire {scorePoints} point{scorePoints > 1 ? "s" : ""}
-           </button>
-        </div>
-      )}
     </div>
   );
 }

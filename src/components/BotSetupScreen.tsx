@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BOT_LEVELS, getBotPolicy, type BotLevel } from "@/domain/bots";
-import { createGame } from "@/domain/game";
+import { createGame, isFinished } from "@/domain/game";
 import { readStoredGame, writeStoredGame } from "@/lib/gameStorage";
 import { ConfirmOverwriteDialog } from "./ConfirmOverwriteDialog";
 
@@ -20,7 +20,7 @@ export function BotSetupScreen() {
 
   const requestStart = () => {
     const stored = readStoredGame();
-    if (stored) {
+    if (stored && !isFinished(stored)) {
       setIsConfirmOpen(true);
       return;
     }
