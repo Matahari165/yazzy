@@ -35,9 +35,9 @@ function ModeDiceIcon({ pair = false }: { pair?: boolean }) {
         </g>
       ) : null}
       <g className="mode-die-front">
-        <rect x={pair ? "7" : "17"} y={pair ? "15" : "9"} width="32" height="32" rx="9" />
-        <circle cx={pair ? "17" : "27"} cy={pair ? "25" : "19"} r="2.7" />
-        <circle cx={pair ? "29" : "39"} cy={pair ? "37" : "31"} r="2.7" />
+        <rect x="7" y={pair ? "15" : "9"} width="32" height="32" rx="9" />
+        <circle cx="17" cy={pair ? "25" : "19"} r="2.7" />
+        <circle cx="29" cy={pair ? "37" : "31"} r="2.7" />
       </g>
     </svg>
   );
@@ -84,12 +84,10 @@ export function HomeScreen() {
     router.push(`/play/${generateRoomCode()}?host=1`);
   };
 
-  const joinMultiplayer = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const normalizedCode = normalizeRoomCode(roomCode);
-
+  const joinRoom = (code: string, invalidMessage = "Saisis les 6 caractères du code envoyé par ton ami.") => {
+    const normalizedCode = normalizeRoomCode(code);
     if (!isRoomCode(normalizedCode)) {
-      setRoomCodeError("Saisis les 6 caractères du code envoyé par ton ami.");
+      setRoomCodeError(invalidMessage);
       return;
     }
 
@@ -99,20 +97,28 @@ export function HomeScreen() {
     router.push(`/play/${normalizedCode}`);
   };
 
+  const joinMultiplayer = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    joinRoom(roomCode);
+  };
+
+  const joinPastedRoomCode = (pastedValue: string) => {
+    const normalizedCode = normalizeRoomCode(pastedValue);
+    setRoomCode(normalizedCode);
+    joinRoom(normalizedCode, "Le code collé n’est pas un code de partie valide.");
+  };
+
+  const pasteRoomCodeFromField = (event: React.ClipboardEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    setRoomCodeError("");
+    joinPastedRoomCode(event.clipboardData.getData("text"));
+  };
+
   const pasteRoomCode = async () => {
     setRoomCodeError("");
     try {
       if (!navigator.clipboard?.readText) throw new Error("Clipboard unavailable");
-      const normalizedCode = normalizeRoomCode(await navigator.clipboard.readText());
-      setRoomCode(normalizedCode);
-
-      if (!isRoomCode(normalizedCode)) {
-        setRoomCodeError("Le presse-papiers ne contient pas un code de partie valide.");
-        return;
-      }
-
-      if (!savePlayerName()) return;
-      router.push(`/play/${normalizedCode}`);
+      joinPastedRoomCode(await navigator.clipboard.readText());
     } catch {
       setRoomCodeError("Impossible de lire le presse-papiers. Colle le code dans le champ.");
     }
@@ -219,6 +225,7 @@ export function HomeScreen() {
                         setRoomCode(normalizeRoomCode(event.currentTarget.value));
                         setRoomCodeError("");
                       }}
+                      onPaste={pasteRoomCodeFromField}
                       placeholder="ABC123"
                       autoComplete="off"
                       autoCapitalize="characters"
@@ -232,9 +239,6 @@ export function HomeScreen() {
                       Coller
                     </button>
                   </div>
-                  <button className="secondary-action join-room-action" type="submit">
-                    Rejoindre
-                  </button>
                 </div>
                 {roomCodeError ? (
                   <p id="room-code-error" className="form-error" role="alert">{roomCodeError}</p>

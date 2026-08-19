@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { CategoryId } from "@/domain/yatzy";
+import { CATEGORIES, type CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useYazzyGame } from "@/hooks/useYazzyGame";
 import { FinishedGame } from "./FinishedGame";
@@ -12,8 +12,11 @@ import { ScoreCard } from "./ScoreCard";
 export function GameBoard() {
   const { game, roll, toggleHeld, score, skipBotAnimation, isFinished, hasLoaded } = useYazzyGame();
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
+  const [highlightedPlayerCategory, setHighlightedPlayerCategory] = useState<CategoryId | null>(null);
+  const [highlightedOpponentCategory, setHighlightedOpponentCategory] = useState<CategoryId | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const rollTimerRef = useRef<number | null>(null);
+  const previousBotScoresRef = useRef(game.bot.scores);
 
   useEffect(() => () => {
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
@@ -24,6 +27,13 @@ export function GameBoard() {
     const frame = window.requestAnimationFrame(() => document.getElementById("finished-title")?.focus({ preventScroll: true }));
     return () => window.cancelAnimationFrame(frame);
   }, [isFinished]);
+
+  useEffect(() => {
+    const previousScores = previousBotScoresRef.current;
+    const newlyFilledCategory = CATEGORIES.find(({ id }) => previousScores[id] === undefined && game.bot.scores[id] !== undefined)?.id;
+    previousBotScoresRef.current = game.bot.scores;
+    if (newlyFilledCategory) setHighlightedOpponentCategory(newlyFilledCategory);
+  }, [game.bot.scores]);
 
   const handleRoll = () => {
     if (game.activePlayer !== "human" || isRolling || game.human.rollNumber >= 3) return;
@@ -38,9 +48,10 @@ export function GameBoard() {
     }, duration);
   };
 
-  const handleScore = () => {
-    if (!selectedCategory || game.activePlayer !== "human" || isRolling) return;
-    score(selectedCategory);
+  const handleScore = (category = selectedCategory) => {
+    if (!category || game.activePlayer !== "human" || isRolling) return;
+    setHighlightedPlayerCategory(category);
+    score(category);
     setSelectedCategory(null);
   };
 
@@ -73,6 +84,8 @@ export function GameBoard() {
             canSelect={game.activePlayer === "human" && game.human.rollNumber > 0 && !isRolling}
             isReadOnly={game.activePlayer === "bot"}
             activeColumn={game.activePlayer === "human" ? "player" : "opponent"}
+            highlightedPlayerCategory={highlightedPlayerCategory}
+            highlightedOpponentCategory={highlightedOpponentCategory}
             onSelect={setSelectedCategory}
             onScore={handleScore}
           />

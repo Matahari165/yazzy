@@ -27,9 +27,10 @@ type ScoreCardProps = {
   canSelect: boolean;
   isReadOnly?: boolean;
   activeColumn?: "player" | "opponent";
+  highlightedPlayerCategory?: CategoryId | null;
   highlightedOpponentCategory?: CategoryId | null;
   onSelect?: (category: CategoryId | null) => void;
-  onScore?: () => void;
+  onScore?: (category: CategoryId) => void;
 };
 
 export function ScoreCard({
@@ -44,6 +45,7 @@ export function ScoreCard({
   canSelect,
   isReadOnly = false,
   activeColumn,
+  highlightedPlayerCategory = null,
   highlightedOpponentCategory = null,
   onSelect,
   onScore,
@@ -72,39 +74,63 @@ export function ScoreCard({
           const currentOpponentScore = botScore ?? opponentScoreWithDice;
           const stateLabel = filled ? "case inscrite" : isSelected ? "case sélectionnée" : "case libre";
           const isExplained = explainedCategory === category.id;
+          const canScoreDirectly = !filled && !isReadOnly && canSelect && currentScore !== null && Boolean(onScore);
 
-          const handleClick = () => {
+          const handleDetailsClick = () => {
             if (!filled && !isReadOnly && canSelect) onSelect?.(category.id);
             setExplainedCategory(category.id);
           };
 
+          const handleDirectScore = () => {
+            setExplainedCategory(null);
+            onSelect?.(null);
+            onScore?.(category.id);
+          };
+
           return (
             <div className="score-list-item" key={category.id} role="listitem">
-              <button
-                id={`score-row-${category.id}`}
+              <div
                 className="score-row"
                 data-actionable={!filled && !isReadOnly && canSelect}
                 data-filled={filled}
                 data-selected={isSelected}
-                type="button"
-                aria-pressed={isSelected}
-                aria-haspopup="dialog"
-                aria-expanded={isExplained}
-                aria-controls={isExplained ? `score-help-${category.id}` : undefined}
-                aria-label={`${category.label}, ${playerLabel.toLowerCase()} : ${filled ? `${score} points inscrits` : currentScore === null ? "aucun score affiché" : `${currentScore} points possibles`}, ${opponentLabel.toLowerCase()} : ${botScore !== undefined ? `${botScore} points inscrits` : opponentScoreWithDice !== null ? `${opponentScoreWithDice} points possibles` : "aucun score affiché"}. ${stateLabel}. Ouvrir l’explication.`}
-                onClick={handleClick}
               >
+                <button
+                  id={`score-row-${category.id}`}
+                  className="score-row-details"
+                  type="button"
+                  aria-pressed={isSelected}
+                  aria-haspopup="dialog"
+                  aria-expanded={isExplained}
+                  aria-controls={isExplained ? `score-help-${category.id}` : undefined}
+                  aria-label={`${category.label}, ${playerLabel.toLowerCase()} : ${filled ? `${score} points inscrits` : currentScore === null ? "aucun score affiché" : `${currentScore} points possibles`}, ${opponentLabel.toLowerCase()} : ${botScore !== undefined ? `${botScore} points inscrits` : opponentScoreWithDice !== null ? `${opponentScoreWithDice} points possibles` : "aucun score affiché"}. ${stateLabel}. Ouvrir l’explication.`}
+                  onClick={handleDetailsClick}
+                />
                 <span className="score-category">
                   {category.label}
                   {VISUAL_HINTS[category.id] && <span className="score-category-hint">{VISUAL_HINTS[category.id]}</span>}
                 </span>
-                <strong
-                  className="score-value"
-                  data-state={filled ? "filled" : currentScore !== null && canSelect ? "preview" : "empty"}
-                  aria-hidden="true"
-                >
-                  {currentScore === null ? "" : currentScore}
-                </strong>
+                {canScoreDirectly ? (
+                  <button
+                    className="score-value score-value-direct"
+                    data-highlighted={highlightedPlayerCategory === category.id}
+                    data-state="preview"
+                    type="button"
+                    aria-label={`Inscrire directement ${currentScore} point${currentScore === 1 ? "" : "s"} dans ${category.label}`}
+                    onClick={handleDirectScore}
+                  >
+                    <span aria-hidden="true">{currentScore}</span>
+                  </button>
+                ) : (
+                  <strong
+                    className="score-value"
+                    data-highlighted={highlightedPlayerCategory === category.id}
+                    data-state={filled ? "filled" : "empty"}
+                    aria-hidden="true"
+                  >
+                    {currentScore === null ? "" : currentScore}
+                  </strong>
+                )}
                 <strong
                   className="score-value score-value-bot"
                   data-highlighted={highlightedOpponentCategory === category.id}
@@ -113,13 +139,13 @@ export function ScoreCard({
                 >
                   {currentOpponentScore === null || currentOpponentScore === undefined ? "" : currentOpponentScore}
                 </strong>
-              </button>
+              </div>
               {isExplained ? (
                 <ScoreHelpPopover
                   anchorId={`score-row-${category.id}`}
                   category={category}
                   placement={index >= CATEGORIES.length - 5 ? "above" : "below"}
-                  scoreAction={(!filled && !isReadOnly && canSelect && onScore) ? () => { closeExplanation(); onScore(); } : undefined}
+                  scoreAction={(!filled && !isReadOnly && canSelect && onScore) ? () => { closeExplanation(); onScore(category.id); } : undefined}
                   onClose={closeExplanation}
                 />
               ) : null}

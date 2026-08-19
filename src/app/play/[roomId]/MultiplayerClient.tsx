@@ -54,6 +54,7 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
     replayGapDetected,
   } = useMultiplayerGame(roomId, isHost, playerName);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
+  const [highlightedPlayerCategory, setHighlightedPlayerCategory] = useState<CategoryId | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
   const [copyStatus, setCopyStatus] = useState("");
@@ -94,9 +95,10 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
     }, duration);
   };
 
-  const handleScore = () => {
-    if (!selectedCategory || !canAct || isRolling) return;
-    score(selectedCategory);
+  const handleScore = (category = selectedCategory) => {
+    if (!category || !canAct || isRolling) return;
+    setHighlightedPlayerCategory(category);
+    score(category);
     setSelectedCategory(null);
   };
 
@@ -238,11 +240,9 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
         <Link className="game-logo" href="/">YAZZY</Link>
         <div className="match-score" aria-label={isMyTurn ? `À ${localName} de jouer` : `À ${opponentName} de jouer`}>
           <span className="match-player" data-active={isMyTurn} data-score-column="player">
-            <i className="turn-dot" aria-hidden="true" />
             <span className="match-player-name">{localName}</span>
           </span>
           <span className="match-player" data-active={!isMyTurn} data-score-column="opponent" data-online={opponentOnline}>
-            <i className="turn-dot" aria-hidden="true" />
             <span className="match-player-name">{opponentName}</span>
           </span>
         </div>
@@ -289,6 +289,7 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
             canSelect={canAct && localState.rollNumber > 0 && !isRolling}
             isReadOnly={!canAct}
             activeColumn={isMyTurn ? "player" : "opponent"}
+            highlightedPlayerCategory={highlightedPlayerCategory}
             highlightedOpponentCategory={highlightedOpponentCategory}
             onSelect={setSelectedCategory}
             onScore={handleScore}

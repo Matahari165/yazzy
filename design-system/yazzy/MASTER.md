@@ -23,11 +23,13 @@ Yazzy est un jeu de plateau moderne, léger et accueillant. Le score reste le ce
 | Texte secondaire | `#5C6261` | `--ink-soft` |
 | Accent de marque | `#ED896E` | `--coral` |
 | Accent accentué | `#C96350` | `--coral-deep` |
+| Joueur local | `#1F5F9C` | `--player` |
+| Adversaire (bot ou ami) | `#A33B3D` | `--opponent` |
 | Dé gardé / confirmation | `#237A58` | `--green` |
 | Surface gardée | `#DCEFE5` | `--green-soft` |
 | Ligne | `#DDD6CC` | `--line` |
 
-La couleur n’est jamais le seul signal : une variation de position ou de forme accompagne l’état visible, et un libellé accessible décrit précisément l’état aux lecteurs d’écran.
+Le joueur local est toujours bleu et l’adversaire toujours rouge. Une case déjà inscrite par le joueur local devient gris neutre avec une bordure pleine. La couleur n’est jamais le seul signal : une variation de position, de forme ou de bordure accompagne l’état visible, et un libellé accessible décrit précisément l’état aux lecteurs d’écran.
 
 ## Formes et relief
 
@@ -69,7 +71,8 @@ La feuille dense et le pupitre sont présentés dans deux colonnes équilibrées
 - états des dés visibles en couleur, position et forme, avec libellés accessibles invisibles ;
 - raccourcis `⌥1` à `⌥5`, `⌥R` et `⌥S` actifs mais non affichés pendant la partie ;
 - trois points compacts indiquent les lancers disponibles et consommés ;
-- toucher une case conserve sa sélection habituelle et ouvre une fiche courte « Réalisation / Calcul / Score » ; la fiche est ancrée à la case sur Mac et présentée en bas de l’écran sur mobile ;
+- toucher le chiffre d’un score possible l’inscrit immédiatement ; toucher le reste de la case la sélectionne et ouvre une fiche courte « Réalisation / Calcul / Score » ; la fiche est ancrée à la case sur Mac et présentée en bas de l’écran sur mobile ;
+- l’inscription d’un score déclenche une impulsion visuelle discrète de `220ms`, pour le joueur local comme pour l’adversaire ;
 - animation des dés de 220 à 300 ms, résultat généré au clic, dés gardés immobiles ;
 - `prefers-reduced-motion` réduit l’animation à un fondu court ;
 - contraste AA et focus visible ;

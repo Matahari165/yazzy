@@ -58,11 +58,11 @@ export function FinishedGame({
               : "Le bot a gagné !"}
       </h1>
       <div className="finished-scoreboard">
-        <div data-winner={isWinner}>
+        <div data-winner={isWinner} data-score-column="player">
           <strong>{localPoints}</strong>
           <span>{playerLabel}</span>
         </div>
-        <div data-winner={!isWinner && !isTie}>
+        <div data-winner={!isWinner && !isTie} data-score-column="opponent">
           <strong>{opponentPoints}</strong>
           <span>{opponentLabel}</span>
         </div>
