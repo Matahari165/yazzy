@@ -326,7 +326,8 @@ h3 { font-size: 18px; line-height: 1.2; }
   padding-top: 4px;
 }
 .lobby-code-form > label { color: var(--ink-soft); font-size: 12px; font-weight: 800; text-transform: uppercase; }
-.lobby-code-form > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.lobby-code-form > div { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; }
+.lobby-code-form .paste-code-action { white-space: nowrap; }
 .lobby-code-form input {
   width: 100%;
   min-height: 48px;
@@ -952,6 +953,8 @@ h3 { font-size: 18px; line-height: 1.2; }
   .logo-mark span { width: 6px; height: 6px; }
   .lobby-brand h1 { font-size: 30px; }
   .lobby-lead { font-size: 16px; }
+  .lobby-code-form > div { grid-template-columns: 1fr 1fr; }
+  .lobby-code-form input { grid-column: 1 / -1; }
   .mode-label { display: none; }
   .game-header { gap: 5px; }
   .match-score { margin-left: auto; font-size: 12px; }
