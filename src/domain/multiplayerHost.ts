@@ -15,7 +15,7 @@ import type { DieValue } from "./yatzy";
 const HOST_PLAYER_ID = "host";
 const HOST_CONNECTION_ID = "local-host";
 const GUEST_PLAYER_ID = "guest";
-export const GUEST_CONNECTION_ID = "server-guest";
+const GUEST_CONNECTION_ID = "server-guest";
 
 export function createHostedGame(
   roomId: string,

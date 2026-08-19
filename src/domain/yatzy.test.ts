@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CATEGORIES, CATEGORY_IDS, bestCombinationLabel, scoreDice, totalScore, type DieValue } from "./yatzy";
+import { CATEGORIES, CATEGORY_IDS, scoreDice, totalScore, type DieValue } from "./yatzy";
 
 describe("Yatzy nordique — scores", () => {
   it("joue avec 14 cases, sans Chance", () => {
@@ -38,12 +38,6 @@ describe("Yatzy nordique — scores", () => {
     expect(totalScore({ ...scores, ones: 2 })).toBe(62);
     expect(totalScore(scores)).toBe(63);
     expect(totalScore({ ...scores, pair: 1 })).toBe(64);
-  });
-
-  it("décrit la meilleure combinaison visible", () => {
-    expect(bestCombinationLabel([6, 6, 6, 6, 6])).toBe("Yatzy ! Cinq dés identiques");
-    expect(bestCombinationLabel([2, 2, 5, 5, 5])).toBe("Full ! Une paire et un brelan");
-    expect(bestCombinationLabel([1, 2, 3, 4, 6])).toBeNull();
   });
 
   it("fournit des explications et un score maximal exacts pour chaque case", () => {

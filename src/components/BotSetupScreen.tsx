@@ -14,7 +14,7 @@ export function BotSetupScreen() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const startGame = () => {
-    writeStoredGame(createGame("bot", selectedLevel));
+    writeStoredGame(createGame(selectedLevel));
     router.push("/game");
   };
 

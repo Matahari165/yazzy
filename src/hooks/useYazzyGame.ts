@@ -18,7 +18,7 @@ import { readStoredGame, writeStoredGame } from "../lib/gameStorage";
 const BOT_ANIMATION_MS = 260;
 
 export function useYazzyGame() {
-  const [game, setGame] = useState<GameState>(() => createGame("bot", "strategist"));
+  const [game, setGame] = useState<GameState>(() => createGame("strategist"));
   const [hasLoaded, setHasLoaded] = useState(false);
   const botTimerRef = useRef<number | null>(null);
   const botWorkerRef = useRef<Worker | null>(null);
@@ -145,9 +145,9 @@ export function useYazzyGame() {
     setGame((current) => completeBotTurn(current));
   }, [clearBotTimer]);
 
-  const reset = useCallback((botLevel: BotLevel = game.botLevel!) => {
+  const reset = useCallback((botLevel: BotLevel = game.botLevel) => {
     clearBotTimer();
-    setGame(createGame("bot", botLevel));
+    setGame(createGame(botLevel));
   }, [clearBotTimer, game.botLevel]);
 
   useEffect(() => () => clearBotTimer(), [clearBotTimer]);

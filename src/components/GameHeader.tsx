@@ -11,11 +11,7 @@ export function GameHeader({ game }: { game: GameState }) {
   return (
     <header className="game-header">
       <Link className="game-logo" href="/" aria-label="Yazzy, revenir à l’accueil">YAZZY</Link>
-      {game.mode === "bot" && game.botLevel ? (
-         <span className="mode-label">BOT · {getBotPolicy(game.botLevel).label}</span>
-      ) : (
-         <span className="mode-label">MULTI</span>
-      )}
+      <span className="mode-label">BOT · {getBotPolicy(game.botLevel).label}</span>
       <div
         className="match-score"
         role="group"

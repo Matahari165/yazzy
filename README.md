@@ -49,5 +49,4 @@ Cette commande contrôle le code, les types, les tests et le build de production
 
 ## Documents
 
-- [Plan produit et technique](./PLAN_DEVELOPPEMENT_YAZZY.md)
 - [Système visuel](./design-system/yazzy/MASTER.md)

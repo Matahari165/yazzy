@@ -21,10 +21,10 @@ const rolledHuman = (scores: PlayerState["scores"] = {}): PlayerState => ({
   scores,
 });
 
-describe("partie à deux joueurs", () => {
+describe("partie contre un bot", () => {
   it("peut faire commencer le joueur ou le bot", () => {
-    const humanStarts = createGame("bot", "strategist", "human");
-    const botStarts = createGame("bot", "strategist", "bot");
+    const humanStarts = createGame("strategist", "human");
+    const botStarts = createGame("strategist", "bot");
 
     expect(humanStarts).toMatchObject({
       activePlayer: "human",
@@ -39,7 +39,7 @@ describe("partie à deux joueurs", () => {
   });
 
   it("fait passer la main du joueur au bot après une inscription", () => {
-    const current = { ...createGame("bot", "calculator", "human"), human: rolledHuman() };
+    const current = { ...createGame("calculator", "human"), human: rolledHuman() };
     const next = scoreHumanTurn(current, "largeStraight");
 
     expect(next.activePlayer).toBe("bot");
@@ -49,7 +49,7 @@ describe("partie à deux joueurs", () => {
 
   it("rend la main au joueur après le score du bot", () => {
     const current = {
-      ...createGame("bot", "discovery", "human"),
+      ...createGame("discovery", "human"),
       activePlayer: "bot" as const,
       turn: 1,
       human: { ...rolledHuman({ largeStraight: 20 }), dice: [], rollNumber: 0 },
@@ -68,7 +68,7 @@ describe("partie à deux joueurs", () => {
   it("ne laisse pas le niveau modifier le générateur de dés", () => {
     const values: (1 | 2 | 3 | 4 | 5 | 6)[] = [1, 2, 3, 4, 5];
     const results = ["discovery", "calculator", "strategist"].map((botLevel) =>
-      rollPlayerTurn(createGame("bot", botLevel as "discovery" | "calculator" | "strategist", "human").human, diceRoll(...values)),
+      rollPlayerTurn(createGame(botLevel as "discovery" | "calculator" | "strategist", "human").human, diceRoll(...values)),
     );
 
     expect(results.map((result) => result.dice)).toEqual([
@@ -79,7 +79,7 @@ describe("partie à deux joueurs", () => {
   });
 
   it("termine une séquence de tour bot avec un tirage injecté", () => {
-    const current = createGame("bot", "discovery", "bot");
+    const current = createGame("discovery", "bot");
     const next = completeBotTurn(current, diceRoll(6, 6, 6, 2, 3, 4, 5, 1));
 
     expect(next.activePlayer).toBe("human");
@@ -88,9 +88,10 @@ describe("partie à deux joueurs", () => {
   });
 
   it("valide uniquement la sauvegarde version 3 sans toucher à l'ancienne", () => {
-    const game = createGame("bot", "strategist", "human");
+    const game = createGame("strategist", "human");
     expect(isStoredGame(game)).toBe(true);
     expect(isStoredGame({ ...game, version: 2 })).toBe(false);
     expect(isStoredGame({ ...game, mode: "solo" })).toBe(false);
+    expect(isStoredGame({ ...game, mode: "multiplayer", botLevel: null })).toBe(false);
   });
 });

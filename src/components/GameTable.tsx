@@ -15,7 +15,7 @@ type DiceTrayProps = {
   onToggle?: (index: number) => void;
 };
 
-export function DiceTray({
+function DiceTray({
   dice,
   held,
   highlightedDieIndex = null,

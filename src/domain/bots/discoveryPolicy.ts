@@ -17,7 +17,7 @@ function pickCategory(context: BotDecisionContext): CategoryId {
   return chooseFirstOpenCategory(context.scores);
 }
 
-function pickHold(context: BotDecisionContext, category: CategoryId): DiceCounts {
+function pickHold(context: BotDecisionContext): DiceCounts {
   if (context.dice.length !== 5) return [0, 0, 0, 0, 0, 0];
   return simpleHold(context.dice);
 }

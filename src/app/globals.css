@@ -131,8 +131,7 @@ h3 { font-size: 18px; line-height: 1.2; }
 }
 
 .primary-action,
-.secondary-action,
-.disabled-action {
+.secondary-action {
   min-height: 48px;
   display: inline-flex;
   align-items: center;
@@ -166,13 +165,6 @@ h3 { font-size: 18px; line-height: 1.2; }
 .secondary-action:hover:not(:disabled) { background: var(--surface-muted); border-color: var(--ink-soft); }
 .secondary-action:active:not(:disabled) { transform: translateY(1px); }
 
-.disabled-action {
-  color: var(--ink-soft);
-  background: var(--surface-muted);
-  border-color: var(--line);
-}
-
-.disabled-action small,
 .secondary-action small,
 .primary-action small {
   color: currentColor;
@@ -481,8 +473,6 @@ h3 { font-size: 18px; line-height: 1.2; }
 .name-gate-form { margin-top: 24px; }
 .name-gate-form .primary-action { width: 100%; margin-top: 5px; }
 .name-gate-card > .quit-link { margin-top: 14px; }
-.setup-note { margin: 24px 0 0; color: var(--ink-soft); font-size: 12px; }
-
 /* Choix du bot */
 .setup-card { width: min(100%, 720px); }
 .setup-header { margin-bottom: 28px; }
@@ -717,23 +707,12 @@ h3 { font-size: 18px; line-height: 1.2; }
 
 .score-card,
 .game-table,
-.bot-turn-panel,
-.opponent-turn-panel {
+.bot-turn-panel {
   background: var(--surface);
   border: 2px solid var(--board-border);
   border-radius: var(--radius-md);
   box-shadow: 0 6px 18px rgb(37 41 43 / 7%);
 }
-.opponent-turn-panel {
-  display: grid;
-  gap: 14px;
-  padding: 20px;
-}
-.opponent-turn-panel .eyebrow,
-.opponent-turn-panel h2,
-.opponent-turn-panel > p:last-child { margin: 0; }
-.opponent-turn-panel > p:last-child { color: var(--ink-soft); font-size: 13px; }
-
 .finished-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-soft); }
 .score-card { overflow: visible; }
 .score-list { display: grid; gap: 1px; background: var(--board-border); }
@@ -859,16 +838,6 @@ h3 { font-size: 18px; line-height: 1.2; }
 
 .game-table { position: relative; display: grid; gap: 12px; padding: 16px; overflow: hidden; background: var(--dice-zone-surface); }
 .game-table[data-observer="true"] { border-color: var(--game-green-strong); background: var(--green-soft); }
-.decision-panel { display: grid; gap: 10px; padding: 14px; background: var(--green-soft); border-radius: var(--radius-sm); }
-.decision-panel-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
-.decision-panel-heading h2 { margin-bottom: 0; }
-.decision-points { color: var(--green); font-family: var(--font-display); font-size: 24px; white-space: nowrap; }
-.decision-metric { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0; color: var(--ink-soft); font-size: 13px; }
-.decision-metric strong { color: var(--ink); font-size: 15px; }
-.decision-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.decision-actions .primary-action { flex: 1 1 190px; }
-.decision-details { display: grid; gap: 8px; padding-top: 4px; border-top: 1px solid rgb(35 122 88 / 24%); }
-.decision-details p { margin: 0; font-size: 14px; }
 .dice-tray {
   display: grid;
   grid-template-columns: repeat(5, minmax(64px, 1fr));
@@ -888,7 +857,7 @@ h3 { font-size: 18px; line-height: 1.2; }
 .die-button[data-held="true"] { transform: translateY(-4px); }
 .die-face { width: 64px; height: 64px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 5px; padding: 9px; background: var(--die-face-surface); border: 2px solid var(--die-face-border); border-radius: 12px; box-shadow: 0 4px 0 rgb(37 41 43 / 18%); transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease; }
 .die-button[data-held="true"] .die-face { background: var(--green-soft); border-color: var(--game-green-strong); box-shadow: 0 4px 0 rgb(35 122 88 / 28%), 0 0 0 3px rgb(35 122 88 / 13%); }
-.die-button[data-rolling="true"] .die-face { animation: die-roll 260ms ease-out; }
+.die-button[data-rolling="true"] .die-face { animation: die-roll 260ms cubic-bezier(0.22, 0.8, 0.3, 1) both; }
 .die-button[data-highlighted="true"] .die-face { animation: opponent-die-choice 260ms ease-out; }
 .die-held-marker {
   position: absolute;
@@ -908,8 +877,13 @@ h3 { font-size: 18px; line-height: 1.2; }
   line-height: 1;
 }
 @keyframes die-roll {
-  35% { transform: translateY(-3px) rotate(-5deg) scale(0.96); }
-  70% { transform: translateY(1px) rotate(4deg) scale(1.03); }
+  0% { opacity: 0.42; transform: rotate(-7deg) scale(0.92); }
+  55% { opacity: 0.82; transform: rotate(5deg) scale(1.04); }
+  100% { opacity: 1; transform: rotate(0) scale(1); }
+}
+@keyframes die-fade {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
 }
 @keyframes opponent-die-choice {
   50% { transform: scale(1.08); box-shadow: 0 4px 0 rgb(35 122 88 / 28%), 0 0 0 6px rgb(35 122 88 / 20%); }
@@ -965,6 +939,11 @@ h3 { font-size: 18px; line-height: 1.2; }
 .opponent-hold-map i[data-highlighted="true"] { animation: opponent-hold-choice 260ms ease-out; }
 @keyframes opponent-hold-choice { 50% { transform: scale(1.18); box-shadow: 0 0 0 4px rgb(35 122 88 / 18%); } }
 @media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 80ms !important;
+    transition-duration: 80ms !important;
+  }
   .logo-mark { transition: none; }
   .lobby-brand:hover .logo-mark { transform: rotate(-4deg); }
   .multiplayer-options { animation: none; }
@@ -976,9 +955,9 @@ h3 { font-size: 18px; line-height: 1.2; }
   .reaction-toast,
   .score-help-popover,
   .score-value-bot[data-highlighted="true"],
-  .die-button[data-rolling="true"] .die-face,
   .die-button[data-highlighted="true"] .die-face,
   .opponent-hold-map i[data-highlighted="true"] { animation: none; }
+  .die-button[data-rolling="true"] .die-face { animation: die-fade 80ms ease both; }
 }
 .bot-turn-panel { display: grid; gap: 12px; padding: 16px; background: var(--green-soft); }
 .bot-status { margin: 0; color: var(--green); font-family: var(--font-display); font-size: 18px; font-weight: 700; }
@@ -986,7 +965,6 @@ h3 { font-size: 18px; line-height: 1.2; }
 .finished-card { width: min(100%, 620px); margin: 32px auto 0; padding: clamp(24px, 5vw, 48px); text-align: center; }
 .finished-card h1 { margin-bottom: 12px; }
 .finished-result { margin-top: 16px; font-size: clamp(24px, 4vw, 34px); }
-.finished-lead { color: var(--ink-soft); }
 .finished-scoreboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 28px 0; }
 .finished-scoreboard > div { display: grid; gap: 4px; padding: 16px; background: var(--surface-muted); border-radius: var(--radius-sm); }
 .finished-scoreboard > div[data-winner="true"] strong { color: var(--green); }
@@ -1048,11 +1026,7 @@ h3 { font-size: 18px; line-height: 1.2; }
   .waiting-room .room-code-block { margin-block: 16px 12px; }
   .waiting-room .invite-field { margin-top: 18px; }
   .game-table,
-  .bot-turn-panel,
-  .opponent-turn-panel { gap: 8px; padding: 10px; }
-  .decision-panel { gap: 8px; padding: 10px; }
-  .decision-panel-heading h2 { font-size: 20px; }
-  .decision-points { font-size: 20px; }
+  .bot-turn-panel { gap: 8px; padding: 10px; }
   .dice-tray { grid-template-columns: repeat(5, minmax(48px, 1fr)); gap: 5px; padding: 8px 4px; }
   .die-placeholder,
   .die-button { min-width: 44px; min-height: 70px; }
@@ -1065,7 +1039,6 @@ h3 { font-size: 18px; line-height: 1.2; }
   .roll-controls { gap: 8px; }
   .roll-controls .primary-action,
   .roll-controls .secondary-action { min-height: 48px; }
-  .game-feedback { flex: none; margin-bottom: 8px; padding: 6px 10px; font-size: 12px; }
   .finished-card { margin: auto 0; }
 }
 
@@ -1089,7 +1062,6 @@ h3 { font-size: 18px; line-height: 1.2; }
   .match-score { margin-left: auto; font-size: 12px; }
   .match-player strong { font-size: 14px; }
   .multiplayer-game-header .match-player { max-width: none; }
-  .decision-actions { display: grid; grid-template-columns: 1fr; }
   .invite-actions { grid-template-columns: 1fr; }
 }
 
@@ -1117,7 +1089,6 @@ h3 { font-size: 18px; line-height: 1.2; }
 @media (max-width: 940px) and (orientation: landscape) and (max-height: 560px) {
   .game-shell { height: 100dvh; min-height: 0; display: flex; flex-direction: column; padding: 10px 16px; overflow: hidden; }
   .game-header { margin-bottom: 8px; }
-  .game-feedback { margin-bottom: 4px; padding: 4px 10px; font-size: 12px; line-height: 1.2; }
   .game-content { min-height: 0; display: grid; flex: 1; grid-template-columns: minmax(0, 1fr) minmax(300px, 0.85fr); gap: 12px; overflow: hidden; }
   .score-card { min-height: 0; display: flex; flex-direction: column; }
   .score-list { min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; overflow-y: auto; }
@@ -1134,9 +1105,7 @@ h3 { font-size: 18px; line-height: 1.2; }
     transform-origin: bottom right;
   }
   .game-table,
-  .bot-turn-panel,
-  .opponent-turn-panel { min-height: 0; overflow-y: auto; padding: 12px; }
-  .decision-panel { padding: 12px; }
+  .bot-turn-panel { min-height: 0; overflow-y: auto; padding: 12px; }
   .dice-tray { gap: 4px; }
   .die-placeholder,
   .die-button { min-width: 44px; min-height: 60px; }
@@ -1148,8 +1117,7 @@ h3 { font-size: 18px; line-height: 1.2; }
 
 @media (min-width: 1100px) {
   .game-table,
-  .bot-turn-panel,
-  .opponent-turn-panel { position: sticky; top: 20px; }
+  .bot-turn-panel { position: sticky; top: 20px; }
   .game-content {
     justify-content: center;
     grid-template-columns: minmax(360px, 480px) minmax(360px, 480px);

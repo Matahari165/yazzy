@@ -5,7 +5,6 @@ import { CATEGORY_BY_ID, CATEGORY_IDS, scoreDice, type CategoryId, type DieValue
 export const GAME_VERSION = 3;
 export const GAME_STORAGE_KEY = "yazzy.game.v3";
 
-export type GameMode = "bot" | "multiplayer";
 export type PlayerId = "human" | "bot";
 export type BotTurnStatus = "idle" | "rolling" | "waiting" | "choosing";
 
@@ -24,9 +23,8 @@ export type BotTurnState = {
 
 export type GameState = {
   version: typeof GAME_VERSION;
-  mode: GameMode;
-  roomId?: string;
-  botLevel: BotLevel | null;
+  mode: "bot";
+  botLevel: BotLevel;
   activePlayer: PlayerId;
   turn: number;
   human: PlayerState;
@@ -34,26 +32,23 @@ export type GameState = {
   botTurn: BotTurnState;
 };
 
-export const emptyHeld = (): boolean[] => [false, false, false, false, false];
+const emptyHeld = (): boolean[] => [false, false, false, false, false];
 
-export const freshPlayer = (scores: Partial<Record<CategoryId, number>> = {}): PlayerState => ({
+const freshPlayer = (scores: Partial<Record<CategoryId, number>> = {}): PlayerState => ({
   dice: [],
   held: emptyHeld(),
   rollNumber: 0,
   scores,
 });
 
-export function createGame(mode: "bot", botLevel: BotLevel, startingPlayer?: PlayerId): GameState;
-export function createGame(mode: "multiplayer", roomId: string, startingPlayer?: PlayerId): GameState;
 export function createGame(
-  mode: GameMode,
-  botLevelOrRoomId: string | BotLevel,
+  botLevel: BotLevel,
   startingPlayer: PlayerId = flipFairCoin() ? "human" : "bot",
 ): GameState {
   return {
     version: GAME_VERSION,
-    mode,
-    ...(mode === "bot" ? { botLevel: botLevelOrRoomId as BotLevel } : { botLevel: null, roomId: botLevelOrRoomId as string }),
+    mode: "bot",
+    botLevel,
     activePlayer: startingPlayer,
     turn: 1,
     human: freshPlayer(),
@@ -115,8 +110,8 @@ export function isStoredGame(value: unknown): value is GameState {
   ));
   return (
     game.version === GAME_VERSION &&
-    (game.mode === "bot" || game.mode === "multiplayer") &&
-    (game.mode === "bot" ? (game.botLevel === "discovery" || game.botLevel === "calculator" || game.botLevel === "strategist") : game.botLevel === null) &&
+    game.mode === "bot" &&
+    (game.botLevel === "discovery" || game.botLevel === "calculator" || game.botLevel === "strategist") &&
     (game.activePlayer === "human" || game.activePlayer === "bot") &&
     hasValidScoreOrder &&
     turn === botCount + 1 &&
@@ -153,7 +148,7 @@ export function togglePlayerHeld(current: PlayerState, index: number): PlayerSta
   return { ...current, held: current.held.map((held, dieIndex) => (dieIndex === index ? !held : held)) };
 }
 
-export function scorePlayerTurn(current: PlayerState, category: CategoryId): PlayerState {
+function scorePlayerTurn(current: PlayerState, category: CategoryId): PlayerState {
   if (current.rollNumber === 0 || current.dice.length !== 5 || current.scores[category] !== undefined) return current;
   return {
     dice: [],
@@ -182,8 +177,8 @@ export function scoreHumanTurn(current: GameState, category: CategoryId): GameSt
     ...current,
     human,
     activePlayer: "bot",
-    bot: current.mode === "bot" ? freshPlayer(current.bot.scores) : current.bot,
-    botTurn: current.mode === "bot" ? { status: "rolling", targetCategory: null, message: "Le bot joue." } : { status: "idle", targetCategory: null, message: null },
+    bot: freshPlayer(current.bot.scores),
+    botTurn: { status: "rolling", targetCategory: null, message: "Le bot joue." },
   };
 }
 
@@ -196,13 +191,12 @@ export function scoreBotTurn(current: GameState, category: CategoryId): GameStat
     ...current,
     bot,
     activePlayer: "human",
-    human: current.mode === "multiplayer" ? freshPlayer(current.human.scores) : current.human,
     turn: Math.min(CATEGORY_IDS.length + 1, current.turn + 1),
-    botTurn: current.mode === "bot" ? {
+    botTurn: {
       status: "idle",
       targetCategory: category,
       message: `Bot : ${CATEGORY_BY_ID[category].label} · ${points} point${points > 1 ? "s" : ""}.`,
-    } : { status: "idle", targetCategory: null, message: null },
+    },
   };
 }
 

@@ -195,16 +195,3 @@ export function scoreDice(category: CategoryId, dice: Dice): number {
 export function totalScore(scores: Partial<Record<CategoryId, number>>): number {
   return Object.values(scores).reduce<number>((sum, score) => sum + (score ?? 0), 0);
 }
-
-export function bestCombinationLabel(dice: Dice): string | null {
-  if (dice.length !== 5) return null;
-  if (scoreDice("yatzy", dice)) return "Yatzy ! Cinq dés identiques";
-  if (scoreDice("largeStraight", dice)) return "Grande suite ! 2–3–4–5–6";
-  if (scoreDice("smallStraight", dice)) return "Petite suite ! 1–2–3–4–5";
-  if (scoreDice("fullHouse", dice)) return "Full ! Une paire et un brelan";
-  if (scoreDice("fourOfAKind", dice)) return "Carré ! Quatre dés identiques";
-  if (scoreDice("threeOfAKind", dice)) return "Brelan — trois dés identiques";
-  if (scoreDice("twoPairs", dice)) return "Deux paires";
-  if (scoreDice("pair", dice)) return "Une paire";
-  return null;
-}

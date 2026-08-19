@@ -9,7 +9,7 @@ const PIPS: Record<DieValue, number[]> = {
   6: [0, 2, 3, 5, 6, 8],
 };
 
-export function DieGlyph({ value, className = "" }: { value: DieValue; className?: string }) {
+function DieGlyph({ value, className = "" }: { value: DieValue; className?: string }) {
   return (
     <span className={`die-glyph ${className}`.trim()} aria-hidden="true">
       {Array.from({ length: 9 }, (_, pip) => (

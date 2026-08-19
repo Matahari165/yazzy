@@ -9,7 +9,7 @@ import {
 } from "../yatzy";
 import type { BotDecisionContext } from "./types";
 
-export function openCategories(scores: Partial<Record<CategoryId, number>>): CategoryId[] {
+function openCategories(scores: Partial<Record<CategoryId, number>>): CategoryId[] {
   return CATEGORY_IDS.filter((category) => scores[category] === undefined);
 }
 

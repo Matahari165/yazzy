@@ -175,29 +175,3 @@ export function generalProbability(category: CategoryId): number {
   generalProbabilityCache.set(category, probability);
   return probability;
 }
-
-export function evaluateHoldChoice(
-  category: CategoryId,
-  hold: DiceCounts,
-  remainingRolls: number,
-): Pick<CategoryEvaluation, "successProbability" | "expectedScore"> {
-  if (remainingRolls < 1) {
-    const score = scoreDice(category, countsToDice(hold));
-    return { successProbability: score > 0 ? 1 : 0, expectedScore: score };
-  }
-
-  const rerolledDice = 5 - countHeld(hold);
-  let successProbability = 0;
-  let expectedScore = 0;
-  for (const outcome of rollOutcomes(rerolledDice)) {
-    const child = solve(category, combineCounts(hold, outcome.counts), remainingRolls - 1);
-    successProbability += outcome.probability * child.successProbability;
-    expectedScore += outcome.probability * child.expectedScore;
-  }
-  return { successProbability: clampProbability(successProbability), expectedScore };
-}
-
-export function formatDiceCounts(counts: DiceCounts): string {
-  const dice = countsToDice(counts);
-  return dice.length ? dice.join("–") : "aucun dé";
-}

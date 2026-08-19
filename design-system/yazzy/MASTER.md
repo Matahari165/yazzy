@@ -59,7 +59,7 @@ La feuille adopte deux colonnes lisibles lorsque la hauteur est courte et peut d
 
 ### Mac
 
-La feuille dense et le pupitre sont présentés dans deux colonnes équilibrées. Les quinze catégories doivent être visibles sans lignes surdimensionnées sur un écran Mac courant. Le panneau de lancer reste visible pendant le défilement de la page si nécessaire.
+La feuille dense et le pupitre sont présentés dans deux colonnes équilibrées. Les quatorze catégories doivent être visibles sans lignes surdimensionnées sur un écran Mac courant. Le panneau de lancer reste visible pendant le défilement de la page si nécessaire.
 
 ## Interaction et accessibilité
 
@@ -73,4 +73,4 @@ La feuille dense et le pupitre sont présentés dans deux colonnes équilibrées
 - animation des dés de 220 à 300 ms, résultat généré au clic, dés gardés immobiles ;
 - `prefers-reduced-motion` réduit l’animation à un fondu court ;
 - contraste AA et focus visible ;
-- aucune icône emoji.
+- pas d’emoji décoratif ; les emojis sont réservés aux réactions temporaires du mode entre amis.

@@ -28,7 +28,7 @@ function createMemoryStorage(): Storage {
 }
 
 function finishedGame(): GameState {
-  const game = createGame("bot", "strategist", "human");
+  const game = createGame("strategist", "human");
   const scores = Object.fromEntries(CATEGORY_IDS.map((category) => [category, 0])) as Record<CategoryId, number>;
   return {
     ...game,
@@ -51,14 +51,14 @@ describe("stockage de la partie bot", () => {
   });
 
   it("conserve une partie en cours", () => {
-    const game = createGame("bot", "calculator", "human");
+    const game = createGame("calculator", "human");
 
     expect(writeStoredGame(game)).toBe(true);
     expect(readStoredGame()).toEqual(game);
   });
 
   it("supprime la sauvegarde dès que la partie est terminée", () => {
-    localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify(createGame("bot", "strategist", "human")));
+    localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify(createGame("strategist", "human")));
 
     expect(writeStoredGame(finishedGame())).toBe(true);
     expect(localStorage.getItem(GAME_STORAGE_KEY)).toBeNull();
