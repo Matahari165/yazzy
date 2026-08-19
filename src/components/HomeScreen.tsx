@@ -20,6 +20,29 @@ import {
   writeStoredPlayerName,
 } from "@/lib/playerNameStorage";
 
+function ModeDiceIcon({ pair = false }: { pair?: boolean }) {
+  return (
+    <svg
+      className="mode-dice-icon"
+      viewBox="0 0 64 48"
+      aria-hidden="true"
+    >
+      {pair ? (
+        <g className="mode-die-back">
+          <rect x="27" y="3" width="30" height="30" rx="8" />
+          <circle cx="36" cy="12" r="2.5" />
+          <circle cx="48" cy="24" r="2.5" />
+        </g>
+      ) : null}
+      <g className="mode-die-front">
+        <rect x={pair ? "7" : "17"} y={pair ? "15" : "9"} width="32" height="32" rx="9" />
+        <circle cx={pair ? "17" : "27"} cy={pair ? "25" : "19"} r="2.7" />
+        <circle cx={pair ? "29" : "39"} cy={pair ? "37" : "31"} r="2.7" />
+      </g>
+    </svg>
+  );
+}
+
 export function HomeScreen() {
   const router = useRouter();
   const [savedGame, setSavedGame] = useState<GameState | null>(null);
@@ -28,6 +51,7 @@ export function HomeScreen() {
   const [roomCodeError, setRoomCodeError] = useState("");
   const [playerName, setPlayerName] = useState("");
   const [playerNameError, setPlayerNameError] = useState("");
+  const [isMultiplayerOpen, setIsMultiplayerOpen] = useState(false);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -39,6 +63,9 @@ export function HomeScreen() {
   }, []);
 
   const canResume = hasLoaded && savedGame !== null && !isFinished(savedGame);
+  const savedTurn = savedGame
+    ? Math.min(savedGame.turn, CATEGORY_IDS.length)
+    : 0;
 
   const savePlayerName = () => {
     const normalizedName = normalizePlayerName(playerName);
@@ -92,92 +119,129 @@ export function HomeScreen() {
   };
 
   return (
-    <main id="main-content" className="lobby-shell">
+    <main
+      id="main-content"
+      className="lobby-shell"
+      data-multiplayer-open={isMultiplayerOpen}
+    >
       <section className="lobby-card" aria-labelledby="lobby-title">
         <header className="lobby-brand">
           <span className="logo-mark" aria-hidden="true"><span /><span /><span /></span>
-          <div>
-            <p className="eyebrow">YAZZY</p>
-            <h1 id="lobby-title">Le Yatzy simple et malin</h1>
-          </div>
+          <h1 id="lobby-title">Yazzy</h1>
         </header>
 
         <div className="lobby-actions">
           {canResume ? (
-            <Link className="secondary-action" href="/game">
-              <span>Reprendre la partie</span>
-              <small>Tour {Math.min(savedGame.turn, CATEGORY_IDS.length)} sur {CATEGORY_IDS.length}</small>
+            <Link className="resume-action" href="/game">
+              <strong>Reprendre</strong>
+              <progress
+                max={CATEGORY_IDS.length}
+                value={savedTurn}
+                aria-label={`Tour ${savedTurn} sur ${CATEGORY_IDS.length}`}
+              />
+              <span>{savedTurn} / {CATEGORY_IDS.length}</span>
             </Link>
           ) : null}
-          <Link className="primary-action" href="/bot">Jouer contre un bot</Link>
-          <div className="player-name-field">
-            <label htmlFor="player-name">Ton pseudo en multijoueur</label>
-            <input
-              id="player-name"
-              name="player-name"
-              type="text"
-              value={playerName}
-              onChange={(event) => {
-                setPlayerName(event.currentTarget.value.slice(0, PLAYER_NAME_MAX_LENGTH));
-                setPlayerNameError("");
-              }}
-              onBlur={() => {
-                const normalizedName = normalizePlayerName(playerName);
-                setPlayerName(normalizedName);
-                if (normalizedName) writeStoredPlayerName(normalizedName);
-              }}
-              placeholder="Ex. Alex"
-              autoComplete="nickname"
-              maxLength={PLAYER_NAME_MAX_LENGTH}
-              aria-describedby={playerNameError ? "player-name-error" : undefined}
-              aria-invalid={playerNameError ? true : undefined}
-            />
-            {playerNameError ? (
-              <p id="player-name-error" className="form-error" role="alert">{playerNameError}</p>
-            ) : null}
-          </div>
-          <button
-            className="primary-action"
-            type="button"
-            onClick={startMultiplayer}
-          >
-            <span>Jouer avec un ami</span>
-            <small>Créer un code privé</small>
-          </button>
-          <form className="lobby-code-form" onSubmit={joinMultiplayer} noValidate>
-            <label htmlFor="room-code">Rejoindre avec un code</label>
-            <div className="lobby-code-controls">
-              <input
-                id="room-code"
-                name="room-code"
-                type="text"
-                value={roomCode}
-                onChange={(event) => {
-                  setRoomCode(normalizeRoomCode(event.currentTarget.value));
-                  setRoomCodeError("");
-                }}
-                placeholder="ABCD23"
-                autoComplete="off"
-                autoCapitalize="characters"
-                spellCheck={false}
-                inputMode="text"
-                maxLength={6}
-                aria-describedby={roomCodeError ? "room-code-error" : undefined}
-                aria-invalid={roomCodeError ? true : undefined}
-              />
-              <div className="lobby-code-actions">
-                <button className="secondary-action" type="button" onClick={pasteRoomCode}>
-                  Coller le code
-                </button>
-                <button className="secondary-action" type="submit">
-                  Rejoindre
-                </button>
-              </div>
+
+          <section className="new-game" aria-labelledby="new-game-title">
+            <h2 id="new-game-title">Nouvelle partie</h2>
+            <div className="game-mode-grid">
+              <Link className="game-mode-action game-mode-action-primary" href="/bot">
+                <ModeDiceIcon />
+                <span>
+                  <strong>Solo</strong>
+                  <small>Contre un bot</small>
+                </span>
+              </Link>
+              <button
+                className="game-mode-action"
+                type="button"
+                aria-expanded={isMultiplayerOpen}
+                aria-controls="multiplayer-options"
+                data-active={isMultiplayerOpen}
+                onClick={() => setIsMultiplayerOpen((isOpen) => !isOpen)}
+              >
+                <ModeDiceIcon pair />
+                <span>
+                  <strong>À deux</strong>
+                  <small>Avec un ami</small>
+                </span>
+              </button>
             </div>
-            {roomCodeError ? (
-              <p id="room-code-error" className="form-error" role="alert">{roomCodeError}</p>
-            ) : null}
-          </form>
+          </section>
+
+          {isMultiplayerOpen ? (
+            <section id="multiplayer-options" className="multiplayer-options" aria-label="Partie avec un ami">
+              <div className="player-name-field">
+                <label htmlFor="player-name">Pseudo</label>
+                <input
+                  id="player-name"
+                  name="player-name"
+                  type="text"
+                  value={playerName}
+                  onChange={(event) => {
+                    setPlayerName(event.currentTarget.value.slice(0, PLAYER_NAME_MAX_LENGTH));
+                    setPlayerNameError("");
+                  }}
+                  onBlur={() => {
+                    const normalizedName = normalizePlayerName(playerName);
+                    setPlayerName(normalizedName);
+                    if (normalizedName) writeStoredPlayerName(normalizedName);
+                  }}
+                  placeholder="Alex"
+                  autoComplete="nickname"
+                  spellCheck={false}
+                  maxLength={PLAYER_NAME_MAX_LENGTH}
+                  aria-describedby={playerNameError ? "player-name-error" : undefined}
+                  aria-invalid={playerNameError ? true : undefined}
+                />
+                {playerNameError ? (
+                  <p id="player-name-error" className="form-error" role="alert">{playerNameError}</p>
+                ) : null}
+              </div>
+
+              <button className="primary-action create-room-action" type="button" onClick={startMultiplayer}>
+                Créer une partie
+              </button>
+
+              <div className="lobby-divider" aria-hidden="true"><span>ou</span></div>
+
+              <form className="lobby-code-form" onSubmit={joinMultiplayer} noValidate>
+                <label className="sr-only" htmlFor="room-code">Code de partie</label>
+                <div className="lobby-code-controls">
+                  <div className="room-code-field">
+                    <input
+                      id="room-code"
+                      name="room-code"
+                      type="text"
+                      value={roomCode}
+                      onChange={(event) => {
+                        setRoomCode(normalizeRoomCode(event.currentTarget.value));
+                        setRoomCodeError("");
+                      }}
+                      placeholder="ABC123"
+                      autoComplete="off"
+                      autoCapitalize="characters"
+                      spellCheck={false}
+                      inputMode="text"
+                      maxLength={6}
+                      aria-describedby={roomCodeError ? "room-code-error" : undefined}
+                      aria-invalid={roomCodeError ? true : undefined}
+                    />
+                    <button className="paste-code-action" type="button" onClick={pasteRoomCode}>
+                      Coller
+                    </button>
+                  </div>
+                  <button className="secondary-action join-room-action" type="submit">
+                    Rejoindre
+                  </button>
+                </div>
+                {roomCodeError ? (
+                  <p id="room-code-error" className="form-error" role="alert">{roomCodeError}</p>
+                ) : null}
+              </form>
+            </section>
+          ) : null}
         </div>
       </section>
     </main>
