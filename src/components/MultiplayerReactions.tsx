@@ -9,12 +9,17 @@ import {
 import type { MultiplayerRole } from "@/domain/multiplayer";
 
 const REACTION_LABELS: Record<ReactionEmoji, string> = {
-  "👏": "Bravo",
-  "🔥": "Incroyable",
+  "😆": "Très drôle",
   "😂": "Ça me fait rire",
-  "😮": "Surprise",
-  "🎲": "Beau lancer",
-  "💛": "Bien joué",
+  "🤭": "Oups",
+  "🤑": "Jackpot",
+  "😏": "Bien tenté",
+  "🤪": "N’importe quoi",
+  "😨": "Ça fait peur",
+  "🤯": "Incroyable",
+  "😭": "Quelle tristesse",
+  "🤬": "Quelle rage",
+  "💀": "Je suis mort",
 };
 
 type MultiplayerReactionsProps = {

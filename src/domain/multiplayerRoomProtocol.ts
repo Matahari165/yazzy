@@ -6,7 +6,7 @@ import {
 import { parseClientActionValue, type ClientAction } from "./protocol";
 import { isPlayerName } from "./playerName";
 
-export const REACTION_EMOJIS = ["👏", "🔥", "😂", "😮", "🎲", "💛"] as const;
+export const REACTION_EMOJIS = ["😆", "😂", "🤭", "🤑", "😏", "🤪", "😨", "🤯", "😭", "🤬", "💀"] as const;
 export type ReactionEmoji = (typeof REACTION_EMOJIS)[number];
 
 export type RoomReaction = {

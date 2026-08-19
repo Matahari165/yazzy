@@ -5,6 +5,8 @@ import { Dice } from "./Dice";
 type DiceTrayProps = {
   dice: DieValue[];
   held: boolean[];
+  highlightedDieIndex?: number | null;
+  showHeldMarkers?: boolean;
   rollNumber: number;
   rolling: boolean;
   disabled: boolean;
@@ -13,7 +15,18 @@ type DiceTrayProps = {
   onToggle?: (index: number) => void;
 };
 
-export function DiceTray({ dice, held, rollNumber, rolling, disabled, finalResult, label, onToggle }: DiceTrayProps) {
+export function DiceTray({
+  dice,
+  held,
+  highlightedDieIndex = null,
+  showHeldMarkers = false,
+  rollNumber,
+  rolling,
+  disabled,
+  finalResult,
+  label,
+  onToggle,
+}: DiceTrayProps) {
   return (
     <div className="dice-tray" role="group" aria-label={label}>
       {dice.length === 5
@@ -23,6 +36,8 @@ export function DiceTray({ dice, held, rollNumber, rolling, disabled, finalResul
               value={value}
               index={index}
               held={rollNumber < 3 && held[index]}
+              highlighted={highlightedDieIndex === index}
+              showHeldMarker={showHeldMarkers}
               disabled={disabled || rollNumber >= 3}
               finalResult={finalResult ?? rollNumber >= 3}
               rolling={rolling}
@@ -42,6 +57,7 @@ type GameTableProps = {
   isRolling: boolean;
   isDisabled?: boolean;
   isObserver?: boolean;
+  highlightedDieIndex?: number | null;
   label?: string;
   onToggleDie: (index: number) => void;
   onRoll: () => void;
@@ -55,6 +71,7 @@ export function GameTable({
   isRolling,
   isDisabled = false,
   isObserver = false,
+  highlightedDieIndex = null,
   label = "Tes cinq dés",
   onToggleDie,
   onRoll,
@@ -75,6 +92,8 @@ export function GameTable({
       <DiceTray
         dice={dice}
         held={held}
+        highlightedDieIndex={highlightedDieIndex}
+        showHeldMarkers={isObserver}
         rollNumber={rollNumber}
         rolling={isRolling}
         disabled={isRolling || isDisabled}
@@ -87,7 +106,11 @@ export function GameTable({
           <strong>{usedRolls}</strong><span aria-hidden="true">/</span><span aria-hidden="true">3</span>
         </span>
         {isObserver ? (
-          <span className="opponent-activity" aria-hidden="true"><i /><i /><i /></span>
+          <span className="opponent-hold-map" aria-hidden="true">
+            {held.map((isHeld, index) => (
+              <i key={index} data-held={isHeld} data-highlighted={highlightedDieIndex === index}>✓</i>
+            ))}
+          </span>
         ) : canShowRollButton ? (
           <button className={selectedCategory ? "secondary-action" : "primary-action"} type="button" disabled={!canRoll} onClick={onRoll}>
             {isRolling ? "Les dés roulent…" : actionLabel}

@@ -220,6 +220,12 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
   const rematchRequested = game.rematchReady.includes(localRole);
   const localName = localPlayer.name;
   const opponentName = opponentPlayer.name;
+  const highlightedOpponentDie = replayedOpponentEvent?.action.type === "HOLD"
+    ? replayedOpponentEvent.action.index
+    : null;
+  const highlightedOpponentCategory = replayedOpponentEvent?.action.type === "SCORE"
+    ? replayedOpponentEvent.action.category
+    : null;
   const connectionNotice = !isConnected
     ? "Ta connexion est interrompue. Reconnexion en cours…"
     : !opponentOnline
@@ -232,10 +238,12 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
         <Link className="game-logo" href="/">YAZZY</Link>
         <div className="match-score" aria-label={isMyTurn ? `À ${localName} de jouer` : `À ${opponentName} de jouer`}>
           <span className="match-player" data-active={isMyTurn} data-score-column="player">
-            <i className="turn-dot" aria-hidden="true" /> {localName}
+            <i className="turn-dot" aria-hidden="true" />
+            <span className="match-player-name">{localName}</span>
           </span>
           <span className="match-player" data-active={!isMyTurn} data-score-column="opponent" data-online={opponentOnline}>
-            <i className="turn-dot" aria-hidden="true" /> {opponentName}
+            <i className="turn-dot" aria-hidden="true" />
+            <span className="match-player-name">{opponentName}</span>
           </span>
         </div>
         <MultiplayerReactions
@@ -281,6 +289,7 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
             canSelect={canAct && localState.rollNumber > 0 && !isRolling}
             isReadOnly={!canAct}
             activeColumn={isMyTurn ? "player" : "opponent"}
+            highlightedOpponentCategory={highlightedOpponentCategory}
             onSelect={setSelectedCategory}
             onScore={handleScore}
           />
@@ -293,6 +302,7 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
             isRolling={isMyTurn ? isRolling : isReplayingOpponentRoll}
             isDisabled={!canAct}
             isObserver={!isMyTurn}
+            highlightedDieIndex={!isMyTurn ? highlightedOpponentDie : null}
             label={isMyTurn ? `Les dés de ${localName}` : `Les dés de ${opponentName}`}
             onToggleDie={toggleHeld}
             onRoll={handleRoll}

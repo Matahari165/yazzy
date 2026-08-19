@@ -27,6 +27,7 @@ type ScoreCardProps = {
   canSelect: boolean;
   isReadOnly?: boolean;
   activeColumn?: "player" | "opponent";
+  highlightedOpponentCategory?: CategoryId | null;
   onSelect?: (category: CategoryId | null) => void;
   onScore?: () => void;
 };
@@ -43,6 +44,7 @@ export function ScoreCard({
   canSelect,
   isReadOnly = false,
   activeColumn,
+  highlightedOpponentCategory = null,
   onSelect,
   onScore,
 }: ScoreCardProps) {
@@ -105,6 +107,7 @@ export function ScoreCard({
                 </strong>
                 <strong
                   className="score-value score-value-bot"
+                  data-highlighted={highlightedOpponentCategory === category.id}
                   data-state={botScore !== undefined ? "filled" : opponentScoreWithDice !== null ? "preview" : "empty"}
                   aria-hidden="true"
                 >

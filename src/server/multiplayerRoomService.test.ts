@@ -296,7 +296,7 @@ describe("service de salon privé", () => {
       role: "player1",
       token: HOST_TOKEN,
       reactionId: REACTION_ID,
-      emoji: "👏",
+      emoji: "😆",
     }, 1_002);
     const guestSync = await command(store, {
       type: "SYNC",
@@ -315,15 +315,15 @@ describe("service de salon privé", () => {
 
     expect(reaction.body).toMatchObject({
       ok: true,
-      latestReaction: { id: REACTION_ID, role: "player1", emoji: "👏" },
+      latestReaction: { id: REACTION_ID, role: "player1", emoji: "😆" },
     });
     expect(guestSync.body).toMatchObject({
       ok: true,
-      latestReaction: { id: REACTION_ID, role: "player1", emoji: "👏" },
+      latestReaction: { id: REACTION_ID, role: "player1", emoji: "😆" },
     });
     expect(expiredSync.body).toMatchObject({ ok: true, latestReaction: null });
     expect(store.room?.game).toEqual(beforeGame);
-    expect(store.reaction).toMatchObject({ id: REACTION_ID, emoji: "👏" });
+    expect(store.reaction).toMatchObject({ id: REACTION_ID, emoji: "😆" });
   });
 });
 

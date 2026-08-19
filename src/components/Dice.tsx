@@ -22,6 +22,8 @@ export function DieGlyph({ value, className = "" }: { value: DieValue; className
 type DiceProps = {
   value: DieValue;
   held: boolean;
+  highlighted?: boolean;
+  showHeldMarker?: boolean;
   disabled: boolean;
   finalResult?: boolean;
   rolling: boolean;
@@ -29,12 +31,23 @@ type DiceProps = {
   onToggle: () => void;
 };
 
-export function Dice({ value, held, disabled, finalResult = false, rolling, index, onToggle }: DiceProps) {
+export function Dice({
+  value,
+  held,
+  highlighted = false,
+  showHeldMarker = false,
+  disabled,
+  finalResult = false,
+  rolling,
+  index,
+  onToggle,
+}: DiceProps) {
   return (
     <button
       type="button"
       className="die-button"
       data-held={held}
+      data-highlighted={highlighted}
       data-rolling={rolling && !held}
       aria-pressed={held}
       aria-keyshortcuts={`Alt+${index + 1}`}
@@ -43,6 +56,7 @@ export function Dice({ value, held, disabled, finalResult = false, rolling, inde
       onClick={onToggle}
     >
       <DieGlyph value={value} className="die-face" />
+      {showHeldMarker && held ? <span className="die-held-marker" aria-hidden="true">✓</span> : null}
     </button>
   );
 }
