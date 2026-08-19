@@ -1,4 +1,8 @@
-import type { MultiplayerGameState, MultiplayerRole } from "../domain/multiplayer";
+import {
+  randomMultiplayerRole,
+  type MultiplayerGameState,
+  type MultiplayerRole,
+} from "../domain/multiplayer";
 import {
   applyPlayerAction,
   connectGuest,
@@ -111,19 +115,21 @@ export async function handleRoomCommand({
   store,
   now,
   rollDie,
+  pickStartingPlayer = randomMultiplayerRole,
 }: {
   roomId: string;
   command: RoomCommand;
   store: MultiplayerRoomStore;
   now: number;
   rollDie: () => DieValue;
+  pickStartingPlayer?: () => MultiplayerRole;
 }): Promise<RoomServiceResult> {
   let room = await store.getRoom(roomId);
 
   if (command.type === "CONNECT" && command.role === "player1") {
     if (!room) {
       room = {
-        game: createHostedGame(roomId, command.playerName),
+        game: createHostedGame(roomId, command.playerName, pickStartingPlayer()),
         hostToken: command.token,
         guestToken: null,
         version: 0,
@@ -205,7 +211,13 @@ export async function handleRoomCommand({
     }
 
     if (room.lastActionIds[command.role] !== command.actionId) {
-      const nextGame = applyPlayerAction(room.game, command.role, command.action, rollDie);
+      const nextGame = applyPlayerAction(
+        room.game,
+        command.role,
+        command.action,
+        rollDie,
+        pickStartingPlayer,
+      );
       const nextVersion = nextGame === room.game ? room.version : room.version + 1;
       const nextEvent: RoomActionEvent | null = nextGame === room.game
         ? null

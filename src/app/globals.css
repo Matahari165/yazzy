@@ -326,7 +326,9 @@ h3 { font-size: 18px; line-height: 1.2; }
   padding-top: 4px;
 }
 .lobby-code-form > label { color: var(--ink-soft); font-size: 12px; font-weight: 800; text-transform: uppercase; }
-.lobby-code-form > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.lobby-code-controls { display: grid; gap: 8px; }
+.lobby-code-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.lobby-code-actions .secondary-action { width: 100%; }
 .lobby-code-form input {
   width: 100%;
   min-height: 48px;
@@ -749,21 +751,6 @@ h3 { font-size: 18px; line-height: 1.2; }
 
 .game-table { position: relative; display: grid; gap: 12px; padding: 16px; overflow: hidden; background: var(--dice-zone-surface); }
 .game-table[data-observer="true"] { border-color: var(--game-green-strong); background: var(--green-soft); }
-.game-table[data-observer="true"]::before {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 34%;
-  height: 3px;
-  content: "";
-  background: var(--green);
-  border-radius: 999px;
-  animation: opponent-active-line 1.8s ease-in-out infinite alternate;
-}
-@keyframes opponent-active-line {
-  from { transform: translateX(-15%); }
-  to { transform: translateX(210%); }
-}
 .decision-panel { display: grid; gap: 10px; padding: 14px; background: var(--green-soft); border-radius: var(--radius-sm); }
 .decision-panel-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
 .decision-panel-heading h2 { margin-bottom: 0; }
@@ -842,7 +829,6 @@ h3 { font-size: 18px; line-height: 1.2; }
 @media (prefers-reduced-motion: reduce) {
   .waiting-status i,
   .multiplayer-game-header .match-player[data-active="true"] .turn-dot,
-  .game-table[data-observer="true"]::before,
   .opponent-activity i,
   .reaction-picker,
   .reaction-toast,

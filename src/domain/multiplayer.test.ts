@@ -18,6 +18,11 @@ import { parseClientActionValue } from "./protocol";
 import { CATEGORY_IDS } from "./yatzy";
 
 describe("règles multijoueur", () => {
+  it("peut faire commencer l’un ou l’autre joueur", () => {
+    expect(createMultiplayerGame("AMIS12", "player1").activePlayer).toBe("player1");
+    expect(createMultiplayerGame("AMIS12", "player2").activePlayer).toBe("player2");
+  });
+
   it("conserve exactement trois lancers et cinq dés", () => {
     let player = freshPlayerState();
     const values = [1, 2, 3, 4, 5, 6] as const;
@@ -37,7 +42,7 @@ describe("règles multijoueur", () => {
   });
 
   it("ne passe pas le tour quand la case est déjà remplie", () => {
-    const game = createMultiplayerGame("AMIS12");
+    const game = createMultiplayerGame("AMIS12", "player1");
     game.status = "playing";
     const player = freshPlayerState({ ones: 2 });
     player.dice = [1, 1, 2, 3, 4];
@@ -51,7 +56,7 @@ describe("règles multijoueur", () => {
   });
 
   it("attend l'accord des deux joueurs avant une revanche", () => {
-    const game = createMultiplayerGame("AMIS12");
+    const game = createMultiplayerGame("AMIS12", "player1");
     game.status = "finished";
     game.player1 = { playerId: "a", name: "Alice", connectionId: "a", state: freshPlayerState({ ones: 5 }) };
     game.player2 = { playerId: "b", name: "Bob", connectionId: "b", state: freshPlayerState({ ones: 4 }) };
@@ -60,14 +65,15 @@ describe("règles multijoueur", () => {
     expect(startRematch(oneReady)).toBe(oneReady);
 
     const bothReady = requestRematch(oneReady, "player2");
-    const rematch = startRematch(bothReady);
+    const rematch = startRematch(bothReady, "player2");
     expect(rematch.status).toBe("playing");
+    expect(rematch.activePlayer).toBe("player2");
     expect(rematch.player1?.state.scores).toEqual({});
     expect(rematch.player2?.state.scores).toEqual({});
   });
 
   it("termine après les 14 cases de chaque joueur, sans tour supplémentaire", () => {
-    const game = createMultiplayerGame("AMIS12");
+    const game = createMultiplayerGame("AMIS12", "player1");
     game.status = "playing";
     const completedScores = Object.fromEntries(
       CATEGORY_IDS.slice(0, -1).map((category) => [category, 0]),
@@ -104,7 +110,7 @@ describe("protocole multijoueur", () => {
 
 describe("moteur de salon privé", () => {
   it("ouvre la partie au premier invité et conserve sa feuille de score", () => {
-    const hosted = createHostedGame("AMIS12", "Alice");
+    const hosted = createHostedGame("AMIS12", "Alice", "player1");
     const connected = connectGuest(hosted, "Bob", "peer-a");
     const reconnected = connectGuest(connected, "Bobby", "peer-b");
 
@@ -115,7 +121,7 @@ describe("moteur de salon privé", () => {
   });
 
   it("valide les actions de l’invité dans le moteur de l’hôte", () => {
-    let game = connectGuest(createHostedGame("AMIS12", "Alice"), "Bob", "peer-a");
+    let game = connectGuest(createHostedGame("AMIS12", "Alice", "player1"), "Bob", "peer-a");
     game = applyPlayerAction(game, "player1", { type: "ROLL" }, () => 6);
     game = applyPlayerAction(game, "player1", { type: "SCORE", category: "sixes" }, () => 1);
 

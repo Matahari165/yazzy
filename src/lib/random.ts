@@ -10,3 +10,12 @@ export function rollFairDie(): DieValue {
   } while (buffer[0] >= FAIR_LIMIT);
   return ((buffer[0] % 6) + 1) as DieValue;
 }
+
+export function flipFairCoin(
+  getRandomValues: (values: Uint32Array) => Uint32Array = (values) =>
+    globalThis.crypto.getRandomValues(values),
+): boolean {
+  const buffer = new Uint32Array(1);
+  getRandomValues(buffer);
+  return (buffer[0] & 1) === 0;
+}

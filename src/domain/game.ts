@@ -1,5 +1,5 @@
 import type { BotLevel } from "./bots";
-import { rollFairDie } from "../lib/random";
+import { flipFairCoin, rollFairDie } from "../lib/random";
 import { CATEGORY_BY_ID, CATEGORY_IDS, scoreDice, type CategoryId, type DieValue } from "./yatzy";
 
 export const GAME_VERSION = 3;
@@ -43,18 +43,24 @@ export const freshPlayer = (scores: Partial<Record<CategoryId, number>> = {}): P
   scores,
 });
 
-export function createGame(mode: "bot", botLevel: BotLevel): GameState;
-export function createGame(mode: "multiplayer", roomId: string): GameState;
-export function createGame(mode: GameMode, botLevelOrRoomId: string | BotLevel): GameState {
+export function createGame(mode: "bot", botLevel: BotLevel, startingPlayer?: PlayerId): GameState;
+export function createGame(mode: "multiplayer", roomId: string, startingPlayer?: PlayerId): GameState;
+export function createGame(
+  mode: GameMode,
+  botLevelOrRoomId: string | BotLevel,
+  startingPlayer: PlayerId = flipFairCoin() ? "human" : "bot",
+): GameState {
   return {
     version: GAME_VERSION,
     mode,
     ...(mode === "bot" ? { botLevel: botLevelOrRoomId as BotLevel } : { botLevel: null, roomId: botLevelOrRoomId as string }),
-    activePlayer: "human",
+    activePlayer: startingPlayer,
     turn: 1,
     human: freshPlayer(),
     bot: freshPlayer(),
-    botTurn: { status: "idle", targetCategory: null, message: null },
+    botTurn: startingPlayer === "bot"
+      ? { status: "rolling", targetCategory: null, message: "Le bot joue." }
+      : { status: "idle", targetCategory: null, message: null },
   };
 }
 
@@ -92,7 +98,11 @@ export function isStoredGame(value: unknown): value is GameState {
   const game = value as Partial<GameState>;
   const humanCount = game.human && typeof game.human === "object" ? Object.keys(game.human.scores ?? {}).length : -1;
   const botCount = game.bot && typeof game.bot === "object" ? Object.keys(game.bot.scores ?? {}).length : -1;
-  const expectedActive = humanCount === botCount ? "human" : humanCount === botCount + 1 ? "bot" : null;
+  const hasValidScoreOrder = humanCount === botCount || (
+    humanCount === botCount + 1 && game.activePlayer === "bot"
+  ) || (
+    botCount === humanCount + 1 && game.activePlayer === "human"
+  );
   const botTurn = game.botTurn;
   const turn = game.turn;
   if (typeof turn !== "number" || !Number.isInteger(turn) || turn < 1 || turn > CATEGORY_IDS.length + 1) return false;
@@ -108,7 +118,7 @@ export function isStoredGame(value: unknown): value is GameState {
     (game.mode === "bot" || game.mode === "multiplayer") &&
     (game.mode === "bot" ? (game.botLevel === "discovery" || game.botLevel === "calculator" || game.botLevel === "strategist") : game.botLevel === null) &&
     (game.activePlayer === "human" || game.activePlayer === "bot") &&
-    game.activePlayer === expectedActive &&
+    hasValidScoreOrder &&
     turn === botCount + 1 &&
     isStoredPlayer(game.human) &&
     isStoredPlayer(game.bot) &&
@@ -157,6 +167,17 @@ export function scoreHumanTurn(current: GameState, category: CategoryId): GameSt
   if (current.activePlayer !== "human") return current;
   const human = scorePlayerTurn(current.human, category);
   if (human === current.human) return current;
+  const finished = CATEGORY_IDS.every(
+    (categoryId) => human.scores[categoryId] !== undefined && current.bot.scores[categoryId] !== undefined,
+  );
+  if (finished) {
+    return {
+      ...current,
+      human,
+      activePlayer: "human",
+      botTurn: { status: "idle", targetCategory: null, message: null },
+    };
+  }
   return {
     ...current,
     human,

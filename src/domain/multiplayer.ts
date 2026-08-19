@@ -1,5 +1,6 @@
 import { type CategoryId, type DieValue, scoreDice, CATEGORY_IDS } from "./yatzy";
 import { isPlayerName } from "./playerName";
+import { flipFairCoin } from "../lib/random";
 
 export type MultiplayerRole = "player1" | "player2";
 
@@ -40,13 +41,20 @@ export function freshPlayerState(
   };
 }
 
-export function createMultiplayerGame(roomId: string): MultiplayerGameState {
+export function randomMultiplayerRole(): MultiplayerRole {
+  return flipFairCoin() ? "player1" : "player2";
+}
+
+export function createMultiplayerGame(
+  roomId: string,
+  startingPlayer: MultiplayerRole = randomMultiplayerRole(),
+): MultiplayerGameState {
   return {
     roomId,
     status: "waiting",
     player1: null,
     player2: null,
-    activePlayer: "player1",
+    activePlayer: startingPlayer,
     turn: 1,
     rematchReady: [],
   };
@@ -248,11 +256,14 @@ export function requestRematch(
   return { ...game, rematchReady: [...game.rematchReady, role] };
 }
 
-export function startRematch(game: MultiplayerGameState): MultiplayerGameState {
+export function startRematch(
+  game: MultiplayerGameState,
+  startingPlayer: MultiplayerRole = randomMultiplayerRole(),
+): MultiplayerGameState {
   if (!game.player1 || !game.player2 || game.rematchReady.length !== 2) return game;
 
   return {
-    ...createMultiplayerGame(game.roomId),
+    ...createMultiplayerGame(game.roomId, startingPlayer),
     status: "playing",
     player1: { ...game.player1, state: freshPlayerState() },
     player2: { ...game.player2, state: freshPlayerState() },

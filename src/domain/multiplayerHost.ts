@@ -17,8 +17,12 @@ const HOST_CONNECTION_ID = "local-host";
 const GUEST_PLAYER_ID = "guest";
 export const GUEST_CONNECTION_ID = "server-guest";
 
-export function createHostedGame(roomId: string, playerName = "Joueur 1"): MultiplayerGameState {
-  const game = createMultiplayerGame(roomId);
+export function createHostedGame(
+  roomId: string,
+  playerName = "Joueur 1",
+  startingPlayer?: MultiplayerRole,
+): MultiplayerGameState {
+  const game = createMultiplayerGame(roomId, startingPlayer);
   return {
     ...game,
     player1: {
@@ -56,9 +60,13 @@ export function applyPlayerAction(
   role: MultiplayerRole,
   action: ClientAction,
   rollDie: () => DieValue,
+  pickStartingPlayer?: () => MultiplayerRole,
 ): MultiplayerGameState {
   if (action.type === "REMATCH") {
-    return startRematch(requestRematch(game, role));
+    const readyGame = requestRematch(game, role);
+    return readyGame.rematchReady.length === 2
+      ? startRematch(readyGame, pickStartingPlayer?.())
+      : readyGame;
   }
   if (action.type === "ROLL") {
     return rollActivePlayer(game, role, rollDie);

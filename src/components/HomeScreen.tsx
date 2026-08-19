@@ -59,7 +59,6 @@ export function HomeScreen() {
 
   const joinMultiplayer = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!savePlayerName()) return;
     const normalizedCode = normalizeRoomCode(roomCode);
 
     if (!isRoomCode(normalizedCode)) {
@@ -67,8 +66,29 @@ export function HomeScreen() {
       return;
     }
 
+    if (!savePlayerName()) return;
+
     setRoomCodeError("");
     router.push(`/play/${normalizedCode}`);
+  };
+
+  const pasteRoomCode = async () => {
+    setRoomCodeError("");
+    try {
+      if (!navigator.clipboard?.readText) throw new Error("Clipboard unavailable");
+      const normalizedCode = normalizeRoomCode(await navigator.clipboard.readText());
+      setRoomCode(normalizedCode);
+
+      if (!isRoomCode(normalizedCode)) {
+        setRoomCodeError("Le presse-papiers ne contient pas un code de partie valide.");
+        return;
+      }
+
+      if (!savePlayerName()) return;
+      router.push(`/play/${normalizedCode}`);
+    } catch {
+      setRoomCodeError("Impossible de lire le presse-papiers. Colle le code dans le champ.");
+    }
   };
 
   return (
@@ -126,7 +146,7 @@ export function HomeScreen() {
           </button>
           <form className="lobby-code-form" onSubmit={joinMultiplayer} noValidate>
             <label htmlFor="room-code">Rejoindre avec un code</label>
-            <div>
+            <div className="lobby-code-controls">
               <input
                 id="room-code"
                 name="room-code"
@@ -145,9 +165,14 @@ export function HomeScreen() {
                 aria-describedby={roomCodeError ? "room-code-error" : undefined}
                 aria-invalid={roomCodeError ? true : undefined}
               />
-              <button className="secondary-action" type="submit">
-                Rejoindre
-              </button>
+              <div className="lobby-code-actions">
+                <button className="secondary-action" type="button" onClick={pasteRoomCode}>
+                  Coller le code
+                </button>
+                <button className="secondary-action" type="submit">
+                  Rejoindre
+                </button>
+              </div>
             </div>
             {roomCodeError ? (
               <p id="room-code-error" className="form-error" role="alert">{roomCodeError}</p>

@@ -60,6 +60,7 @@ async function command(
     store,
     now,
     rollDie: () => die,
+    pickStartingPlayer: () => "player1",
   });
 }
 
