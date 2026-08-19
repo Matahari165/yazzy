@@ -57,6 +57,16 @@ export function HomeScreen() {
     router.push(`/play/${generateRoomCode()}?host=1`);
   };
 
+  const pasteRoomCode = async () => {
+    try {
+      const pastedCode = await navigator.clipboard.readText();
+      setRoomCode(normalizeRoomCode(pastedCode));
+      setRoomCodeError("");
+    } catch {
+      setRoomCodeError("Impossible de lire le presse-papiers. Colle le code manuellement.");
+    }
+  };
+
   const joinMultiplayer = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!savePlayerName()) return;
@@ -145,6 +155,9 @@ export function HomeScreen() {
                 aria-describedby={roomCodeError ? "room-code-error" : undefined}
                 aria-invalid={roomCodeError ? true : undefined}
               />
+              <button className="secondary-action paste-code-action" type="button" onClick={pasteRoomCode}>
+                Coller le code
+              </button>
               <button className="secondary-action" type="submit">
                 Rejoindre
               </button>
