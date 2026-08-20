@@ -324,6 +324,45 @@ h3 { font-size: 18px; line-height: 1.2; }
   line-height: 0.95;
 }
 .lobby-actions { display: grid; gap: 20px; }
+.paired-player {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--player-soft);
+  border: 1px solid color-mix(in srgb, var(--player) 35%, var(--line));
+  border-radius: var(--radius-md);
+}
+.paired-player > div { min-width: 0; display: flex; align-items: center; gap: 10px; }
+.paired-player > div > span:last-child { min-width: 0; display: grid; }
+.paired-player small { color: var(--player); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.paired-player strong { overflow: hidden; font-family: var(--font-display); font-size: 17px; text-overflow: ellipsis; white-space: nowrap; }
+.paired-player-mark {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--surface);
+  background: var(--player);
+  border-radius: 50%;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+.paired-player .primary-action { min-height: 44px; padding: 10px 14px; }
+.paired-player-remove {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 
 .resume-action {
   min-height: 60px;
@@ -1003,6 +1042,9 @@ h3 { font-size: 18px; line-height: 1.2; }
   .setup-shell { padding: 20px 12px; }
   .lobby-card,
   .setup-card { padding: 28px 20px; }
+  .paired-player { grid-template-columns: minmax(0, 1fr) auto; }
+  .paired-player > div { grid-column: 1 / -1; }
+  .paired-player .primary-action { width: 100%; }
   .game-shell { height: 100dvh; min-height: 0; display: flex; flex-direction: column; padding: max(8px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom)); overflow: hidden; }
   .game-header { flex: none; gap: 8px; margin-bottom: 8px; }
   .game-logo { font-size: 20px; }

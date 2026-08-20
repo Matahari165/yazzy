@@ -45,9 +45,13 @@ function replayDelay(event: RoomActionEvent): number {
   return event.action.type === "ROLL" ? REPLAY_ROLL_DELAY_MS : REPLAY_STEP_DELAY_MS;
 }
 
-function playerToken(roomId: string, role: MultiplayerRole): string {
+function playerToken(roomId: string, role: MultiplayerRole, preferredToken?: string): string {
   const key = `${PLAYER_TOKEN_PREFIX}${roomId}.${role}`;
   try {
+    if (preferredToken) {
+      localStorage.setItem(key, preferredToken);
+      return preferredToken;
+    }
     const saved = localStorage.getItem(key);
     if (saved) return saved;
     const token = crypto.randomUUID();
@@ -98,7 +102,13 @@ export type MultiplayerStatus =
   | "finished"
   | "room_full";
 
-export function useMultiplayerGame(roomId: string, isHost: boolean, playerName: string | null) {
+export function useMultiplayerGame(
+  roomId: string,
+  isHost: boolean,
+  playerName: string | null,
+  pairing?: { localToken: string; guestToken: string | null } | null,
+) {
+  const hasPairing = Boolean(pairing?.localToken);
   const [game, setGame] = useState<MultiplayerGameState | null>(null);
   const [localRole, setLocalRole] = useState<MultiplayerRole | null>(null);
   const [opponentOnline, setOpponentOnline] = useState(false);
@@ -205,7 +215,7 @@ export function useMultiplayerGame(roomId: string, isHost: boolean, playerName: 
     let pollTimer: number | null = null;
     let consecutiveFailures = 0;
     const role: MultiplayerRole = isHost ? "player1" : "player2";
-    const token = playerToken(roomId, role);
+    const token = playerToken(roomId, role, pairing?.localToken);
     roleRef.current = role;
     tokenRef.current = token;
     resetReplay();
@@ -248,15 +258,27 @@ export function useMultiplayerGame(roomId: string, isHost: boolean, playerName: 
 
     const connect = async (attempt = 0): Promise<void> => {
       try {
-        const response = await sendRoomCommand(roomId, { type: "CONNECT", role, token, playerName });
+        const response = await sendRoomCommand(roomId, {
+          type: "CONNECT",
+          role,
+          token,
+          playerName,
+          ...(role === "player1" && pairing?.guestToken
+            ? { pairedGuestToken: pairing.guestToken }
+            : {}),
+        });
         if (cancelled) return;
         if (response.ok) {
           applySuccess(response, "connect");
           schedulePoll();
           return;
         }
-        if (response.code === "ROOM_NOT_FOUND" && role === "player2" && attempt < 3) {
-          await new Promise((resolve) => window.setTimeout(resolve, 700));
+        if (
+          response.code === "ROOM_NOT_FOUND" &&
+          role === "player2" &&
+          (hasPairing || attempt < 3)
+        ) {
+          await new Promise((resolve) => window.setTimeout(resolve, hasPairing ? 1_200 : 700));
           if (!cancelled) await connect(attempt + 1);
           return;
         }
@@ -285,7 +307,17 @@ export function useMultiplayerGame(roomId: string, isHost: boolean, playerName: 
       if (pollTimer !== null) window.clearTimeout(pollTimer);
       resetReplay();
     };
-  }, [applySuccess, connectionAttempt, isHost, playerName, resetReplay, roomId]);
+  }, [
+    applySuccess,
+    connectionAttempt,
+    hasPairing,
+    isHost,
+    pairing?.guestToken,
+    pairing?.localToken,
+    playerName,
+    resetReplay,
+    roomId,
+  ]);
 
   const dispatch = useCallback(async (action: ClientAction) => {
     const role = roleRef.current;

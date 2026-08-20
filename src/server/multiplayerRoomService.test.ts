@@ -65,6 +65,34 @@ async function command(
 }
 
 describe("service de salon privé", () => {
+  it("réserve strictement la place du partenaire lié", async () => {
+    const store = new MemoryRoomStore();
+    await command(store, {
+      type: "CONNECT",
+      role: "player1",
+      token: HOST_TOKEN,
+      playerName: "Alice",
+      pairedGuestToken: GUEST_TOKEN,
+    }, 1_000);
+
+    const intruder = await command(store, {
+      type: "CONNECT",
+      role: "player2",
+      token: OTHER_TOKEN,
+      playerName: "Charlie",
+    }, 20_000);
+    const partner = await command(store, {
+      type: "CONNECT",
+      role: "player2",
+      token: GUEST_TOKEN,
+      playerName: "Bob",
+    }, 20_001);
+
+    expect(intruder.body).toMatchObject({ ok: false, code: "ACCESS_DENIED" });
+    expect(partner.body).toMatchObject({ ok: true, yourRole: "player2" });
+    expect(store.room?.guestTokenLocked).toBe(true);
+  });
+
   it("synchronise une action du serveur entre les deux joueurs", async () => {
     const store = new MemoryRoomStore();
     await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN, playerName: "Alice" }, 1_000);
@@ -335,6 +363,13 @@ describe("validation des commandes de salon", () => {
       token: "court",
       playerName: "Alice",
       afterVersion: 0,
+    })).toBeNull();
+    expect(parseRoomCommand({
+      type: "CONNECT",
+      role: "player2",
+      token: GUEST_TOKEN,
+      playerName: "Bob",
+      pairedGuestToken: OTHER_TOKEN,
     })).toBeNull();
     expect(parseRoomCommand({
       type: "ACTION",

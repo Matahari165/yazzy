@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { FinishedGame } from "@/components/FinishedGame";
 import { GameTable } from "@/components/GameTable";
@@ -12,6 +13,12 @@ import { CATEGORY_BY_ID, type CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 import { readStoredPlayerName, writeStoredPlayerName } from "@/lib/playerNameStorage";
+import {
+  acceptGuestPlayerPairing,
+  readStoredPlayerPairing,
+  updatePlayerPairingPartnerName,
+  type PlayerPairing,
+} from "@/lib/playerPairingStorage";
 
 function replayAnnouncement(event: RoomActionEvent, opponentName: string): string {
   const playerState = event.game[event.role]?.state;
@@ -30,8 +37,18 @@ function replayAnnouncement(event: RoomActionEvent, opponentName: string): strin
   return `${opponentName} propose une nouvelle partie.`;
 }
 
-export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: boolean }) {
+export function MultiplayerClient({
+  roomId,
+  isHost,
+  pairToken,
+}: {
+  roomId: string;
+  isHost: boolean;
+  pairToken: string | null;
+}) {
+  const router = useRouter();
   const [playerName, setPlayerName] = useState<string | null>(null);
+  const [pairing, setPairing] = useState<PlayerPairing | null>(null);
   const {
     game,
     localRole,
@@ -52,7 +69,7 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
     isReplayingOpponentRoll,
     replayedOpponentEvent,
     replayGapDetected,
-  } = useMultiplayerGame(roomId, isHost, playerName);
+  } = useMultiplayerGame(roomId, isHost, playerName, pairing);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [highlightedPlayerCategory, setHighlightedPlayerCategory] = useState<CategoryId | null>(null);
   const [isRolling, setIsRolling] = useState(false);
@@ -62,10 +79,20 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
+      const storedPairing = readStoredPlayerPairing();
+      const matchingPairing = storedPairing?.roomId === roomId &&
+        storedPairing.role === (isHost ? "player1" : "player2")
+        ? storedPairing
+        : null;
+      const acceptedPairing = !isHost && pairToken
+        ? acceptGuestPlayerPairing(roomId, pairToken)
+        : null;
+      setPairing(acceptedPairing ?? matchingPairing);
       setPlayerName(readStoredPlayerName());
+      if (acceptedPairing) router.replace(`/play/${roomId}`);
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, []);
+  }, [isHost, pairToken, roomId, router]);
 
   const localState = localPlayer?.state;
   const opponentState = opponentPlayer?.state;
@@ -73,10 +100,18 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      setInviteLink(`${window.location.origin}/play/${roomId}`);
+      const pairQuery = isHost && pairing?.guestToken
+        ? `?pair=${encodeURIComponent(pairing.guestToken)}`
+        : "";
+      setInviteLink(`${window.location.origin}/play/${roomId}${pairQuery}`);
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, [roomId]);
+  }, [isHost, pairing?.guestToken, roomId]);
+
+  useEffect(() => {
+    if (!pairing || pairing.roomId !== roomId || !opponentPlayer?.name) return;
+    updatePlayerPairingPartnerName(opponentPlayer.name);
+  }, [opponentPlayer?.name, pairing, roomId]);
 
   useEffect(() => () => {
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
@@ -159,7 +194,9 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
   if (status === "connecting") {
     return (
       <main id="main-content" className="app-loading" aria-busy="true">
-        <p role="status">Connexion à la partie {roomId}…</p>
+        <p role="status">{pairing && !isHost
+          ? `En attente de ${pairing.partnerName || "ton partenaire"}…`
+          : `Connexion à la partie ${roomId}…`}</p>
       </main>
     );
   }
@@ -186,15 +223,17 @@ export function MultiplayerClient({ roomId, isHost }: { roomId: string; isHost: 
 
         <section className="waiting-room" aria-labelledby="waiting-title">
           <span className="waiting-dice" aria-hidden="true">•••</span>
-          <p className="eyebrow">PARTIE PRIVÉE</p>
-          <h1 id="waiting-title">Invite ton ami</h1>
-          <p>Envoie-lui ce code. La partie commencera automatiquement dès qu’il l’aura saisi.</p>
+          <p className="eyebrow">{pairing ? "DUO PERMANENT" : "PARTIE PRIVÉE"}</p>
+          <h1 id="waiting-title">{pairing ? "Invite ton partenaire une fois" : "Invite ton ami"}</h1>
+          <p>{pairing
+            ? "Après cette première ouverture, vous pourrez rejouer ensemble directement depuis l’accueil."
+            : "Envoie-lui ce code. La partie commencera automatiquement dès qu’il l’aura saisi."}</p>
           <div className="room-code-block">
             <span>Code de la partie</span>
             <strong>{roomId}</strong>
           </div>
           <div className="invite-actions">
-            <button className="primary-action" type="button" onClick={handleCopyCode}>Copier le code</button>
+            {!pairing ? <button className="primary-action" type="button" onClick={handleCopyCode}>Copier le code</button> : null}
             <button className="secondary-action" type="button" onClick={handleCopyLink}>Copier le lien</button>
           </div>
           <div className="invite-field">

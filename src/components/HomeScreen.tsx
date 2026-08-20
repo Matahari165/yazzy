@@ -19,6 +19,12 @@ import {
   readStoredPlayerName,
   writeStoredPlayerName,
 } from "@/lib/playerNameStorage";
+import {
+  createHostPlayerPairing,
+  readStoredPlayerPairing,
+  removeStoredPlayerPairing,
+  type PlayerPairing,
+} from "@/lib/playerPairingStorage";
 
 function ModeDiceIcon({ pair = false }: { pair?: boolean }) {
   return (
@@ -52,11 +58,13 @@ export function HomeScreen() {
   const [playerName, setPlayerName] = useState("");
   const [playerNameError, setPlayerNameError] = useState("");
   const [isMultiplayerOpen, setIsMultiplayerOpen] = useState(false);
+  const [pairing, setPairing] = useState<PlayerPairing | null>(null);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setSavedGame(readStoredGame());
       setPlayerName(readStoredPlayerName());
+      setPairing(readStoredPlayerPairing());
       setHasLoaded(true);
     }, 0);
     return () => window.clearTimeout(timeout);
@@ -82,6 +90,25 @@ export function HomeScreen() {
   const startMultiplayer = () => {
     if (!savePlayerName()) return;
     router.push(`/play/${generateRoomCode()}?host=1`);
+  };
+
+  const startPairing = () => {
+    if (!savePlayerName()) return;
+    const nextPairing = createHostPlayerPairing(generateRoomCode());
+    setPairing(nextPairing);
+    router.push(`/play/${nextPairing.roomId}?host=1&pair=1`);
+  };
+
+  const playWithPartner = () => {
+    if (!pairing || !savePlayerName()) return;
+    router.push(`/play/${pairing.roomId}${pairing.role === "player1" ? "?host=1" : ""}`);
+  };
+
+  const forgetPartner = () => {
+    const label = pairing?.partnerName || "ce partenaire";
+    if (!window.confirm(`Oublier ${label} sur cet appareil ?`)) return;
+    removeStoredPlayerPairing();
+    setPairing(null);
   };
 
   const joinRoom = (code: string, invalidMessage = "Saisis les 6 caractères du code envoyé par ton ami.") => {
@@ -149,6 +176,24 @@ export function HomeScreen() {
             </Link>
           ) : null}
 
+          {pairing ? (
+            <section className="paired-player" aria-labelledby="paired-player-title">
+              <div>
+                <span className="paired-player-mark" aria-hidden="true">••</span>
+                <span>
+                  <small>Ton duo</small>
+                  <strong id="paired-player-title">{pairing.partnerName || "Partenaire lié"}</strong>
+                </span>
+              </div>
+              <button className="primary-action" type="button" onClick={playWithPartner}>
+                Jouer ensemble
+              </button>
+              <button className="paired-player-remove" type="button" onClick={forgetPartner}>
+                Oublier
+              </button>
+            </section>
+          ) : null}
+
           <section className="new-game" aria-labelledby="new-game-title">
             <h2 id="new-game-title">Nouvelle partie</h2>
             <div className="game-mode-grid">
@@ -209,6 +254,12 @@ export function HomeScreen() {
               <button className="primary-action create-room-action" type="button" onClick={startMultiplayer}>
                 Créer une partie
               </button>
+
+              {!pairing ? (
+                <button className="secondary-action create-room-action" type="button" onClick={startPairing}>
+                  Lier nos appareils
+                </button>
+              ) : null}
 
               <div className="lobby-divider" aria-hidden="true"><span>ou</span></div>
 

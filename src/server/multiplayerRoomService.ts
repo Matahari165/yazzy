@@ -29,6 +29,7 @@ export type StoredRoom = {
   game: MultiplayerGameState;
   hostToken: string;
   guestToken: string | null;
+  guestTokenLocked: boolean;
   version: number;
   lastActionIds: Partial<Record<MultiplayerRole, string>>;
   actionEvents: RoomActionEvent[];
@@ -131,7 +132,8 @@ export async function handleRoomCommand({
       room = {
         game: createHostedGame(roomId, command.playerName, pickStartingPlayer()),
         hostToken: command.token,
-        guestToken: null,
+        guestToken: command.pairedGuestToken ?? null,
+        guestTokenLocked: Boolean(command.pairedGuestToken),
         version: 0,
         lastActionIds: {},
         actionEvents: [],
@@ -156,6 +158,9 @@ export async function handleRoomCommand({
 
   if (command.type === "CONNECT" && command.role === "player2") {
     if (room.guestToken && room.guestToken !== command.token) {
+      if (room.guestTokenLocked) {
+        return failure(403, "ACCESS_DENIED", "Cette invitation appartient à un autre appareil.");
+      }
       const lastSeen = await store.getPresence(roomId, "player2");
       if (lastSeen !== null && now - lastSeen <= ONLINE_WINDOW_MS) {
         return failure(409, "ROOM_FULL", "Deux amis jouent déjà dans cette partie.");
