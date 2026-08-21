@@ -56,7 +56,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
   {
     id: "pair",
     label: "Une paire",
-    shortLabel: "Paire",
+    shortLabel: "1 paire",
     section: "lower",
     rule: "Au moins deux dés identiques.",
     scoring: "Somme la paire de valeur la plus élevée.",
@@ -92,7 +92,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
   {
     id: "smallStraight",
     label: "Petite suite",
-    shortLabel: "Petite suite",
+    shortLabel: "P. suite",
     section: "lower",
     rule: "Obtenir exactement 1, 2, 3, 4 et 5.",
     scoring: "15 points.",
@@ -102,7 +102,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
   {
     id: "largeStraight",
     label: "Grande suite",
-    shortLabel: "Grande suite",
+    shortLabel: "G. suite",
     section: "lower",
     rule: "Obtenir exactement 2, 3, 4, 5 et 6.",
     scoring: "20 points.",

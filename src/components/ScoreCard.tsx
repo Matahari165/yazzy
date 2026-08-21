@@ -111,8 +111,13 @@ export function ScoreCard({
                   aria-label={`${category.label}, ${playerLabel.toLowerCase()} : ${filled ? `${score} points inscrits` : currentScore === null ? "aucun score affiché" : `${currentScore} points possibles`}, ${opponentLabel.toLowerCase()} : ${botScore !== undefined ? `${botScore} points inscrits` : opponentScoreWithDice !== null ? `${opponentScoreWithDice} points possibles` : "aucun score affiché"}. ${stateLabel}. Ouvrir l’explication.`}
                   onClick={handleDetailsClick}
                 />
-                <span className="score-category">
-                  {category.label}
+                <span className="score-category" aria-hidden="true">
+                  <span className="score-category-label score-category-label-full">
+                    {category.label}
+                  </span>
+                  <span className="score-category-label score-category-label-short" aria-hidden="true">
+                    {category.shortLabel}
+                  </span>
                   {VISUAL_HINTS[category.id] && <span className="score-category-hint">{VISUAL_HINTS[category.id]}</span>}
                 </span>
                 {canScoreDirectly ? (

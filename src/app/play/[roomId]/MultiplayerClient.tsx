@@ -9,7 +9,7 @@ import { MultiplayerNameGate } from "@/components/MultiplayerNameGate";
 import { MultiplayerReactions } from "@/components/MultiplayerReactions";
 import { ScoreCard } from "@/components/ScoreCard";
 import type { RoomActionEvent } from "@/domain/multiplayerRoomProtocol";
-import { CATEGORY_BY_ID, type CategoryId } from "@/domain/yatzy";
+import { CATEGORY_BY_ID, totalScore, type CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 import { readStoredPlayerName, writeStoredPlayerName } from "@/lib/playerNameStorage";
@@ -261,6 +261,8 @@ export function MultiplayerClient({
   const rematchRequested = game.rematchReady.includes(localRole);
   const localName = localPlayer.name;
   const opponentName = opponentPlayer.name;
+  const localTotal = totalScore(localState.scores);
+  const opponentTotal = totalScore(opponentState.scores);
   const highlightedOpponentDie = replayedOpponentEvent?.action.type === "HOLD"
     ? replayedOpponentEvent.action.index
     : null;
@@ -277,12 +279,17 @@ export function MultiplayerClient({
     <main id="main-content" className="game-shell">
       <header className="game-header multiplayer-game-header">
         <Link className="game-logo" href="/">YAZZY</Link>
-        <div className="match-score" aria-label={isMyTurn ? `À ${localName} de jouer` : `À ${opponentName} de jouer`}>
+        <div
+          className="match-score"
+          aria-label={`${localName} ${localTotal}, ${opponentName} ${opponentTotal}. ${isMyTurn ? `À ${localName} de jouer.` : `À ${opponentName} de jouer.`}`}
+        >
           <span className="match-player" data-active={isMyTurn} data-score-column="player">
             <span className="match-player-name">{localName}</span>
+            <strong aria-hidden="true">{localTotal}</strong>
           </span>
           <span className="match-player" data-active={!isMyTurn} data-score-column="opponent" data-online={opponentOnline}>
             <span className="match-player-name">{opponentName}</span>
+            <strong aria-hidden="true">{opponentTotal}</strong>
           </span>
         </div>
         <MultiplayerReactions

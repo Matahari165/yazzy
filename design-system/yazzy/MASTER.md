@@ -23,9 +23,11 @@ Yazzy est un jeu de plateau moderne, léger et accueillant. Le score reste le ce
 | Texte secondaire | `#5C6261` | `--ink-soft` |
 | Accent de marque | `#ED896E` | `--coral` |
 | Accent accentué | `#C96350` | `--coral-deep` |
+| Texte corail accessible | `#A94735` | `--coral-ink` |
 | Joueur local | `#1F5F9C` | `--player` |
 | Adversaire (bot ou ami) | `#A33B3D` | `--opponent` |
 | Dé gardé / confirmation | `#237A58` | `--green` |
+| Texte vert accessible | `#176346` | `--green-ink` |
 | Surface gardée | `#DCEFE5` | `--green-soft` |
 | Ligne | `#DDD6CC` | `--line` |
 
@@ -53,7 +55,7 @@ Le joueur local est toujours bleu et l’adversaire toujours rouge. Une case dé
 
 ### Téléphone
 
-L’accueil et le choix du bot sont centrés sur une action principale. Pendant la partie, l’en-tête regroupe le mode, les scores et le joueur actif sur une seule ligne. La feuille n’a pas de titre redondant et utilise deux colonnes. Les dés et l’action restent dans la zone basse visible ; la feuille ne défile que lorsque la hauteur est trop courte pour préserver des cibles tactiles d’au moins 44 × 44 px.
+L’accueil et le choix du bot sont centrés sur une action principale. Pendant la partie, l’en-tête regroupe le mode, les scores et le joueur actif sur une seule ligne. La feuille n’a pas de titre redondant et utilise deux colonnes. Les catégories utilisent `shortLabel` jusqu’à 430 px et en paysage compact ; leur nom complet reste dans les libellés accessibles. Les dés et l’action restent dans la zone basse visible ; la feuille ne défile que lorsque la hauteur est trop courte pour préserver des cibles tactiles d’au moins 44 × 44 px.
 
 ### Paysage compact
 
@@ -72,8 +74,9 @@ La feuille dense et le pupitre sont présentés dans deux colonnes équilibrées
 - raccourcis `⌥1` à `⌥5`, `⌥R` et `⌥S` actifs mais non affichés pendant la partie ;
 - trois points compacts indiquent les lancers disponibles et consommés ;
 - toucher le chiffre d’un score possible l’inscrit immédiatement ; toucher le reste de la case la sélectionne et ouvre une fiche courte « Réalisation / Calcul / Score » ; la fiche est ancrée à la case sur Mac et présentée en bas de l’écran sur mobile ;
-- l’inscription d’un score déclenche une impulsion visuelle discrète de `220ms`, pour le joueur local comme pour l’adversaire ;
-- animation des dés de 220 à 300 ms, résultat généré au clic, dés gardés immobiles ;
+- les mouvements utilisent les jetons `--motion-fast`, `--motion-state` et `--motion-emphasis`, avec les accélérations `--ease-out`, `--ease-standard` et `--ease-emphasized` ;
+- l’inscription d’un score déclenche une impulsion visuelle discrète de `260ms`, pour le joueur local comme pour l’adversaire ;
+- animation des dés de `260ms`, résultat généré au clic, dés gardés immobiles ;
 - `prefers-reduced-motion` réduit l’animation à un fondu court ;
 - contraste AA et focus visible ;
 - pas d’emoji décoratif ; les emojis sont réservés aux réactions temporaires du mode entre amis.

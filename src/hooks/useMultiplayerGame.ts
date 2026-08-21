@@ -15,13 +15,46 @@ import type { ClientAction } from "../domain/protocol";
 import type { CategoryId } from "../domain/yatzy";
 
 const PLAYER_TOKEN_PREFIX = "yazzy.multiplayer.token.v2.";
-const POLL_INTERVAL_MS = 800;
+export const FOREGROUND_POLL_INTERVAL_MS = 800;
+export const BACKGROUND_POLL_INTERVAL_MS = 4_000;
+export const MAX_POLL_INTERVAL_MS = 4_000;
 const REQUEST_TIMEOUT_MS = 8_000;
 const MAX_SILENT_FAILURES = 3;
 const REPLAY_ROLL_DELAY_MS = 420;
 const REPLAY_STEP_DELAY_MS = 260;
 
 type RoomResponseSource = "connect" | "sync" | "action" | "reaction";
+
+export function multiplayerPollDelay(
+  isDocumentHidden: boolean,
+  consecutiveFailures: number,
+): number {
+  if (isDocumentHidden) return BACKGROUND_POLL_INTERVAL_MS;
+  if (consecutiveFailures <= 0) return FOREGROUND_POLL_INTERVAL_MS;
+
+  return Math.min(
+    FOREGROUND_POLL_INTERVAL_MS * (2 ** consecutiveFailures),
+    MAX_POLL_INTERVAL_MS,
+  );
+}
+
+export function shouldReplaceCanonicalGame(
+  currentVersion: number,
+  responseVersion: number,
+): boolean {
+  return responseVersion > currentVersion;
+}
+
+export function canonicalGameAfterResponse<T>(
+  currentGame: T | null,
+  currentVersion: number,
+  responseGame: T,
+  responseVersion: number,
+): T {
+  return currentGame === null || shouldReplaceCanonicalGame(currentVersion, responseVersion)
+    ? responseGame
+    : currentGame;
+}
 
 export function replayCursorAfterResponse(
   currentCursor: number,
@@ -163,8 +196,17 @@ export function useMultiplayerGame(
   }, []);
 
   const applySuccess = useCallback((response: RoomSuccess, source: RoomResponseSource) => {
-    if (response.version >= canonicalVersionRef.current) {
-      canonicalGameRef.current = response.game;
+    const shouldReplaceGame = shouldReplaceCanonicalGame(
+      canonicalVersionRef.current,
+      response.version,
+    );
+    canonicalGameRef.current = canonicalGameAfterResponse(
+      canonicalGameRef.current,
+      canonicalVersionRef.current,
+      response.game,
+      response.version,
+    );
+    if (shouldReplaceGame) {
       canonicalVersionRef.current = response.version;
     }
 
@@ -175,7 +217,7 @@ export function useMultiplayerGame(
       replayQueueRef.current = [];
       setReplayedOpponentEvent(null);
       setReplayGapDetected(true);
-      setGame(response.game);
+      setGame(canonicalGameRef.current);
     } else if (source === "sync") {
       setReplayGapDetected(false);
       const unseenEvents = response.events.filter((event) => event.version > eventCursorRef.current);
@@ -202,7 +244,11 @@ export function useMultiplayerGame(
     );
     setLocalRole(response.yourRole);
     setOpponentOnline(response.opponentOnline);
-    setLatestReaction(response.latestReaction);
+    setLatestReaction((currentReaction) => (
+      currentReaction?.id === response.latestReaction?.id
+        ? currentReaction
+        : response.latestReaction
+    ));
     setIsConnected(true);
     setConnectionError(null);
     setRoomFull(false);
@@ -221,7 +267,15 @@ export function useMultiplayerGame(
     resetReplay();
 
     const schedulePoll = () => {
-      if (!cancelled) pollTimer = window.setTimeout(poll, POLL_INTERVAL_MS);
+      if (!cancelled) {
+        pollTimer = window.setTimeout(
+          () => {
+            pollTimer = null;
+            void poll();
+          },
+          multiplayerPollDelay(document.visibilityState === "hidden", consecutiveFailures),
+        );
+      }
     };
 
     const poll = async () => {
@@ -291,6 +345,17 @@ export function useMultiplayerGame(
       }
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible" || pollTimer === null) return;
+      window.clearTimeout(pollTimer);
+      pollTimer = window.setTimeout(() => {
+        pollTimer = null;
+        void poll();
+      }, 0);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     const startTimer = window.setTimeout(() => {
       setGame(null);
       setLocalRole(null);
@@ -305,6 +370,7 @@ export function useMultiplayerGame(
       cancelled = true;
       window.clearTimeout(startTimer);
       if (pollTimer !== null) window.clearTimeout(pollTimer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       resetReplay();
     };
   }, [

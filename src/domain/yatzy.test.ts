@@ -7,6 +7,27 @@ describe("Yatzy nordique — scores", () => {
     expect(CATEGORY_IDS.map(String)).not.toContain("chance");
   });
 
+  it("fournit un libellé compact sans remplacer le nom complet", () => {
+    expect(CATEGORIES.map((category) => category.shortLabel)).toEqual([
+      "As",
+      "Deux",
+      "Trois",
+      "Quatre",
+      "Cinq",
+      "Six",
+      "1 paire",
+      "2 paires",
+      "Brelan",
+      "Carré",
+      "P. suite",
+      "G. suite",
+      "Full",
+      "Yatzy",
+    ]);
+    expect(CATEGORIES.find((category) => category.id === "smallStraight")?.label)
+      .toBe("Petite suite");
+  });
+
   it("calcule la section supérieure", () => {
     expect(scoreDice("fours", [4, 4, 4, 2, 6])).toBe(12);
   });
