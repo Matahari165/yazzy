@@ -106,11 +106,7 @@ export function GameTable({
           <strong>{usedRolls}</strong><span aria-hidden="true">/</span><span aria-hidden="true">3</span>
         </span>
         {isObserver ? (
-          <span className="opponent-hold-map" aria-hidden="true">
-            {held.map((isHeld, index) => (
-              <i key={index} data-held={isHeld} data-highlighted={highlightedDieIndex === index}>✓</i>
-            ))}
-          </span>
+          <span className="roll-control-spacer" aria-hidden="true" />
         ) : canShowRollButton ? (
           <button className={selectedCategory ? "secondary-action" : "primary-action"} type="button" disabled={!canRoll} onClick={onRoll}>
             {isRolling ? "Les dés roulent…" : actionLabel}

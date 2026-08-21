@@ -63,6 +63,10 @@ export function ScoreCard({
           const score = humanScores[category.id];
           const botScore = botScores[category.id];
           const filled = score !== undefined;
+          const opponentFilled = botScore !== undefined;
+          const visuallyFilledColumn = activeColumn === "opponent"
+            ? opponentFilled ? "opponent" : "none"
+            : filled ? "player" : "none";
           const isSelected = selected === category.id;
           const scoreWithDice = dice.length === 5 && activeColumn !== "opponent"
             ? scoreDice(category.id, dice)
@@ -92,7 +96,8 @@ export function ScoreCard({
               <div
                 className="score-row"
                 data-actionable={!filled && !isReadOnly && canSelect}
-                data-filled={filled}
+                data-filled={visuallyFilledColumn !== "none"}
+                data-filled-column={visuallyFilledColumn}
                 data-selected={isSelected}
               >
                 <button

@@ -838,7 +838,8 @@ h3 { font-size: 18px; line-height: 1.2; }
   45% { transform: scale(1.08); box-shadow: 0 0 0 4px rgb(163 59 61 / 20%); }
 }
 .score-value[data-state="filled"] { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 55%); }
-.score-row[data-filled="true"] > .score-value:not(.score-value-bot) {
+.score-row[data-filled-column="player"] > .score-value:not(.score-value-bot),
+.score-row[data-filled-column="opponent"] > .score-value-bot {
   color: var(--ink);
   background: var(--score-filled-cell);
   border-color: var(--score-filled-border);
@@ -965,34 +966,7 @@ h3 { font-size: 18px; line-height: 1.2; }
   font-weight: 800;
 }
 .roll-indicator strong { color: var(--ink); font-family: var(--font-display); font-size: 18px; line-height: 1; }
-.roll-control-spacer,
-.opponent-hold-map { min-height: 48px; }
-.opponent-hold-map {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: rgb(255 253 248 / 65%);
-  border: 1px solid rgb(35 122 88 / 28%);
-  border-radius: var(--radius-sm);
-}
-.opponent-hold-map i {
-  width: 24px;
-  height: 24px;
-  display: grid;
-  place-items: center;
-  color: transparent;
-  background: rgb(255 253 248 / 72%);
-  border: 2px solid rgb(35 122 88 / 32%);
-  border-radius: 7px;
-  font-size: 14px;
-  font-style: normal;
-  font-weight: 900;
-  line-height: 1;
-}
-.opponent-hold-map i[data-held="true"] { color: var(--surface); background: var(--game-green-strong); border-color: var(--game-green-strong); }
-.opponent-hold-map i[data-highlighted="true"] { animation: opponent-hold-choice 260ms ease-out; }
-@keyframes opponent-hold-choice { 50% { transform: scale(1.18); box-shadow: 0 0 0 4px rgb(35 122 88 / 18%); } }
+.roll-control-spacer { min-height: 48px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important;
@@ -1010,8 +984,7 @@ h3 { font-size: 18px; line-height: 1.2; }
   .reaction-toast,
   .score-help-popover,
   .score-value[data-highlighted="true"],
-  .die-button[data-highlighted="true"] .die-face,
-  .opponent-hold-map i[data-highlighted="true"] { animation: none; }
+  .die-button[data-highlighted="true"] .die-face { animation: none; }
   .die-button[data-rolling="true"] .die-face { animation: die-fade 80ms ease both; }
 }
 .bot-turn-panel { display: grid; gap: 12px; padding: 16px; background: var(--opponent-soft); border-color: var(--opponent); }
