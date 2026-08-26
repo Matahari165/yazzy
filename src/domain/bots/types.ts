@@ -1,6 +1,6 @@
 import type { CategoryId, Dice, DiceCounts } from "../yatzy";
 
-export const BOT_LEVELS = ["discovery", "calculator", "strategist"] as const;
+export const BOT_LEVELS = ["strategist", "expert"] as const;
 export type BotLevel = (typeof BOT_LEVELS)[number];
 
 export type BotDecisionContext = {

@@ -4,14 +4,16 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BOT_LEVELS, getBotPolicy, type BotLevel } from "@/domain/bots";
-import { createGame, isFinished } from "@/domain/game";
-import { readStoredGame, writeStoredGame } from "@/lib/gameStorage";
-import { ConfirmOverwriteDialog } from "./ConfirmOverwriteDialog";
+import { createGame } from "@/domain/game";
+import { writeStoredGame } from "@/lib/gameStorage";
 
 export function BotSetupScreen() {
   const router = useRouter();
   const [selectedLevel, setSelectedLevel] = useState<BotLevel>("strategist");
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    router.prefetch("/game");
+  }, [router]);
 
   useEffect(() => {
     router.prefetch("/game");
@@ -20,15 +22,6 @@ export function BotSetupScreen() {
   const startGame = () => {
     writeStoredGame(createGame(selectedLevel));
     router.push("/game");
-  };
-
-  const requestStart = () => {
-    const stored = readStoredGame();
-    if (stored && !isFinished(stored)) {
-      setIsConfirmOpen(true);
-      return;
-    }
-    startGame();
   };
 
   return (
@@ -64,17 +57,8 @@ export function BotSetupScreen() {
           })}
         </div>
 
-        <button className="primary-action setup-submit" type="button" onClick={requestStart}>Commencer</button>
+        <button className="primary-action setup-submit" type="button" onClick={startGame}>Commencer</button>
       </section>
-
-      <ConfirmOverwriteDialog
-        open={isConfirmOpen}
-        onCancel={() => setIsConfirmOpen(false)}
-        onConfirm={() => {
-          setIsConfirmOpen(false);
-          startGame();
-        }}
-      />
     </main>
   );
 }

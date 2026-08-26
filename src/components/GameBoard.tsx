@@ -9,6 +9,8 @@ import { BotTurnPanel, GameTable } from "./GameTable";
 import { GameHeader } from "./GameHeader";
 import { ScoreCard } from "./ScoreCard";
 
+const HUMAN_ROLL_ANIMATION_MS = 360;
+
 export function GameBoard() {
   const { game, roll, toggleHeld, score, skipBotAnimation, isFinished, hasLoaded } = useYazzyGame();
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
@@ -41,7 +43,7 @@ export function GameBoard() {
     roll();
     setIsRolling(true);
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
-    const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 80 : 260;
+    const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 80 : HUMAN_ROLL_ANIMATION_MS;
     rollTimerRef.current = window.setTimeout(() => {
       rollTimerRef.current = null;
       setIsRolling(false);

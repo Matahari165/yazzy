@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { DieValue } from "@/domain/yatzy";
 
 const PIPS: Record<DieValue, number[]> = {
@@ -27,6 +28,7 @@ type DiceProps = {
   disabled: boolean;
   finalResult?: boolean;
   rolling: boolean;
+  rollAnimationStyle?: CSSProperties;
   index: number;
   onToggle: () => void;
 };
@@ -39,6 +41,7 @@ export function Dice({
   disabled,
   finalResult = false,
   rolling,
+  rollAnimationStyle,
   index,
   onToggle,
 }: DiceProps) {
@@ -49,6 +52,7 @@ export function Dice({
       data-held={held}
       data-highlighted={highlighted}
       data-rolling={rolling && !held}
+      style={rollAnimationStyle}
       aria-pressed={held}
       aria-keyshortcuts={`Alt+${index + 1}`}
       aria-label={`Dé ${index + 1} : ${value}, ${finalResult ? "résultat final" : held ? "gardé" : "à relancer"}`}

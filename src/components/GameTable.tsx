@@ -1,3 +1,4 @@
+import { useState, type CSSProperties } from "react";
 import { type CategoryId, type DieValue } from "@/domain/yatzy";
 import type { GameState } from "@/domain/game";
 import { Dice } from "./Dice";
@@ -8,6 +9,7 @@ type DiceTrayProps = {
   highlightedDieIndex?: number | null;
   showHeldMarkers?: boolean;
   rollNumber: number;
+  animationSeed: number;
   rolling: boolean;
   disabled: boolean;
   finalResult?: boolean;
@@ -21,18 +23,38 @@ function DiceTray({
   highlightedDieIndex = null,
   showHeldMarkers = false,
   rollNumber,
+  animationSeed,
   rolling,
   disabled,
   finalResult,
   label,
   onToggle,
 }: DiceTrayProps) {
+  const rollAnimationStyle = (index: number): CSSProperties => {
+    const seed = animationSeed * 31 + (index + 1) * 17;
+    const pseudoRandom = (salt: number) => {
+      const value = Math.sin(seed * 12.9898 + salt * 78.233) * 43758.5453;
+      return value - Math.floor(value);
+    };
+    const between = (min: number, max: number, salt: number) => min + (max - min) * pseudoRandom(salt);
+
+    return {
+      "--roll-delay": `${Math.round(between(0, 18, 1))}ms`,
+      "--roll-start-y": `${Math.round(between(4, 8, 2))}px`,
+      "--roll-start-angle": `${Math.round(between(-14, 14, 3))}deg`,
+      "--roll-mid-y": `${Math.round(between(-4, -1, 4))}px`,
+      "--roll-mid-angle": `${Math.round(between(-12, 12, 5))}deg`,
+      "--roll-end-y": `${Math.round(between(0, 2, 6))}px`,
+      "--roll-end-angle": `${Math.round(between(-4, 4, 7))}deg`,
+    } as CSSProperties;
+  };
+
   return (
     <div className="dice-tray" role="group" aria-label={label}>
       {dice.length === 5
         ? dice.map((value, index) => (
             <Dice
-              key={index}
+              key={`${index}-${rollNumber}`}
               value={value}
               index={index}
               held={rollNumber < 3 && held[index]}
@@ -41,6 +63,7 @@ function DiceTray({
               disabled={disabled || rollNumber >= 3}
               finalResult={finalResult ?? rollNumber >= 3}
               rolling={rolling}
+              rollAnimationStyle={rollAnimationStyle(index)}
               onToggle={() => onToggle?.(index)}
             />
           ))
@@ -54,6 +77,7 @@ type GameTableProps = {
   held: boolean[];
   rollNumber: number;
   selectedCategory: CategoryId | null;
+  animationSeed?: number;
   isRolling: boolean;
   isDisabled?: boolean;
   isRollDisabled?: boolean;
@@ -69,6 +93,7 @@ export function GameTable({
   held,
   rollNumber,
   selectedCategory,
+  animationSeed: animationSeedProp,
   isRolling,
   isDisabled = false,
   isRollDisabled = false,
@@ -79,6 +104,8 @@ export function GameTable({
   onRoll,
 }: GameTableProps) {
   const heldCount = held.filter(Boolean).length;
+  const [localAnimationSeed, setLocalAnimationSeed] = useState(0);
+  const animationSeed = animationSeedProp ?? localAnimationSeed;
   const canRoll = rollNumber < 3 && !(rollNumber > 0 && heldCount === 5) && !isRolling && !isDisabled && !isRollDisabled;
   const actionLabel = rollNumber === 0 ? "Lancer" : "Relancer";
   const usedRolls = Math.min(rollNumber, 3);
@@ -97,6 +124,7 @@ export function GameTable({
         highlightedDieIndex={highlightedDieIndex}
         showHeldMarkers={isObserver}
         rollNumber={rollNumber}
+        animationSeed={animationSeed}
         rolling={isRolling}
         disabled={isRolling || isDisabled}
         label={label}
@@ -110,7 +138,15 @@ export function GameTable({
         {isObserver ? (
           <span className="roll-control-spacer" aria-hidden="true" />
         ) : canShowRollButton ? (
-          <button className={selectedCategory ? "secondary-action" : "primary-action"} type="button" disabled={!canRoll} onClick={onRoll}>
+          <button
+            className={selectedCategory ? "secondary-action" : "primary-action"}
+            type="button"
+            disabled={!canRoll}
+            onClick={() => {
+              setLocalAnimationSeed((seed) => seed + 1);
+              onRoll();
+            }}
+          >
             {isRolling ? "Les dés roulent…" : actionLabel}
           </button>
         ) : <span className="roll-control-spacer" aria-hidden="true" />}
@@ -135,6 +171,7 @@ export function BotTurnPanel({ game, onSkip }: BotTurnPanelProps) {
         dice={game.bot.dice}
         held={game.bot.held}
         rollNumber={game.bot.rollNumber}
+        animationSeed={game.turn * 3 + game.bot.rollNumber}
         rolling={game.botTurn.status === "rolling" || game.botTurn.status === "waiting"}
         disabled
         finalResult={game.bot.rollNumber >= 3}

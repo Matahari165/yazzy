@@ -59,7 +59,6 @@ function normalizeStoredRoom(value: unknown): StoredRoom | null {
     !isMultiplayerGameState(room.game) ||
     !isPlayerToken(room.hostToken) ||
     (room.guestToken !== null && !isPlayerToken(room.guestToken)) ||
-    (room.guestTokenLocked !== undefined && typeof room.guestTokenLocked !== "boolean") ||
     !Number.isInteger(room.version) ||
     room.version! < 0 ||
     !room.lastActionIds ||
@@ -89,7 +88,6 @@ function normalizeStoredRoom(value: unknown): StoredRoom | null {
     game: room.game,
     hostToken: room.hostToken,
     guestToken: room.guestToken,
-    guestTokenLocked: room.guestTokenLocked ?? false,
     version: room.version!,
     lastActionIds: room.lastActionIds,
     actionEvents,

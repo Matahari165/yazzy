@@ -4,7 +4,7 @@ import { MultiplayerClient } from "./MultiplayerClient";
 
 type PlayRoomPageProps = {
   params: Promise<{ roomId: string }>;
-  searchParams: Promise<{ host?: string | string[]; pair?: string | string[] }>;
+  searchParams: Promise<{ host?: string | string[] }>;
 };
 
 export default async function PlayRoomPage({ params, searchParams }: PlayRoomPageProps) {
@@ -19,7 +19,6 @@ export default async function PlayRoomPage({ params, searchParams }: PlayRoomPag
     <MultiplayerClient
       roomId={roomId}
       isHost={query.host === "1"}
-      pairToken={typeof query.pair === "string" ? query.pair : null}
     />
   );
 }

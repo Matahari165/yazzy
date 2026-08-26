@@ -22,8 +22,7 @@
   --player-soft: #dceaf7;
   --opponent: #a33b3d;
   --opponent-soft: #f7dddd;
-  --score-upper-surface: #fff3d8;
-  --score-combo-surface: #eaf4ef;
+  --score-row-surface: #f5efe6;
   --score-player-cell: var(--player-soft);
   --score-opponent-cell: var(--opponent-soft);
   --score-opponent-preview: #f9e9e9;
@@ -48,6 +47,7 @@
   --motion-fast: 120ms;
   --motion-state: 180ms;
   --motion-emphasis: 260ms;
+  --motion-dice-roll: 340ms;
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);

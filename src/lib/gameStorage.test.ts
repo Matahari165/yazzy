@@ -51,7 +51,7 @@ describe("stockage de la partie bot", () => {
   });
 
   it("conserve une partie en cours", () => {
-    const game = createGame("calculator", "human");
+    const game = createGame("expert", "human");
 
     expect(writeStoredGame(game)).toBe(true);
     expect(readStoredGame()).toEqual(game);

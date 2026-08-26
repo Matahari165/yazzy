@@ -111,7 +111,7 @@ export function isStoredGame(value: unknown): value is GameState {
   return (
     game.version === GAME_VERSION &&
     game.mode === "bot" &&
-    (game.botLevel === "discovery" || game.botLevel === "calculator" || game.botLevel === "strategist") &&
+    (game.botLevel === "strategist" || game.botLevel === "expert") &&
     (game.activePlayer === "human" || game.activePlayer === "bot") &&
     hasValidScoreOrder &&
     turn === botCount + 1 &&

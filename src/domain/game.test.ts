@@ -39,7 +39,7 @@ describe("partie contre un bot", () => {
   });
 
   it("fait passer la main du joueur au bot après une inscription", () => {
-    const current = { ...createGame("calculator", "human"), human: rolledHuman() };
+    const current = { ...createGame("expert", "human"), human: rolledHuman() };
     const next = scoreHumanTurn(current, "largeStraight");
 
     expect(next.activePlayer).toBe("bot");
@@ -49,7 +49,7 @@ describe("partie contre un bot", () => {
 
   it("rend la main au joueur après le score du bot", () => {
     const current = {
-      ...createGame("discovery", "human"),
+      ...createGame("strategist", "human"),
       activePlayer: "bot" as const,
       turn: 1,
       human: { ...rolledHuman({ largeStraight: 20 }), dice: [], rollNumber: 0 },
@@ -67,19 +67,18 @@ describe("partie contre un bot", () => {
 
   it("ne laisse pas le niveau modifier le générateur de dés", () => {
     const values: (1 | 2 | 3 | 4 | 5 | 6)[] = [1, 2, 3, 4, 5];
-    const results = ["discovery", "calculator", "strategist"].map((botLevel) =>
-      rollPlayerTurn(createGame(botLevel as "discovery" | "calculator" | "strategist", "human").human, diceRoll(...values)),
+    const results = ["strategist", "expert"].map((botLevel) =>
+      rollPlayerTurn(createGame(botLevel as "strategist" | "expert", "human").human, diceRoll(...values)),
     );
 
     expect(results.map((result) => result.dice)).toEqual([
-      [1, 2, 3, 4, 5],
       [1, 2, 3, 4, 5],
       [1, 2, 3, 4, 5],
     ]);
   });
 
   it("termine une séquence de tour bot avec un tirage injecté", () => {
-    const current = createGame("discovery", "bot");
+    const current = createGame("expert", "bot");
     const next = completeBotTurn(current, diceRoll(6, 6, 6, 2, 3, 4, 5, 1));
 
     expect(next.activePlayer).toBe("human");

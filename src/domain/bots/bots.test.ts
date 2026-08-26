@@ -12,7 +12,7 @@ const context = {
 };
 
 describe("politiques de bot", () => {
-  it.each<[BotLevel]>([["discovery"], ["calculator"], ["strategist"]])(
+  it.each<[BotLevel]>([["strategist"], ["expert"]])(
     "%s choisit une case libre et une conservation légale",
     (level) => {
       const policy = getBotPolicy(level);
@@ -26,9 +26,9 @@ describe("politiques de bot", () => {
     },
   );
 
-  it("documente le stratège comme une heuristique et le calculateur comme exact", () => {
+  it("documente le stratège et l’expert", () => {
     expect(getBotPolicy("strategist").precision).toBe("heuristic");
     expect(getBotPolicy("strategist").description).toContain("pas une stratégie optimale");
-    expect(getBotPolicy("calculator").precision).toBe("exact");
+    expect(getBotPolicy("expert").description).toContain("valeur future");
   });
 });

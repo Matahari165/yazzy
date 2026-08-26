@@ -106,32 +106,20 @@ describe("service de salon privé", () => {
     expect(store.peakOperations).toBe(3);
   });
 
-  it("réserve strictement la place du partenaire lié", async () => {
+  it("permet à un nouvel invité de rejoindre après la déconnexion de l’ancien", async () => {
     const store = new MemoryRoomStore();
-    await command(store, {
-      type: "CONNECT",
-      role: "player1",
-      token: HOST_TOKEN,
-      playerName: "Alice",
-      pairedGuestToken: GUEST_TOKEN,
-    }, 1_000);
+    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN, playerName: "Alice" }, 1_000);
+    await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN, playerName: "Bob" }, 1_001);
 
-    const intruder = await command(store, {
+    const replacement = await command(store, {
       type: "CONNECT",
       role: "player2",
       token: OTHER_TOKEN,
       playerName: "Charlie",
     }, 20_000);
-    const partner = await command(store, {
-      type: "CONNECT",
-      role: "player2",
-      token: GUEST_TOKEN,
-      playerName: "Bob",
-    }, 20_001);
 
-    expect(intruder.body).toMatchObject({ ok: false, code: "ACCESS_DENIED" });
-    expect(partner.body).toMatchObject({ ok: true, yourRole: "player2" });
-    expect(store.room?.guestTokenLocked).toBe(true);
+    expect(replacement.body).toMatchObject({ ok: true, yourRole: "player2" });
+    expect(store.room?.guestToken).toBe(OTHER_TOKEN);
   });
 
   it("synchronise une action du serveur entre les deux joueurs", async () => {

@@ -3,28 +3,19 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { isFinished, type GameState } from "@/domain/game";
 import {
   generateRoomCode,
   isRoomCode,
   normalizeRoomCode,
 } from "@/domain/roomCode";
-import { CATEGORY_IDS } from "@/domain/yatzy";
 import {
   normalizePlayerName,
   PLAYER_NAME_MAX_LENGTH,
 } from "@/domain/playerName";
-import { readStoredGame } from "@/lib/gameStorage";
 import {
   readStoredPlayerName,
   writeStoredPlayerName,
 } from "@/lib/playerNameStorage";
-import {
-  createHostPlayerPairing,
-  readStoredPlayerPairing,
-  removeStoredPlayerPairing,
-  type PlayerPairing,
-} from "@/lib/playerPairingStorage";
 
 function ModeDiceIcon({ pair = false }: { pair?: boolean }) {
   return (
@@ -51,29 +42,21 @@ function ModeDiceIcon({ pair = false }: { pair?: boolean }) {
 
 export function HomeScreen() {
   const router = useRouter();
-  const [savedGame, setSavedGame] = useState<GameState | null>(null);
-  const [hasLoaded, setHasLoaded] = useState(false);
   const [roomCode, setRoomCode] = useState("");
   const [roomCodeError, setRoomCodeError] = useState("");
   const [playerName, setPlayerName] = useState("");
   const [playerNameError, setPlayerNameError] = useState("");
   const [isMultiplayerOpen, setIsMultiplayerOpen] = useState(false);
-  const [pairing, setPairing] = useState<PlayerPairing | null>(null);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      setSavedGame(readStoredGame());
       setPlayerName(readStoredPlayerName());
-      setPairing(readStoredPlayerPairing());
-      setHasLoaded(true);
+      try {
+        window.localStorage.removeItem("yazzy.playerPairing.v1");
+      } catch {}
     }, 0);
     return () => window.clearTimeout(timeout);
   }, []);
-
-  const canResume = hasLoaded && savedGame !== null && !isFinished(savedGame);
-  const savedTurn = savedGame
-    ? Math.min(savedGame.turn, CATEGORY_IDS.length)
-    : 0;
 
   const savePlayerName = () => {
     const normalizedName = normalizePlayerName(playerName);
@@ -90,25 +73,6 @@ export function HomeScreen() {
   const startMultiplayer = () => {
     if (!savePlayerName()) return;
     router.push(`/play/${generateRoomCode()}?host=1`);
-  };
-
-  const startPairing = () => {
-    if (!savePlayerName()) return;
-    const nextPairing = createHostPlayerPairing(generateRoomCode());
-    setPairing(nextPairing);
-    router.push(`/play/${nextPairing.roomId}?host=1&pair=1`);
-  };
-
-  const playWithPartner = () => {
-    if (!pairing || !savePlayerName()) return;
-    router.push(`/play/${pairing.roomId}${pairing.role === "player1" ? "?host=1" : ""}`);
-  };
-
-  const forgetPartner = () => {
-    const label = pairing?.partnerName || "ce partenaire";
-    if (!window.confirm(`Oublier ${label} sur cet appareil ?`)) return;
-    removeStoredPlayerPairing();
-    setPairing(null);
   };
 
   const joinRoom = (code: string, invalidMessage = "Saisis les 6 caractères du code envoyé par ton ami.") => {
@@ -164,38 +128,7 @@ export function HomeScreen() {
         </header>
 
         <div className="lobby-actions">
-          {canResume ? (
-            <Link className="resume-action" href="/game">
-              <strong>Reprendre</strong>
-              <progress
-                max={CATEGORY_IDS.length}
-                value={savedTurn}
-                aria-label={`Tour ${savedTurn} sur ${CATEGORY_IDS.length}`}
-              />
-              <span>{savedTurn} / {CATEGORY_IDS.length}</span>
-            </Link>
-          ) : null}
-
-          {pairing ? (
-            <section className="paired-player" aria-labelledby="paired-player-title">
-              <div>
-                <span className="paired-player-mark" aria-hidden="true">••</span>
-                <span>
-                  <small>Ton duo</small>
-                  <strong id="paired-player-title">{pairing.partnerName || "Partenaire lié"}</strong>
-                </span>
-              </div>
-              <button className="primary-action" type="button" onClick={playWithPartner}>
-                Jouer ensemble
-              </button>
-              <button className="paired-player-remove" type="button" onClick={forgetPartner}>
-                Oublier
-              </button>
-            </section>
-          ) : null}
-
-          <section className="new-game" aria-labelledby="new-game-title">
-            <h2 id="new-game-title">Nouvelle partie</h2>
+          <section className="new-game" aria-label="Modes de jeu">
             <div className="game-mode-grid">
               <Link className="game-mode-action game-mode-action-primary" href="/bot">
                 <ModeDiceIcon />
@@ -214,7 +147,7 @@ export function HomeScreen() {
               >
                 <ModeDiceIcon pair />
                 <span>
-                  <strong>À deux</strong>
+                  <strong>Duo</strong>
                   <small>Avec un ami</small>
                 </span>
               </button>
@@ -254,12 +187,6 @@ export function HomeScreen() {
               <button className="primary-action create-room-action" type="button" onClick={startMultiplayer}>
                 Créer une partie
               </button>
-
-              {!pairing ? (
-                <button className="secondary-action create-room-action" type="button" onClick={startPairing}>
-                  Lier nos appareils
-                </button>
-              ) : null}
 
               <div className="lobby-divider" aria-hidden="true"><span>ou</span></div>
 

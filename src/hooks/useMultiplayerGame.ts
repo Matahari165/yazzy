@@ -26,7 +26,7 @@ export const BACKGROUND_POLL_INTERVAL_MS = 4_000;
 export const MAX_POLL_INTERVAL_MS = 4_000;
 const REQUEST_TIMEOUT_MS = 8_000;
 const MAX_SILENT_FAILURES = 3;
-const REPLAY_ROLL_DELAY_MS = 240;
+const REPLAY_ROLL_DELAY_MS = 360;
 const REPLAY_STEP_DELAY_MS = 120;
 
 type RoomResponseSource = "connect" | "sync" | "action" | "reaction";
@@ -99,7 +99,8 @@ export function shouldDisplayResponseImmediately(
 }
 
 function replayDelay(event: RoomActionEvent): number {
-  return event.action.type === "ROLL" ? REPLAY_ROLL_DELAY_MS : REPLAY_STEP_DELAY_MS;
+  if (event.action.type !== "ROLL") return REPLAY_STEP_DELAY_MS;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 80 : REPLAY_ROLL_DELAY_MS;
 }
 
 function playerToken(roomId: string, role: MultiplayerRole, preferredToken?: string): string {
@@ -163,9 +164,7 @@ export function useMultiplayerGame(
   roomId: string,
   isHost: boolean,
   playerName: string | null,
-  pairing?: { localToken: string; guestToken: string | null } | null,
 ) {
-  const hasPairing = Boolean(pairing?.localToken);
   const [game, setGame] = useState<MultiplayerGameState | null>(null);
   const [localRole, setLocalRole] = useState<MultiplayerRole | null>(null);
   const [opponentOnline, setOpponentOnline] = useState(false);
@@ -304,7 +303,7 @@ export function useMultiplayerGame(
     let pollTimer: number | null = null;
     let consecutiveFailures = 0;
     const role: MultiplayerRole = isHost ? "player1" : "player2";
-    const token = playerToken(roomId, role, pairing?.localToken);
+    const token = playerToken(roomId, role);
     roleRef.current = role;
     tokenRef.current = token;
     resetReplay();
@@ -366,9 +365,6 @@ export function useMultiplayerGame(
           role,
           token,
           playerName,
-          ...(role === "player1" && pairing?.guestToken
-            ? { pairedGuestToken: pairing.guestToken }
-            : {}),
         });
         if (cancelled) return;
         if (response.ok) {
@@ -379,9 +375,9 @@ export function useMultiplayerGame(
         if (
           response.code === "ROOM_NOT_FOUND" &&
           role === "player2" &&
-          (hasPairing || attempt < 3)
+          attempt < 3
         ) {
-          await new Promise((resolve) => window.setTimeout(resolve, hasPairing ? 1_200 : 700));
+          await new Promise((resolve) => window.setTimeout(resolve, 700));
           if (!cancelled) await connect(attempt + 1);
           return;
         }
@@ -425,10 +421,7 @@ export function useMultiplayerGame(
   }, [
     applySuccess,
     connectionAttempt,
-    hasPairing,
     isHost,
-    pairing?.guestToken,
-    pairing?.localToken,
     playerName,
     resetReplay,
     roomId,

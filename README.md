@@ -5,7 +5,7 @@ Yazzy est une application web de Yatzy nordique qui explique les probabilités e
 ## État actuel
 
 - accueil explicite, choix du bot puis partie sur `/`, `/bot` et `/game` ;
-- trois niveaux de bot séparés : Découverte, Calculateur et Stratège ;
+- deux niveaux de bot séparés : Stratège et Expert ;
 - même générateur de dés équitables pour tous les niveaux ;
 - scores des 14 cases nordiques, sans bonus supérieur ;
 - probabilités exactes affichées uniquement dans le panneau de décision de la case sélectionnée ;

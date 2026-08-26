@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { FinishedGame } from "@/components/FinishedGame";
 import { GameTable } from "@/components/GameTable";
@@ -9,16 +8,12 @@ import { MultiplayerNameGate } from "@/components/MultiplayerNameGate";
 import { MultiplayerReactions } from "@/components/MultiplayerReactions";
 import { ScoreCard } from "@/components/ScoreCard";
 import type { RoomActionEvent } from "@/domain/multiplayerRoomProtocol";
-import { CATEGORY_BY_ID, totalScore, type CategoryId } from "@/domain/yatzy";
+import { CATEGORY_BY_ID, type CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 import { readStoredPlayerName, writeStoredPlayerName } from "@/lib/playerNameStorage";
-import {
-  acceptGuestPlayerPairing,
-  readStoredPlayerPairing,
-  updatePlayerPairingPartnerName,
-  type PlayerPairing,
-} from "@/lib/playerPairingStorage";
+
+const HUMAN_ROLL_ANIMATION_MS = 360;
 
 function replayAnnouncement(event: RoomActionEvent, opponentName: string): string {
   const playerState = event.game[event.role]?.state;
@@ -40,15 +35,11 @@ function replayAnnouncement(event: RoomActionEvent, opponentName: string): strin
 export function MultiplayerClient({
   roomId,
   isHost,
-  pairToken,
 }: {
   roomId: string;
   isHost: boolean;
-  pairToken: string | null;
 }) {
-  const router = useRouter();
   const [playerName, setPlayerName] = useState<string | null>(null);
-  const [pairing, setPairing] = useState<PlayerPairing | null>(null);
   const {
     game,
     localRole,
@@ -71,7 +62,7 @@ export function MultiplayerClient({
     replayGapDetected,
     hasPendingHolds,
     pendingAction,
-  } = useMultiplayerGame(roomId, isHost, playerName, pairing);
+  } = useMultiplayerGame(roomId, isHost, playerName);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [highlightedPlayerCategory, setHighlightedPlayerCategory] = useState<CategoryId | null>(null);
   const [isRolling, setIsRolling] = useState(false);
@@ -81,20 +72,10 @@ export function MultiplayerClient({
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      const storedPairing = readStoredPlayerPairing();
-      const matchingPairing = storedPairing?.roomId === roomId &&
-        storedPairing.role === (isHost ? "player1" : "player2")
-        ? storedPairing
-        : null;
-      const acceptedPairing = !isHost && pairToken
-        ? acceptGuestPlayerPairing(roomId, pairToken)
-        : null;
-      setPairing(acceptedPairing ?? matchingPairing);
       setPlayerName(readStoredPlayerName());
-      if (acceptedPairing) router.replace(`/play/${roomId}`);
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, [isHost, pairToken, roomId, router]);
+  }, []);
 
   const localState = localPlayer?.state;
   const opponentState = opponentPlayer?.state;
@@ -102,18 +83,10 @@ export function MultiplayerClient({
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      const pairQuery = isHost && pairing?.guestToken
-        ? `?pair=${encodeURIComponent(pairing.guestToken)}`
-        : "";
-      setInviteLink(`${window.location.origin}/play/${roomId}${pairQuery}`);
+      setInviteLink(`${window.location.origin}/play/${roomId}`);
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, [isHost, pairing?.guestToken, roomId]);
-
-  useEffect(() => {
-    if (!pairing || pairing.roomId !== roomId || !opponentPlayer?.name) return;
-    updatePlayerPairingPartnerName(opponentPlayer.name);
-  }, [opponentPlayer?.name, pairing, roomId]);
+  }, [roomId]);
 
   useEffect(() => () => {
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
@@ -125,7 +98,7 @@ export function MultiplayerClient({
     roll();
     setIsRolling(true);
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
-    const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 80 : 260;
+    const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 80 : HUMAN_ROLL_ANIMATION_MS;
     rollTimerRef.current = window.setTimeout(() => {
       rollTimerRef.current = null;
       setIsRolling(false);
@@ -196,9 +169,7 @@ export function MultiplayerClient({
   if (status === "connecting") {
     return (
       <main id="main-content" className="app-loading" aria-busy="true">
-        <p role="status">{pairing && !isHost
-          ? `En attente de ${pairing.partnerName || "ton partenaire"}…`
-          : `Connexion à la partie ${roomId}…`}</p>
+        <p role="status">Connexion à la partie {roomId}…</p>
       </main>
     );
   }
@@ -225,17 +196,15 @@ export function MultiplayerClient({
 
         <section className="waiting-room" aria-labelledby="waiting-title">
           <span className="waiting-dice" aria-hidden="true">•••</span>
-          <p className="eyebrow">{pairing ? "DUO PERMANENT" : "PARTIE PRIVÉE"}</p>
-          <h1 id="waiting-title">{pairing ? "Invite ton partenaire une fois" : "Invite ton ami"}</h1>
-          <p>{pairing
-            ? "Après cette première ouverture, vous pourrez rejouer ensemble directement depuis l’accueil."
-            : "Envoie-lui ce code. La partie commencera automatiquement dès qu’il l’aura saisi."}</p>
+          <p className="eyebrow">PARTIE PRIVÉE</p>
+          <h1 id="waiting-title">Invite ton ami</h1>
+          <p>Envoie-lui ce code. La partie commencera automatiquement dès qu’il l’aura saisi.</p>
           <div className="room-code-block">
             <span>Code de la partie</span>
             <strong>{roomId}</strong>
           </div>
           <div className="invite-actions">
-            {!pairing ? <button className="primary-action" type="button" onClick={handleCopyCode}>Copier le code</button> : null}
+            <button className="primary-action" type="button" onClick={handleCopyCode}>Copier le code</button>
             <button className="secondary-action" type="button" onClick={handleCopyLink}>Copier le lien</button>
           </div>
           <div className="invite-field">
@@ -263,8 +232,6 @@ export function MultiplayerClient({
   const rematchRequested = game.rematchReady.includes(localRole);
   const localName = localPlayer.name;
   const opponentName = opponentPlayer.name;
-  const localTotal = totalScore(localState.scores);
-  const opponentTotal = totalScore(opponentState.scores);
   const highlightedOpponentDie = replayedOpponentEvent?.action.type === "HOLD"
     ? replayedOpponentEvent.action.index
     : null;
@@ -281,19 +248,6 @@ export function MultiplayerClient({
     <main id="main-content" className="game-shell">
       <header className="game-header multiplayer-game-header">
         <Link className="game-logo" href="/">YAZZY</Link>
-        <div
-          className="match-score"
-          aria-label={`${localName} ${localTotal}, ${opponentName} ${opponentTotal}. ${isMyTurn ? `À ${localName} de jouer.` : `À ${opponentName} de jouer.`}`}
-        >
-          <span className="match-player" data-active={isMyTurn} data-score-column="player">
-            <span className="match-player-name">{localName}</span>
-            <strong aria-hidden="true">{localTotal}</strong>
-          </span>
-          <span className="match-player" data-active={!isMyTurn} data-score-column="opponent" data-online={opponentOnline}>
-            <span className="match-player-name">{opponentName}</span>
-            <strong aria-hidden="true">{opponentTotal}</strong>
-          </span>
-        </div>
         <MultiplayerReactions
           disabled={!isConnected || !opponentOnline}
           latestReaction={latestReaction}
@@ -302,7 +256,16 @@ export function MultiplayerClient({
           opponentName={opponentName}
           onSend={sendReaction}
         />
-        <Link className="quit-link multiplayer-quit-link" href="/" aria-label="Quitter la partie"><span aria-hidden="true">×</span></Link>
+        <Link
+          className="quit-link multiplayer-quit-link"
+          href="/"
+          aria-label="Quitter la partie"
+          onClick={(event) => {
+            if (!window.confirm("Quitter la partie en cours ?")) event.preventDefault();
+          }}
+        >
+          <span aria-hidden="true">×</span>
+        </Link>
       </header>
 
       {connectionNotice ? <p className="connection-notice" role="status">{connectionNotice}</p> : null}
@@ -348,6 +311,7 @@ export function MultiplayerClient({
             held={isMyTurn ? localState.held : opponentState.held}
             rollNumber={isMyTurn ? localState.rollNumber : opponentState.rollNumber}
             selectedCategory={isMyTurn ? selectedCategory : null}
+            animationSeed={replayedOpponentEvent?.version ?? game.turn * 20 + (isMyTurn ? 1 : 2) * 5 + (isMyTurn ? localState.rollNumber : opponentState.rollNumber)}
             isRolling={isMyTurn ? isRolling : isReplayingOpponentRoll}
             isDisabled={!canAct || pendingAction !== null}
             isRollDisabled={hasPendingHolds || pendingAction !== null}
