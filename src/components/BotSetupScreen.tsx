@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BOT_LEVELS, getBotPolicy, type BotLevel } from "@/domain/bots";
 import { createGame, isFinished } from "@/domain/game";
@@ -12,6 +12,10 @@ export function BotSetupScreen() {
   const router = useRouter();
   const [selectedLevel, setSelectedLevel] = useState<BotLevel>("strategist");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    router.prefetch("/game");
+  }, [router]);
 
   const startGame = () => {
     writeStoredGame(createGame(selectedLevel));

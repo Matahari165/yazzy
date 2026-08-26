@@ -56,6 +56,7 @@ type GameTableProps = {
   selectedCategory: CategoryId | null;
   isRolling: boolean;
   isDisabled?: boolean;
+  isRollDisabled?: boolean;
   isObserver?: boolean;
   highlightedDieIndex?: number | null;
   label?: string;
@@ -70,6 +71,7 @@ export function GameTable({
   selectedCategory,
   isRolling,
   isDisabled = false,
+  isRollDisabled = false,
   isObserver = false,
   highlightedDieIndex = null,
   label = "Tes cinq dés",
@@ -77,7 +79,7 @@ export function GameTable({
   onRoll,
 }: GameTableProps) {
   const heldCount = held.filter(Boolean).length;
-  const canRoll = rollNumber < 3 && !(rollNumber > 0 && heldCount === 5) && !isRolling && !isDisabled;
+  const canRoll = rollNumber < 3 && !(rollNumber > 0 && heldCount === 5) && !isRolling && !isDisabled && !isRollDisabled;
   const actionLabel = rollNumber === 0 ? "Lancer" : "Relancer";
   const usedRolls = Math.min(rollNumber, 3);
   const remainingRolls = 3 - usedRolls;

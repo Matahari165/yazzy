@@ -1,14 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
+  ACTIVE_TURN_POLL_INTERVAL_MS,
   BACKGROUND_POLL_INTERVAL_MS,
   canonicalGameAfterResponse,
   FOREGROUND_POLL_INTERVAL_MS,
+  gameWithPendingHolds,
   MAX_POLL_INTERVAL_MS,
   multiplayerPollDelay,
+  OPPONENT_TURN_POLL_INTERVAL_MS,
   replayCursorAfterResponse,
   shouldReplaceCanonicalGame,
   shouldDisplayResponseImmediately,
 } from "./useMultiplayerGame";
+import { rollActivePlayer } from "../domain/multiplayer";
+import { connectGuest, createHostedGame } from "../domain/multiplayerHost";
 
 describe("replayCursorAfterResponse", () => {
   it("ne saute pas les actions adverses après une réaction", () => {
@@ -34,6 +39,11 @@ describe("multiplayerPollDelay", () => {
     expect(multiplayerPollDelay(false, 0)).toBe(FOREGROUND_POLL_INTERVAL_MS);
   });
 
+  it("observe plus vite le tour adverse et ralentit pendant le tour local", () => {
+    expect(multiplayerPollDelay(false, 0, "opponent")).toBe(OPPONENT_TURN_POLL_INTERVAL_MS);
+    expect(multiplayerPollDelay(false, 0, "active")).toBe(ACTIVE_TURN_POLL_INTERVAL_MS);
+  });
+
   it("ralentit à 4 s lorsque la page est masquée", () => {
     expect(multiplayerPollDelay(true, 0)).toBe(BACKGROUND_POLL_INTERVAL_MS);
     expect(multiplayerPollDelay(true, 2)).toBe(BACKGROUND_POLL_INTERVAL_MS);
@@ -44,6 +54,33 @@ describe("multiplayerPollDelay", () => {
     expect(multiplayerPollDelay(false, 2)).toBe(3_200);
     expect(multiplayerPollDelay(false, 3)).toBe(MAX_POLL_INTERVAL_MS);
     expect(multiplayerPollDelay(false, 8)).toBe(MAX_POLL_INTERVAL_MS);
+  });
+});
+
+describe("gameWithPendingHolds", () => {
+  it("projette immédiatement plusieurs clics sans modifier l’état canonique", () => {
+    const connected = connectGuest(createHostedGame("AMIS12", "Alice", "player1"), "Bob");
+    const canonical = rollActivePlayer(connected, "player1", () => 6);
+
+    const projected = gameWithPendingHolds(canonical, "player1", [
+      { index: 0 },
+      { index: 2 },
+    ]);
+
+    expect(projected?.player1?.state.held).toEqual([true, false, true, false, false]);
+    expect(canonical.player1?.state.held).toEqual([false, false, false, false, false]);
+  });
+
+  it("respecte un double clic sur le même dé", () => {
+    const connected = connectGuest(createHostedGame("AMIS12", "Alice", "player1"), "Bob");
+    const canonical = rollActivePlayer(connected, "player1", () => 6);
+
+    const projected = gameWithPendingHolds(canonical, "player1", [
+      { index: 1 },
+      { index: 1 },
+    ]);
+
+    expect(projected?.player1?.state.held[1]).toBe(false);
   });
 });
 

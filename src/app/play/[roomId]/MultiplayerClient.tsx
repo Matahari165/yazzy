@@ -69,6 +69,8 @@ export function MultiplayerClient({
     isReplayingOpponentRoll,
     replayedOpponentEvent,
     replayGapDetected,
+    hasPendingHolds,
+    pendingAction,
   } = useMultiplayerGame(roomId, isHost, playerName, pairing);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [highlightedPlayerCategory, setHighlightedPlayerCategory] = useState<CategoryId | null>(null);
@@ -118,7 +120,7 @@ export function MultiplayerClient({
   }, []);
 
   const handleRoll = () => {
-    if (!canAct || isRolling || !localState || localState.rollNumber >= 3) return;
+    if (!canAct || isRolling || hasPendingHolds || pendingAction || !localState || localState.rollNumber >= 3) return;
     if (localState.rollNumber > 0 && localState.held.every(Boolean)) return;
     roll();
     setIsRolling(true);
@@ -131,14 +133,14 @@ export function MultiplayerClient({
   };
 
   const handleScore = (category = selectedCategory) => {
-    if (!category || !canAct || isRolling) return;
+    if (!category || !canAct || isRolling || hasPendingHolds || pendingAction) return;
     setHighlightedPlayerCategory(category);
     score(category);
     setSelectedCategory(null);
   };
 
   useGameKeyboard({
-    disabled: status !== "playing" || !canAct || isRolling,
+    disabled: status !== "playing" || !canAct || isRolling || hasPendingHolds || pendingAction !== null,
     canRoll: Boolean(localState && localState.rollNumber < 3 && !localState.held.every(Boolean)),
     canScore: selectedCategory !== null && !isRolling,
     onRoll: handleRoll,
@@ -332,7 +334,7 @@ export function MultiplayerClient({
             dice={localState.dice}
             opponentDice={opponentState.dice}
             selected={canAct ? selectedCategory : null}
-            canSelect={canAct && localState.rollNumber > 0 && !isRolling}
+            canSelect={canAct && localState.rollNumber > 0 && !isRolling && !hasPendingHolds && pendingAction === null}
             isReadOnly={!canAct}
             activeColumn={isMyTurn ? "player" : "opponent"}
             highlightedPlayerCategory={highlightedPlayerCategory}
@@ -347,7 +349,8 @@ export function MultiplayerClient({
             rollNumber={isMyTurn ? localState.rollNumber : opponentState.rollNumber}
             selectedCategory={isMyTurn ? selectedCategory : null}
             isRolling={isMyTurn ? isRolling : isReplayingOpponentRoll}
-            isDisabled={!canAct}
+            isDisabled={!canAct || pendingAction !== null}
+            isRollDisabled={hasPendingHolds || pendingAction !== null}
             isObserver={!isMyTurn}
             highlightedDieIndex={!isMyTurn ? highlightedOpponentDie : null}
             label={isMyTurn ? `Les dés de ${localName}` : `Les dés de ${opponentName}`}

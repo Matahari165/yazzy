@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { generalProbability } from "@/domain/probability";
+import { GENERAL_PROBABILITIES } from "@/domain/generalProbabilities";
 import type { CategoryDefinition } from "@/domain/yatzy";
 
 type ScoreHelpPopoverProps = {
@@ -111,7 +111,7 @@ export function ScoreHelpPopover({
             </div>
             <div>
               <dt>Probabilité</dt>
-              <dd>{percent.format(generalProbability(category.id))}</dd>
+              <dd>{percent.format(GENERAL_PROBABILITIES[category.id])}</dd>
             </div>
           </div>
         </div>

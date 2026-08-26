@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { GENERAL_PROBABILITIES } from "./generalProbabilities";
 import { evaluateCategory, generalProbability, rollOutcomes } from "./probability";
 import { CATEGORY_IDS, countsToDice, scoreDice } from "./yatzy";
 
@@ -33,6 +34,12 @@ describe("moteur de probabilités exactes", () => {
       expect(probability).toBeGreaterThan(0);
       expect(probability).toBeLessThanOrEqual(1);
       expect(generalProbability(category)).toBe(probability);
+    }
+  });
+
+  it("garde les probabilités affichées alignées avec le solveur exact", () => {
+    for (const category of CATEGORY_IDS) {
+      expect(GENERAL_PROBABILITIES[category]).toBeCloseTo(generalProbability(category), 12);
     }
   });
 

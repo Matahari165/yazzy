@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { MultiplayerGameState, MultiplayerRole } from "../domain/multiplayer";
+import {
+  holdActiveDie,
+  type MultiplayerGameState,
+  type MultiplayerRole,
+} from "../domain/multiplayer";
 import {
   isRoomResponse,
   type ReactionEmoji,
@@ -16,24 +20,44 @@ import type { CategoryId } from "../domain/yatzy";
 
 const PLAYER_TOKEN_PREFIX = "yazzy.multiplayer.token.v2.";
 export const FOREGROUND_POLL_INTERVAL_MS = 800;
+export const ACTIVE_TURN_POLL_INTERVAL_MS = 1_200;
+export const OPPONENT_TURN_POLL_INTERVAL_MS = 400;
 export const BACKGROUND_POLL_INTERVAL_MS = 4_000;
 export const MAX_POLL_INTERVAL_MS = 4_000;
 const REQUEST_TIMEOUT_MS = 8_000;
 const MAX_SILENT_FAILURES = 3;
-const REPLAY_ROLL_DELAY_MS = 420;
-const REPLAY_STEP_DELAY_MS = 260;
+const REPLAY_ROLL_DELAY_MS = 240;
+const REPLAY_STEP_DELAY_MS = 120;
 
 type RoomResponseSource = "connect" | "sync" | "action" | "reaction";
+type PendingHold = { actionId: string; index: number };
+
+export function gameWithPendingHolds(
+  game: MultiplayerGameState | null,
+  role: MultiplayerRole,
+  pendingHolds: readonly Pick<PendingHold, "index">[],
+): MultiplayerGameState | null {
+  return pendingHolds.reduce(
+    (current, hold) => current ? holdActiveDie(current, role, hold.index) : null,
+    game,
+  );
+}
 
 export function multiplayerPollDelay(
   isDocumentHidden: boolean,
   consecutiveFailures: number,
+  turn: "active" | "opponent" | "neutral" = "neutral",
 ): number {
   if (isDocumentHidden) return BACKGROUND_POLL_INTERVAL_MS;
-  if (consecutiveFailures <= 0) return FOREGROUND_POLL_INTERVAL_MS;
+  const baseInterval = turn === "opponent"
+    ? OPPONENT_TURN_POLL_INTERVAL_MS
+    : turn === "active"
+      ? ACTIVE_TURN_POLL_INTERVAL_MS
+      : FOREGROUND_POLL_INTERVAL_MS;
+  if (consecutiveFailures <= 0) return baseInterval;
 
   return Math.min(
-    FOREGROUND_POLL_INTERVAL_MS * (2 ** consecutiveFailures),
+    baseInterval * (2 ** consecutiveFailures),
     MAX_POLL_INTERVAL_MS,
   );
 }
@@ -162,13 +186,21 @@ export function useMultiplayerGame(
   const replayTimerRef = useRef<number | null>(null);
   const replayGenerationRef = useRef(0);
   const actionPendingRef = useRef(false);
+  const actionGenerationRef = useRef(0);
+  const pendingHoldsRef = useRef<PendingHold[]>([]);
+  const actionQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const [pendingHoldCount, setPendingHoldCount] = useState(0);
+  const [pendingAction, setPendingAction] = useState<Exclude<ClientAction["type"], "HOLD"> | null>(null);
 
   const drainReplay = useCallback(function drainNextReplay() {
     if (replayTimerRef.current !== null) return;
     const nextEvent = replayQueueRef.current.shift();
     if (!nextEvent) {
       setReplayedOpponentEvent(null);
-      setGame(canonicalGameRef.current);
+      const role = roleRef.current;
+      setGame(role
+        ? gameWithPendingHolds(canonicalGameRef.current, role, pendingHoldsRef.current)
+        : canonicalGameRef.current);
       return;
     }
 
@@ -183,11 +215,17 @@ export function useMultiplayerGame(
 
   const resetReplay = useCallback(() => {
     replayGenerationRef.current += 1;
+    actionGenerationRef.current += 1;
     if (replayTimerRef.current !== null) {
       window.clearTimeout(replayTimerRef.current);
       replayTimerRef.current = null;
     }
     replayQueueRef.current = [];
+    pendingHoldsRef.current = [];
+    actionQueueRef.current = Promise.resolve();
+    actionPendingRef.current = false;
+    setPendingHoldCount(0);
+    setPendingAction(null);
     setReplayedOpponentEvent(null);
     setReplayGapDetected(false);
     canonicalGameRef.current = null;
@@ -209,6 +247,11 @@ export function useMultiplayerGame(
     if (shouldReplaceGame) {
       canonicalVersionRef.current = response.version;
     }
+    const visibleGame = gameWithPendingHolds(
+      canonicalGameRef.current,
+      response.yourRole,
+      pendingHoldsRef.current,
+    );
 
     if (source === "sync" && response.eventsTruncated) {
       replayGenerationRef.current += 1;
@@ -217,7 +260,7 @@ export function useMultiplayerGame(
       replayQueueRef.current = [];
       setReplayedOpponentEvent(null);
       setReplayGapDetected(true);
-      setGame(canonicalGameRef.current);
+      setGame(visibleGame);
     } else if (source === "sync") {
       setReplayGapDetected(false);
       const unseenEvents = response.events.filter((event) => event.version > eventCursorRef.current);
@@ -225,7 +268,7 @@ export function useMultiplayerGame(
         ...unseenEvents.filter((event) => event.role !== response.yourRole),
       );
       if (replayTimerRef.current === null && replayQueueRef.current.length === 0) {
-        setGame(canonicalGameRef.current);
+        setGame(visibleGame);
       } else {
         drainReplay();
       }
@@ -234,7 +277,7 @@ export function useMultiplayerGame(
       replayQueueRef.current.length === 0 &&
       shouldDisplayResponseImmediately(eventCursorRef.current, response.version, source)
     ) {
-      setGame(canonicalGameRef.current);
+      setGame(visibleGame);
     }
 
     eventCursorRef.current = replayCursorAfterResponse(
@@ -268,12 +311,18 @@ export function useMultiplayerGame(
 
     const schedulePoll = () => {
       if (!cancelled) {
+        const currentGame = canonicalGameRef.current;
+        const turn = currentGame?.status !== "playing"
+          ? "neutral"
+          : currentGame.activePlayer === role
+            ? "active"
+            : "opponent";
         pollTimer = window.setTimeout(
           () => {
             pollTimer = null;
             void poll();
           },
-          multiplayerPollDelay(document.visibilityState === "hidden", consecutiveFailures),
+          multiplayerPollDelay(document.visibilityState === "hidden", consecutiveFailures, turn),
         );
       }
     };
@@ -385,35 +434,69 @@ export function useMultiplayerGame(
     roomId,
   ]);
 
-  const dispatch = useCallback(async (action: ClientAction) => {
+  const dispatch = useCallback((action: ClientAction) => {
     const role = roleRef.current;
     const token = tokenRef.current;
-    if (!role || !token || actionPendingRef.current) return;
+    if (!role || !token) return;
 
-    actionPendingRef.current = true;
-    try {
-      const response = await sendRoomCommand(roomId, {
-        type: "ACTION",
-        role,
-        token,
-        actionId: crypto.randomUUID(),
-        action,
-      });
-      if (response.ok) {
-        applySuccess(response, "action");
-      } else if (response.code === "OPPONENT_OFFLINE") {
-        setOpponentOnline(false);
-      } else if (response.code === "ROOM_FULL") {
-        setRoomFull(true);
-      } else {
-        setConnectionError(connectionMessage(response));
-      }
-    } catch {
-      setIsConnected(false);
-      setConnectionError("L’action n’a pas été envoyée. Yazzy va tenter de se reconnecter.");
-    } finally {
-      actionPendingRef.current = false;
+    const isHold = action.type === "HOLD";
+    if (isHold && actionPendingRef.current) return;
+    if (!isHold && (actionPendingRef.current || pendingHoldsRef.current.length > 0)) return;
+
+    const actionId = crypto.randomUUID();
+    const generation = actionGenerationRef.current;
+    if (isHold) {
+      pendingHoldsRef.current.push({ actionId, index: action.index });
+      setPendingHoldCount(pendingHoldsRef.current.length);
+      setGame((current) => current ? holdActiveDie(current, role, action.index) : current);
+    } else {
+      actionPendingRef.current = true;
+      setPendingAction(action.type);
     }
+
+    actionQueueRef.current = actionQueueRef.current.then(async () => {
+      if (generation !== actionGenerationRef.current) return;
+      try {
+        const response = await sendRoomCommand(roomId, {
+          type: "ACTION",
+          role,
+          token,
+          actionId,
+          action,
+        });
+        if (generation !== actionGenerationRef.current) return;
+        if (isHold) {
+          pendingHoldsRef.current = pendingHoldsRef.current.filter(
+            (pending) => pending.actionId !== actionId,
+          );
+          setPendingHoldCount(pendingHoldsRef.current.length);
+        }
+        if (response.ok) {
+          applySuccess(response, "action");
+        } else {
+          if (response.code === "OPPONENT_OFFLINE") setOpponentOnline(false);
+          else if (response.code === "ROOM_FULL") setRoomFull(true);
+          else setConnectionError(connectionMessage(response));
+          setGame(gameWithPendingHolds(canonicalGameRef.current, role, pendingHoldsRef.current));
+        }
+      } catch {
+        if (generation !== actionGenerationRef.current) return;
+        if (isHold) {
+          pendingHoldsRef.current = pendingHoldsRef.current.filter(
+            (pending) => pending.actionId !== actionId,
+          );
+          setPendingHoldCount(pendingHoldsRef.current.length);
+        }
+        setGame(gameWithPendingHolds(canonicalGameRef.current, role, pendingHoldsRef.current));
+        setIsConnected(false);
+        setConnectionError("L’action n’a pas été envoyée. Yazzy va tenter de se reconnecter.");
+      } finally {
+        if (!isHold && generation === actionGenerationRef.current) {
+          actionPendingRef.current = false;
+          setPendingAction(null);
+        }
+      }
+    });
   }, [applySuccess, roomId]);
 
   const roll = useCallback(() => void dispatch({ type: "ROLL" }), [dispatch]);
@@ -486,5 +569,7 @@ export function useMultiplayerGame(
     isReplayingOpponentRoll: replayedOpponentEvent?.action.type === "ROLL",
     replayedOpponentEvent,
     replayGapDetected,
+    hasPendingHolds: pendingHoldCount > 0,
+    pendingAction,
   };
 }

@@ -81,15 +81,18 @@ async function success(
   events: RoomActionEvent[] = [],
   eventsTruncated = false,
 ): Promise<RoomServiceResult> {
-  await store.setPresence(roomId, role, now);
-  const latestReaction = await store.getReaction(roomId);
+  const [latestReaction, opponentOnline] = await Promise.all([
+    store.getReaction(roomId),
+    presenceStatus(store, roomId, role, now),
+    store.setPresence(roomId, role, now),
+  ]);
   return {
     status: 200,
     body: {
       ok: true,
       game: room.game,
       yourRole: role,
-      opponentOnline: await presenceStatus(store, roomId, role, now),
+      opponentOnline,
       version: room.version,
       events,
       eventsTruncated,

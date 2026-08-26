@@ -48,6 +48,34 @@ class MemoryRoomStore implements MultiplayerRoomStore {
   }
 }
 
+class ConcurrentReadRoomStore extends MemoryRoomStore {
+  activeOperations = 0;
+  peakOperations = 0;
+
+  private async track<T>(operation: () => Promise<T>): Promise<T> {
+    this.activeOperations += 1;
+    this.peakOperations = Math.max(this.peakOperations, this.activeOperations);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    try {
+      return await operation();
+    } finally {
+      this.activeOperations -= 1;
+    }
+  }
+
+  override getPresence(roomId: string, role: MultiplayerRole) {
+    return this.track(() => super.getPresence(roomId, role));
+  }
+
+  override setPresence(roomId: string, role: MultiplayerRole, timestamp: number) {
+    return this.track(() => super.setPresence(roomId, role, timestamp));
+  }
+
+  override getReaction() {
+    return this.track(() => super.getReaction());
+  }
+}
+
 async function command(
   store: MemoryRoomStore,
   body: Parameters<typeof handleRoomCommand>[0]["command"],
@@ -65,6 +93,19 @@ async function command(
 }
 
 describe("service de salon privé", () => {
+  it("regroupe les accès indépendants nécessaires à une réponse", async () => {
+    const store = new ConcurrentReadRoomStore();
+
+    await command(store, {
+      type: "CONNECT",
+      role: "player1",
+      token: HOST_TOKEN,
+      playerName: "Alice",
+    }, 1_000);
+
+    expect(store.peakOperations).toBe(3);
+  });
+
   it("réserve strictement la place du partenaire lié", async () => {
     const store = new MemoryRoomStore();
     await command(store, {
