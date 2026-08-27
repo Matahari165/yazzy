@@ -1,5 +1,5 @@
-import { BotSetupScreen } from "@/components/BotSetupScreen";
+import { BotGameLauncher } from "@/components/BotGameLauncher";
 
 export default function BotPage() {
-  return <BotSetupScreen />;
+  return <BotGameLauncher />;
 }

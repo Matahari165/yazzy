@@ -1,6 +1,5 @@
 /* Accueil */
-.lobby-shell,
-.setup-shell {
+.lobby-shell {
   min-height: 100svh;
   min-height: 100dvh;
   display: grid;
@@ -8,8 +7,7 @@
   padding: 32px 20px;
 }
 
-.lobby-card,
-.setup-card {
+.lobby-card {
   width: min(100%, 620px);
   padding: clamp(28px, 6vw, 64px);
   background: var(--surface);
@@ -190,41 +188,9 @@
 .name-gate-form { margin-top: 24px; }
 .name-gate-form .primary-action { width: 100%; margin-top: 5px; }
 .name-gate-card > .quit-link { margin-top: 14px; }
-/* Choix du bot */
-.setup-card { width: min(100%, 720px); }
-.setup-header { margin-bottom: 28px; }
-.back-link { min-height: 44px; display: inline-flex; align-items: center; margin-bottom: 20px; color: var(--ink-soft); font-size: 14px; font-weight: 700; }
-.back-link:hover { color: var(--ink); }
-.setup-header h1 { margin-bottom: 10px; }
-.setup-header p:last-child { margin-bottom: 0; color: var(--ink-soft); }
-.level-list { display: grid; gap: 12px; margin-bottom: 24px; }
-.level-card {
-  width: 100%;
-  min-height: 116px;
-  display: grid;
-  gap: 8px;
-  padding: 18px;
-  color: var(--ink);
-  text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  transition: background-color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
-}
-.level-card:hover { background: var(--surface-muted); border-color: var(--line-strong); }
-.level-card[data-selected="true"] { background: var(--green-soft); border-color: var(--green); box-shadow: 0 0 0 2px rgb(35 122 88 / 14%); }
-.level-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.level-card-top strong { font-family: var(--font-display); font-size: 20px; }
-.level-card > span:not(.level-card-top) { color: var(--ink-soft); font-size: 15px; }
-.level-card small { color: var(--green-ink); font-size: 12px; font-weight: 700; }
-.recommended-chip { padding: 5px 8px; color: var(--green-ink); background: var(--surface); border-radius: 999px; font-size: 12px; font-weight: 700; }
-.setup-submit { width: 100%; }
-
 @media (max-width: 760px) {
-  .lobby-shell,
-  .setup-shell { padding: 20px 12px; }
-  .lobby-card,
-  .setup-card { padding: 28px 20px; }
+  .lobby-shell { padding: 20px 12px; }
+  .lobby-card { padding: 28px 20px; }
 }
 
 @media (max-height: 620px) {

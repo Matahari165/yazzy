@@ -15,7 +15,9 @@ export function prepareBotStep(current: GameState): GameState {
   const context = contextForBot(current);
   if (!current.botLevel) return current;
   const policy = getBotPolicy(current.botLevel);
-  const targetCategory = current.botTurn.targetCategory ?? policy.pickCategory(context);
+  const targetCategory = policy.reassessAfterRoll
+    ? policy.pickCategory(context)
+    : current.botTurn.targetCategory ?? policy.pickCategory(context);
   const hold = policy.pickHold(context, targetCategory);
   const held = holdFlagsForDice(current.bot.dice, hold);
   return {
@@ -33,7 +35,7 @@ export function completeBotTurn(current: GameState, rollDie: () => DieValue = ro
   let bot = current.bot;
   let targetCategory: CategoryId | null = current.botTurn.targetCategory;
 
-  if (bot.rollNumber > 0 && bot.rollNumber < 3 && !targetCategory) {
+  if (bot.rollNumber > 0 && bot.rollNumber < 3 && (!targetCategory || policy.reassessAfterRoll)) {
     const context = contextForBot({ ...current, bot });
     targetCategory = policy.pickCategory(context);
     bot = { ...bot, held: holdFlagsForDice(bot.dice, policy.pickHold(context, targetCategory)) };
@@ -42,13 +44,13 @@ export function completeBotTurn(current: GameState, rollDie: () => DieValue = ro
   while (bot.rollNumber < 3 && !(bot.rollNumber > 0 && bot.held.every(Boolean))) {
     bot = rollPlayerTurn(bot, rollDie);
     const context = contextForBot({ ...current, bot });
-    targetCategory ??= policy.pickCategory(context);
+    if (!targetCategory || policy.reassessAfterRoll) targetCategory = policy.pickCategory(context);
     const held = holdFlagsForDice(bot.dice, policy.pickHold(context, targetCategory));
     bot = { ...bot, held };
   }
 
   const context = contextForBot({ ...current, bot });
-  targetCategory ??= policy.pickCategory(context);
+  if (!targetCategory || policy.reassessAfterRoll) targetCategory = policy.pickCategory(context);
   const finished = scoreBotTurn({ ...current, bot, botTurn: { ...current.botTurn, targetCategory } }, targetCategory);
   if (finished.activePlayer !== "human") return finished;
   const points = finished.bot.scores[targetCategory] ?? 0;

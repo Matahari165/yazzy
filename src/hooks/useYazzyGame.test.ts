@@ -29,7 +29,7 @@ describe("état du jeu", () => {
 
   it("enchaîne inscription humaine et passage au bot", () => {
     const game = {
-      ...createGame("strategist", "human"),
+      ...createGame("expert", "human"),
       human: {
         dice: [6, 5, 4, 3, 2] as [6, 5, 4, 3, 2],
         held: [false, false, false, false, false],

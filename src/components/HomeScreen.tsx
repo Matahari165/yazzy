@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -16,6 +15,8 @@ import {
   readStoredPlayerName,
   writeStoredPlayerName,
 } from "@/lib/playerNameStorage";
+import { createGame } from "@/domain/game";
+import { writeStoredGame } from "@/lib/gameStorage";
 
 function ModeDiceIcon({ pair = false }: { pair?: boolean }) {
   return (
@@ -75,6 +76,11 @@ export function HomeScreen() {
     router.push(`/play/${generateRoomCode()}?host=1`);
   };
 
+  const startBotGame = () => {
+    writeStoredGame(createGame("expert"));
+    router.push("/game");
+  };
+
   const joinRoom = (code: string, invalidMessage = "Saisis les 6 caractères du code envoyé par ton ami.") => {
     const normalizedCode = normalizeRoomCode(code);
     if (!isRoomCode(normalizedCode)) {
@@ -130,13 +136,13 @@ export function HomeScreen() {
         <div className="lobby-actions">
           <section className="new-game" aria-label="Modes de jeu">
             <div className="game-mode-grid">
-              <Link className="game-mode-action game-mode-action-primary" href="/bot">
+              <button className="game-mode-action game-mode-action-primary" type="button" onClick={startBotGame}>
                 <ModeDiceIcon />
                 <span>
                   <strong>Solo</strong>
                   <small>Contre un bot</small>
                 </span>
-              </Link>
+              </button>
               <button
                 className="game-mode-action"
                 type="button"

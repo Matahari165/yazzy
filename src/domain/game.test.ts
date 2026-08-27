@@ -23,8 +23,8 @@ const rolledHuman = (scores: PlayerState["scores"] = {}): PlayerState => ({
 
 describe("partie contre un bot", () => {
   it("peut faire commencer le joueur ou le bot", () => {
-    const humanStarts = createGame("strategist", "human");
-    const botStarts = createGame("strategist", "bot");
+    const humanStarts = createGame("expert", "human");
+    const botStarts = createGame("expert", "bot");
 
     expect(humanStarts).toMatchObject({
       activePlayer: "human",
@@ -49,7 +49,7 @@ describe("partie contre un bot", () => {
 
   it("rend la main au joueur après le score du bot", () => {
     const current = {
-      ...createGame("strategist", "human"),
+      ...createGame("expert", "human"),
       activePlayer: "bot" as const,
       turn: 1,
       human: { ...rolledHuman({ largeStraight: 20 }), dice: [], rollNumber: 0 },
@@ -65,16 +65,11 @@ describe("partie contre un bot", () => {
     expect(isStoredGame(next)).toBe(true);
   });
 
-  it("ne laisse pas le niveau modifier le générateur de dés", () => {
+  it("utilise le générateur de dés équitable", () => {
     const values: (1 | 2 | 3 | 4 | 5 | 6)[] = [1, 2, 3, 4, 5];
-    const results = ["strategist", "expert"].map((botLevel) =>
-      rollPlayerTurn(createGame(botLevel as "strategist" | "expert", "human").human, diceRoll(...values)),
-    );
+    const result = rollPlayerTurn(createGame("expert", "human").human, diceRoll(...values));
 
-    expect(results.map((result) => result.dice)).toEqual([
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-    ]);
+    expect(result.dice).toEqual([1, 2, 3, 4, 5]);
   });
 
   it("termine une séquence de tour bot avec un tirage injecté", () => {
@@ -86,11 +81,30 @@ describe("partie contre un bot", () => {
     expect(next.bot.rollNumber).toBe(0);
   });
 
+  it("laisse l'expert abandonner son ancienne cible après un nouveau lancer", () => {
+    const current = {
+      ...createGame("expert", "bot"),
+      bot: {
+        dice: [1, 2, 3, 4, 5] as (1 | 2 | 3 | 4 | 5 | 6)[],
+        held: [false, false, false, false, false],
+        rollNumber: 3,
+        scores: {},
+      },
+      botTurn: { status: "choosing" as const, targetCategory: "sixes" as const, message: "Le bot joue." },
+    };
+
+    const next = completeBotTurn(current);
+
+    expect(next.bot.scores.smallStraight).toBe(15);
+    expect(next.bot.scores.sixes).toBeUndefined();
+  });
+
   it("valide uniquement la sauvegarde version 3 sans toucher à l'ancienne", () => {
-    const game = createGame("strategist", "human");
+    const game = createGame("expert", "human");
     expect(isStoredGame(game)).toBe(true);
     expect(isStoredGame({ ...game, version: 2 })).toBe(false);
     expect(isStoredGame({ ...game, mode: "solo" })).toBe(false);
     expect(isStoredGame({ ...game, mode: "multiplayer", botLevel: null })).toBe(false);
+    expect(isStoredGame({ ...game, botLevel: "strategist" })).toBe(false);
   });
 });
