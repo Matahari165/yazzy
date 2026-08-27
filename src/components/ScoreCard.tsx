@@ -1,18 +1,19 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { CATEGORIES, scoreDice, type CategoryId, type Dice, totalScore } from "@/domain/yatzy";
+import { CATEGORIES, scoreDice, type CategoryId, type Dice, type DieValue, totalScore } from "@/domain/yatzy";
+import { DieGlyph } from "./Dice";
 import { ScoreHelpPopover } from "./ScoreHelpPopover";
 
-const VISUAL_HINTS: Partial<Record<CategoryId, string>> = {
-  pair: "⚅ ⚅",
-  twoPairs: "⚅ ⚅ ⚄ ⚄",
-  threeOfAKind: "⚅ ⚅ ⚅",
-  fourOfAKind: "⚅ ⚅ ⚅ ⚅",
-  smallStraight: "⚀ ⚁ ⚂ ⚃ ⚄",
-  largeStraight: "⚁ ⚂ ⚃ ⚄ ⚅",
-  fullHouse: "⚅ ⚅ ⚅ ⚄ ⚄",
-  yatzy: "⚅ ⚅ ⚅ ⚅ ⚅",
+const VISUAL_HINTS: Partial<Record<CategoryId, DieValue[]>> = {
+  pair: [6, 6],
+  twoPairs: [6, 6, 5, 5],
+  threeOfAKind: [6, 6, 6],
+  fourOfAKind: [6, 6, 6, 6],
+  smallStraight: [1, 2, 3, 4, 5],
+  largeStraight: [2, 3, 4, 5, 6],
+  fullHouse: [6, 6, 6, 5, 5],
+  yatzy: [6, 6, 6, 6, 6],
 };
 
 type ScoreCardProps = {
@@ -62,6 +63,7 @@ export function ScoreCard({
     <section className="score-card" aria-label={label}>
       <div className="score-list" role="list" aria-label={label}>
         {CATEGORIES.map((category, index) => {
+          const visualHint = VISUAL_HINTS[category.id];
           const score = humanScores[category.id];
           const botScore = botScores[category.id];
           const filled = score !== undefined;
@@ -120,7 +122,13 @@ export function ScoreCard({
                   <span className="score-category-label score-category-label-short" aria-hidden="true">
                     {category.shortLabel}
                   </span>
-                  {VISUAL_HINTS[category.id] && <span className="score-category-hint">{VISUAL_HINTS[category.id]}</span>}
+                  {visualHint ? (
+                    <span className="score-category-hint" data-dice-count={visualHint.length}>
+                      {visualHint.map((value, dieIndex) => (
+                        <DieGlyph className="score-hint-die" key={`${category.id}-${dieIndex}`} value={value} />
+                      ))}
+                    </span>
+                  ) : null}
                 </span>
                 {showsScorePreview ? (
                   <button

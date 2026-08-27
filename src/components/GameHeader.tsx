@@ -1,20 +1,18 @@
 import Link from "next/link";
-import type { GameState } from "@/domain/game";
-import { getBotPolicy } from "@/domain/bots";
 
-export function GameHeader({ game }: { game: GameState }) {
+export function GameHeader() {
   return (
     <header className="game-header">
       <Link className="game-logo" href="/" aria-label="Yazzy, revenir à l’accueil">YAZZY</Link>
-      <span className="mode-label">BOT · {getBotPolicy(game.botLevel).label}</span>
       <Link
-        className="quit-link"
+        className="quit-link multiplayer-quit-link"
         href="/"
+        aria-label="Quitter la partie"
         onClick={(event) => {
           if (!window.confirm("Quitter la partie en cours ?")) event.preventDefault();
         }}
       >
-        Quitter
+        <span aria-hidden="true">×</span>
       </Link>
     </header>
   );

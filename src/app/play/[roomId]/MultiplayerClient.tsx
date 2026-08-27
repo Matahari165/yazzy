@@ -92,6 +92,14 @@ export function MultiplayerClient({
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
   }, []);
 
+  useEffect(() => {
+    if (status !== "finished") return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("finished-title")?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [status]);
+
   const handleRoll = () => {
     if (!canAct || isRolling || hasPendingHolds || pendingAction || !localState || localState.rollNumber >= 3) return;
     if (localState.rollNumber > 0 && localState.held.every(Boolean)) return;

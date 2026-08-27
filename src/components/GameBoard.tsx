@@ -72,7 +72,7 @@ export function GameBoard() {
 
   return (
     <main id="main-content" className="game-shell">
-      <GameHeader game={game} />
+      <GameHeader />
       {isFinished ? (
         <FinishedGame game={game} />
       ) : (
