@@ -8,7 +8,7 @@ import { MultiplayerNameGate } from "@/components/MultiplayerNameGate";
 import { MultiplayerReactions } from "@/components/MultiplayerReactions";
 import { ScoreCard } from "@/components/ScoreCard";
 import type { RoomActionEvent } from "@/domain/multiplayerRoomProtocol";
-import { CATEGORY_BY_ID, type CategoryId } from "@/domain/yatzy";
+import { CATEGORY_BY_ID, totalScore, type CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 import { readStoredPlayerName, writeStoredPlayerName } from "@/lib/playerNameStorage";
@@ -248,14 +248,11 @@ export function MultiplayerClient({
     <main id="main-content" className="game-shell">
       <header className="game-header multiplayer-game-header">
         <Link className="game-logo" href="/">YAZZY</Link>
-        <MultiplayerReactions
-          disabled={!isConnected || !opponentOnline}
-          latestReaction={latestReaction}
-          localRole={localRole}
-          localName={localName}
-          opponentName={opponentName}
-          onSend={sendReaction}
-        />
+        <div className="multiplayer-total-summary" aria-label={`Total : ${localName} ${totalScore(localState.scores)}, ${opponentName} ${totalScore(opponentState.scores)}`}>
+          <span className="total-label">Total</span>
+          <strong className="score-value total-score-value" aria-hidden="true">{totalScore(localState.scores)}</strong>
+          <strong className="score-value score-value-bot" aria-hidden="true">{totalScore(opponentState.scores)}</strong>
+        </div>
         <Link
           className="quit-link multiplayer-quit-link"
           href="/"
@@ -302,6 +299,7 @@ export function MultiplayerClient({
             activeColumn={isMyTurn ? "player" : "opponent"}
             highlightedPlayerCategory={highlightedPlayerCategory}
             highlightedOpponentCategory={highlightedOpponentCategory}
+            showTotal={false}
             onSelect={setSelectedCategory}
             onScore={handleScore}
           />
@@ -318,6 +316,16 @@ export function MultiplayerClient({
             isObserver={!isMyTurn}
             highlightedDieIndex={!isMyTurn ? highlightedOpponentDie : null}
             label={isMyTurn ? `Les dés de ${localName}` : `Les dés de ${opponentName}`}
+            trailingControl={(
+              <MultiplayerReactions
+                disabled={!isConnected || !opponentOnline}
+                latestReaction={latestReaction}
+                localRole={localRole}
+                localName={localName}
+                opponentName={opponentName}
+                onSend={sendReaction}
+              />
+            )}
             onToggleDie={toggleHeld}
             onRoll={handleRoll}
           />

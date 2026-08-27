@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   REACTION_EMOJIS,
   type ReactionEmoji,
@@ -44,15 +44,24 @@ export function MultiplayerReactions({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const lastReactionIdRef = useRef<string | null>(null);
+  const optimisticEmojiRef = useRef<ReactionEmoji | null>(null);
   const hideTimerRef = useRef<number | null>(null);
+
+  const showReaction = useCallback((reaction: RoomReaction) => {
+    setVisibleReaction(reaction);
+    if (hideTimerRef.current !== null) window.clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = window.setTimeout(() => setVisibleReaction(null), 2_400);
+  }, []);
 
   useEffect(() => {
     if (!latestReaction || latestReaction.id === lastReactionIdRef.current) return;
     lastReactionIdRef.current = latestReaction.id;
-    setVisibleReaction(latestReaction);
-    if (hideTimerRef.current !== null) window.clearTimeout(hideTimerRef.current);
-    hideTimerRef.current = window.setTimeout(() => setVisibleReaction(null), 2_400);
-  }, [latestReaction]);
+    if (latestReaction.role === localRole && latestReaction.emoji === optimisticEmojiRef.current) {
+      optimisticEmojiRef.current = null;
+      return;
+    }
+    showReaction(latestReaction);
+  }, [latestReaction, localRole, showReaction]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -101,6 +110,15 @@ export function MultiplayerReactions({
               type="button"
               aria-label={REACTION_LABELS[emoji]}
               onClick={() => {
+                const optimisticReaction: RoomReaction = {
+                  id: `local-${Date.now()}`,
+                  role: localRole,
+                  emoji,
+                  sentAt: Date.now(),
+                };
+                lastReactionIdRef.current = optimisticReaction.id;
+                optimisticEmojiRef.current = emoji;
+                showReaction(optimisticReaction);
                 onSend(emoji);
                 setIsOpen(false);
                 triggerRef.current?.focus();
@@ -112,9 +130,19 @@ export function MultiplayerReactions({
         </div>
       ) : null}
       {visibleReaction ? (
-        <div className="reaction-toast" role="status" aria-live="polite">
-          <span aria-hidden="true">{visibleReaction.emoji}</span>
-          <small>{reactionAuthor}</small>
+        <div
+          className="reaction-toast"
+          key={visibleReaction.id}
+          role="status"
+          aria-live="polite"
+          aria-label={`${reactionAuthor} ${visibleReaction.emoji}`}
+        >
+          <small aria-hidden="true">{reactionAuthor}</small>
+          <span className="reaction-burst" aria-hidden="true">
+            <i />
+            <b>{visibleReaction.emoji}</b>
+            <i />
+          </span>
         </div>
       ) : null}
     </div>

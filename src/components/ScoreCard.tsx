@@ -29,6 +29,7 @@ type ScoreCardProps = {
   activeColumn?: "player" | "opponent";
   highlightedPlayerCategory?: CategoryId | null;
   highlightedOpponentCategory?: CategoryId | null;
+  showTotal?: boolean;
   onSelect?: (category: CategoryId | null) => void;
   onScore?: (category: CategoryId) => void;
 };
@@ -47,6 +48,7 @@ export function ScoreCard({
   activeColumn,
   highlightedPlayerCategory = null,
   highlightedOpponentCategory = null,
+  showTotal = true,
   onSelect,
   onScore,
 }: ScoreCardProps) {
@@ -74,11 +76,11 @@ export function ScoreCard({
           const opponentScoreWithDice = opponentDice.length === 5 && activeColumn === "opponent"
             ? scoreDice(category.id, opponentDice)
             : null;
-          const currentScore = filled ? score : scoreWithDice !== null && canSelect ? scoreWithDice : null;
+          const currentScore = filled ? score : scoreWithDice;
           const currentOpponentScore = botScore ?? opponentScoreWithDice;
           const stateLabel = filled ? "case inscrite" : isSelected ? "case sélectionnée" : "case libre";
           const isExplained = explainedCategory === category.id;
-          const canScoreDirectly = !filled && !isReadOnly && canSelect && currentScore !== null && Boolean(onScore);
+          const showsScorePreview = !filled && !isReadOnly && currentScore !== null && Boolean(onScore);
 
           const handleDetailsClick = () => {
             if (!filled && !isReadOnly && canSelect) onSelect?.(category.id);
@@ -120,12 +122,13 @@ export function ScoreCard({
                   </span>
                   {VISUAL_HINTS[category.id] && <span className="score-category-hint">{VISUAL_HINTS[category.id]}</span>}
                 </span>
-                {canScoreDirectly ? (
+                {showsScorePreview ? (
                   <button
                     className="score-value score-value-direct"
                     data-highlighted={highlightedPlayerCategory === category.id}
                     data-state="preview"
                     type="button"
+                    disabled={!canSelect}
                     aria-label={`Inscrire directement ${currentScore} point${currentScore === 1 ? "" : "s"} dans ${category.label}`}
                     onClick={handleDirectScore}
                   >
@@ -164,11 +167,13 @@ export function ScoreCard({
         })}
       </div>
 
-      <div className="total-row">
-        <span className="total-label">Total</span>
-        <strong className="score-value total-score-value">{totalScore(humanScores)}</strong>
-        <strong className="score-value score-value-bot">{totalScore(botScores)}</strong>
-      </div>
+      {showTotal ? (
+        <div className="total-row">
+          <span className="total-label">Total</span>
+          <strong className="score-value total-score-value">{totalScore(humanScores)}</strong>
+          <strong className="score-value score-value-bot">{totalScore(botScores)}</strong>
+        </div>
+      ) : null}
     </section>
   );
 }

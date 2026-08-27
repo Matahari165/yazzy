@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { type CategoryId, type DieValue } from "@/domain/yatzy";
 import type { GameState } from "@/domain/game";
 import { Dice } from "./Dice";
@@ -84,6 +84,7 @@ type GameTableProps = {
   isObserver?: boolean;
   highlightedDieIndex?: number | null;
   label?: string;
+  trailingControl?: ReactNode;
   onToggleDie: (index: number) => void;
   onRoll: () => void;
 };
@@ -100,6 +101,7 @@ export function GameTable({
   isObserver = false,
   highlightedDieIndex = null,
   label = "Tes cinq dés",
+  trailingControl,
   onToggleDie,
   onRoll,
 }: GameTableProps) {
@@ -110,7 +112,7 @@ export function GameTable({
   const actionLabel = rollNumber === 0 ? "Lancer" : "Relancer";
   const usedRolls = Math.min(rollNumber, 3);
   const remainingRolls = 3 - usedRolls;
-  const canShowRollButton = usedRolls < 3 && heldCount < 5;
+  const canShowRollButton = (usedRolls < 3 && heldCount < 5) || isRolling;
   const rollStatus = usedRolls === 0
     ? "Trois lancers disponibles"
     : `${usedRolls} lancer${usedRolls > 1 ? "s" : ""} utilisé${usedRolls > 1 ? "s" : ""}, ${remainingRolls} disponible${remainingRolls !== 1 ? "s" : ""}`;
@@ -131,7 +133,7 @@ export function GameTable({
         onToggle={onToggleDie}
       />
 
-      <div className="roll-controls">
+      <div className="roll-controls" data-has-trailing-control={Boolean(trailingControl)}>
         <span className="roll-indicator" aria-label={rollStatus}>
           <strong>{usedRolls}</strong><span aria-hidden="true">/</span><span aria-hidden="true">3</span>
         </span>
@@ -147,9 +149,11 @@ export function GameTable({
               onRoll();
             }}
           >
-            {isRolling ? "Les dés roulent…" : actionLabel}
+            {actionLabel}
           </button>
         ) : <span className="roll-control-spacer" aria-hidden="true" />}
+        {trailingControl}
+        {isRolling ? <span className="sr-only" role="status">Les dés roulent…</span> : null}
       </div>
     </section>
   );
