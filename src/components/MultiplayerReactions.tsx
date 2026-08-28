@@ -7,6 +7,7 @@ import {
   type RoomReaction,
 } from "@/domain/multiplayerRoomProtocol";
 import type { MultiplayerRole } from "@/domain/multiplayer";
+import { ReactionToast } from "./ReactionToast";
 
 const REACTION_LABELS: Record<ReactionEmoji, string> = {
   "😆": "Très drôle",
@@ -130,20 +131,7 @@ export function MultiplayerReactions({
         </div>
       ) : null}
       {visibleReaction ? (
-        <div
-          className="reaction-toast"
-          key={visibleReaction.id}
-          role="status"
-          aria-live="polite"
-          aria-label={`${reactionAuthor} ${visibleReaction.emoji}`}
-        >
-          <small aria-hidden="true">{reactionAuthor}</small>
-          <span className="reaction-burst" aria-hidden="true">
-            <i />
-            <b>{visibleReaction.emoji}</b>
-            <i />
-          </span>
-        </div>
+        <ReactionToast key={visibleReaction.id} author={reactionAuthor} emoji={visibleReaction.emoji} />
       ) : null}
     </div>
   );

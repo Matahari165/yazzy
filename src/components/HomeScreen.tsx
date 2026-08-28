@@ -17,6 +17,7 @@ import {
 } from "@/lib/playerNameStorage";
 import { createGame } from "@/domain/game";
 import { writeStoredGame } from "@/lib/gameStorage";
+import { readBotDemonTheme, writeBotDemonTheme } from "@/lib/botThemeStorage";
 
 function ModeDiceIcon({ pair = false }: { pair?: boolean }) {
   return (
@@ -48,10 +49,12 @@ export function HomeScreen() {
   const [playerName, setPlayerName] = useState("");
   const [playerNameError, setPlayerNameError] = useState("");
   const [isMultiplayerOpen, setIsMultiplayerOpen] = useState(false);
+  const [isDemonThemeEnabled, setIsDemonThemeEnabled] = useState(true);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setPlayerName(readStoredPlayerName());
+      setIsDemonThemeEnabled(readBotDemonTheme());
       try {
         window.localStorage.removeItem("yazzy.playerPairing.v1");
       } catch {}
@@ -77,6 +80,7 @@ export function HomeScreen() {
   };
 
   const startBotGame = () => {
+    writeBotDemonTheme(isDemonThemeEnabled);
     writeStoredGame(createGame("expert"));
     router.push("/game");
   };
@@ -158,6 +162,22 @@ export function HomeScreen() {
                 </span>
               </button>
             </div>
+            <label className="demon-theme-toggle">
+              <input
+                type="checkbox"
+                checked={isDemonThemeEnabled}
+                onChange={(event) => {
+                  const enabled = event.currentTarget.checked;
+                  setIsDemonThemeEnabled(enabled);
+                  writeBotDemonTheme(enabled);
+                }}
+              />
+              <span aria-hidden="true">😈</span>
+              <span>
+                <strong>Mode démon</strong>
+                <small>Ambiance du boss en Solo</small>
+              </span>
+            </label>
           </section>
 
           {isMultiplayerOpen ? (

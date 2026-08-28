@@ -5,9 +5,10 @@ import {
 } from "./multiplayer";
 import { parseClientActionValue, type ClientAction } from "./protocol";
 import { isPlayerName } from "./playerName";
+import { REACTION_EMOJIS, type ReactionEmoji } from "./reactions";
 
-export const REACTION_EMOJIS = ["😆", "😂", "🤭", "🤑", "😏", "🤪", "😨", "🤯", "😭", "🤬", "💀"] as const;
-export type ReactionEmoji = (typeof REACTION_EMOJIS)[number];
+export { REACTION_EMOJIS };
+export type { ReactionEmoji };
 
 export type RoomReaction = {
   id: string;
