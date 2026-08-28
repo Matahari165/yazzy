@@ -18,6 +18,7 @@ import {
 import { createGame } from "@/domain/game";
 import { writeStoredGame } from "@/lib/gameStorage";
 import { readBotDemonTheme, writeBotDemonTheme } from "@/lib/botThemeStorage";
+import { botAudio } from "@/lib/botAudio";
 
 function ModeDiceIcon({ pair = false }: { pair?: boolean }) {
   return (
@@ -82,6 +83,8 @@ export function HomeScreen() {
   const startBotGame = () => {
     writeBotDemonTheme(isDemonThemeEnabled);
     writeStoredGame(createGame("expert"));
+    botAudio.syncPreference();
+    botAudio.startGame(isDemonThemeEnabled);
     router.push("/game");
   };
 

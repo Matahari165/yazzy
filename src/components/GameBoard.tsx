@@ -16,6 +16,8 @@ import { GameHeader } from "./GameHeader";
 import { ReactionToast } from "./ReactionToast";
 import { ScoreCard } from "./ScoreCard";
 import { readBotDemonTheme } from "@/lib/botThemeStorage";
+import { botAudio } from "@/lib/botAudio";
+import { totalScore } from "@/domain/yatzy";
 
 const HUMAN_ROLL_ANIMATION_MS = 360;
 const BOT_REACTION_DURATION_MS = 2_400;
@@ -34,12 +36,17 @@ export function GameBoard() {
   const [visibleBotReaction, setVisibleBotReaction] = useState<VisibleBotReaction | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [isDemonThemeEnabled, setIsDemonThemeEnabled] = useState<boolean | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const rollTimerRef = useRef<number | null>(null);
   const reactionTimerRef = useRef<number | null>(null);
   const reactionSequenceRef = useRef(0);
   const reactionHistoryRef = useRef(INITIAL_BOT_REACTION_HISTORY);
   const reactionTrackingReadyRef = useRef(false);
   const previousBotScoresRef = useRef(game.bot.scores);
+  const previousBotRollNumberRef = useRef(game.bot.rollNumber);
+  const previousBotHeldRef = useRef(game.bot.held.join(""));
+  const botAudioTrackingReadyRef = useRef(false);
+  const resultSoundPlayedRef = useRef(false);
 
   const showBotReaction = useCallback((emoji: BotReactionEmoji, scoredCount: number) => {
     reactionHistoryRef.current = recordBotReaction(reactionHistoryRef.current, scoredCount, emoji);
@@ -58,9 +65,17 @@ export function GameBoard() {
   }, []);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => setIsDemonThemeEnabled(readBotDemonTheme()), 0);
+    const timeout = window.setTimeout(() => {
+      const demonThemeEnabled = readBotDemonTheme();
+      setIsDemonThemeEnabled(demonThemeEnabled);
+      const enabled = botAudio.syncPreference();
+      setSoundEnabled(enabled);
+      if (enabled) botAudio.startMusic(demonThemeEnabled);
+    }, 0);
     return () => window.clearTimeout(timeout);
   }, []);
+
+  useEffect(() => () => botAudio.stopMusic(), []);
 
   useEffect(() => {
     if (!isFinished) return;
@@ -81,7 +96,10 @@ export function GameBoard() {
       ({ id }) => previousScores[id] === undefined && game.bot.scores[id] !== undefined,
     )?.id;
     previousBotScoresRef.current = game.bot.scores;
-    if (newlyFilledBotCategory) setHighlightedOpponentCategory(newlyFilledBotCategory);
+    if (newlyFilledBotCategory) {
+      setHighlightedOpponentCategory(newlyFilledBotCategory);
+      if (!isFinished) botAudio.playEffect("bot");
+    }
 
     const category = newlyFilledBotCategory;
     if (!category) return;
@@ -93,11 +111,45 @@ export function GameBoard() {
     );
     if (!emoji) return;
     showBotReaction(emoji, scoredCount);
-  }, [game.bot.scores, game.human.scores, hasLoaded, showBotReaction]);
+  }, [game.bot.scores, game.human.scores, hasLoaded, isFinished, showBotReaction]);
+
+  useEffect(() => {
+    if (!hasLoaded) return;
+    const heldSignature = game.bot.held.join("");
+    if (!botAudioTrackingReadyRef.current) {
+      previousBotRollNumberRef.current = game.bot.rollNumber;
+      previousBotHeldRef.current = heldSignature;
+      botAudioTrackingReadyRef.current = true;
+      return;
+    }
+    if (game.activePlayer === "bot") {
+      const rollDelta = game.bot.rollNumber - previousBotRollNumberRef.current;
+      if (rollDelta > 0) botAudio.playBotRollSequence(rollDelta);
+      if (heldSignature !== previousBotHeldRef.current && game.bot.held.some(Boolean)) {
+        botAudio.playEffect("botHold");
+      }
+    }
+    previousBotRollNumberRef.current = game.bot.rollNumber;
+    previousBotHeldRef.current = heldSignature;
+  }, [game.activePlayer, game.bot.held, game.bot.rollNumber, hasLoaded]);
+
+  useEffect(() => {
+    if (!isFinished || isDemonThemeEnabled === null || resultSoundPlayedRef.current) return;
+    resultSoundPlayedRef.current = true;
+    const humanScore = totalScore(game.human.scores);
+    const botScore = totalScore(game.bot.scores);
+    const outcome = humanScore === botScore ? "tie" : humanScore > botScore ? "win" : "loss";
+    if (isDemonThemeEnabled && outcome !== "tie") botAudio.playDemonResult(outcome);
+    else {
+      if (isDemonThemeEnabled) botAudio.stopMusic(0.18);
+      botAudio.playEffect(outcome);
+    }
+  }, [game.bot.scores, game.human.scores, isDemonThemeEnabled, isFinished]);
 
   const handleRoll = () => {
     if (game.activePlayer !== "human" || isRolling || game.human.rollNumber >= 3) return;
     if (game.human.rollNumber > 0 && game.human.held.every(Boolean)) return;
+    botAudio.playEffect("dice");
     roll();
     setIsRolling(true);
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
@@ -112,6 +164,7 @@ export function GameBoard() {
     if (!category || game.activePlayer !== "human" || isRolling) return;
     setHighlightedPlayerCategory(category);
     const scoredCount = Object.keys(game.human.scores).length + Object.keys(game.bot.scores).length + 1;
+    if (scoredCount < CATEGORIES.length * 2) botAudio.playEffect("score");
     const emoji = chooseBotReaction(
       {
         actor: "human",
@@ -133,8 +186,33 @@ export function GameBoard() {
     canScore: selectedCategory !== null && !isRolling,
     onRoll: handleRoll,
     onScore: handleScore,
-    onToggleDie: toggleHeld,
+    onToggleDie: (index) => {
+      botAudio.playEffect(game.human.held[index] ? "release" : "hold");
+      toggleHeld(index);
+    },
   });
+
+  const handleToggleDie = (index: number) => {
+    botAudio.playEffect(game.human.held[index] ? "release" : "hold");
+    toggleHeld(index);
+  };
+
+  const handleToggleSound = () => {
+    const enabled = !soundEnabled;
+    setSoundEnabled(enabled);
+    botAudio.setEnabled(enabled);
+    if (enabled) {
+      if (isFinished && isDemonThemeEnabled) {
+        const humanScore = totalScore(game.human.scores);
+        const botScore = totalScore(game.bot.scores);
+        if (humanScore !== botScore) botAudio.playDemonResult(humanScore > botScore ? "win" : "loss");
+        else botAudio.playEffect("tie");
+      } else botAudio.startMusic(Boolean(isDemonThemeEnabled));
+      botAudio.playEffect("button");
+    }
+  };
+
+  const handleStopAudio = () => botAudio.stopMusic(0.18);
 
   if (!hasLoaded || isDemonThemeEnabled === null) {
     return <main id="main-content" className="app-loading" aria-busy="true"><p role="status">Chargement de la partie…</p></main>;
@@ -147,9 +225,9 @@ export function GameBoard() {
       data-game-mode="bot"
       data-demon-theme={isDemonThemeEnabled ? "on" : "off"}
     >
-      <GameHeader />
+      <GameHeader soundEnabled={soundEnabled} onToggleSound={handleToggleSound} onQuit={handleStopAudio} />
       {isFinished ? (
-        <FinishedGame game={game} />
+        <FinishedGame game={game} onLeave={handleStopAudio} />
       ) : (
         <div className="game-content">
           <ScoreCard
@@ -163,7 +241,10 @@ export function GameBoard() {
             activeColumn={game.activePlayer === "human" ? "player" : "opponent"}
             highlightedPlayerCategory={highlightedPlayerCategory}
             highlightedOpponentCategory={highlightedOpponentCategory}
-            onSelect={setSelectedCategory}
+            onSelect={(category) => {
+              botAudio.playEffect("button");
+              setSelectedCategory(category);
+            }}
             onScore={handleScore}
           />
 
@@ -174,11 +255,17 @@ export function GameBoard() {
               rollNumber={game.human.rollNumber}
               selectedCategory={selectedCategory}
               isRolling={isRolling}
-              onToggleDie={toggleHeld}
+              onToggleDie={handleToggleDie}
               onRoll={handleRoll}
             />
           ) : (
-            <BotTurnPanel game={game} onSkip={skipBotAnimation} />
+            <BotTurnPanel
+              game={game}
+              onSkip={() => {
+                botAudio.playEffect("button");
+                skipBotAnimation();
+              }}
+            />
           )}
         </div>
       )}

@@ -11,6 +11,7 @@ type FinishedGameProps = {
   rematchRequested?: boolean;
   localName?: string;
   opponentName?: string;
+  onLeave?: () => void;
 };
 
 type GameOutcome = "win" | "loss" | "tie";
@@ -38,6 +39,7 @@ export function FinishedGame({
   rematchRequested = false,
   localName = "Toi",
   opponentName = "Ami",
+  onLeave,
 }: FinishedGameProps) {
   const isMultiplayer = "player1" in game;
 
@@ -157,9 +159,9 @@ export function FinishedGame({
             {rematchRequested ? `En attente de ${opponentName}…` : "Proposer une revanche"}
           </button>
         ) : (
-          <Link className="primary-action" href="/bot">Rejouer</Link>
+          <Link className="primary-action" href="/bot" onClick={onLeave}>Rejouer</Link>
         )}
-        <Link className="secondary-action" href="/">Accueil</Link>
+        <Link className="secondary-action" href="/" onClick={onLeave}>Accueil</Link>
       </div>
     </section>
   );

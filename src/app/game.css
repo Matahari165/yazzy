@@ -42,6 +42,24 @@
 }
 .multiplayer-game-header .game-logo { font-size: 19px; }
 .game-header > .quit-link { margin-left: auto; }
+.sound-toggle {
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+}
+.sound-toggle:hover { color: var(--ink); background: var(--surface-muted); }
+.sound-toggle[aria-pressed="false"] { color: var(--ink-soft); opacity: 0.72; }
 .multiplayer-total-summary {
   min-width: 0;
   display: grid;
