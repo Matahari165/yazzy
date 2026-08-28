@@ -320,7 +320,7 @@ export function MultiplayerClient({
             animationSeed={replayedOpponentEvent?.version ?? game.turn * 20 + (isMyTurn ? 1 : 2) * 5 + (isMyTurn ? localState.rollNumber : opponentState.rollNumber)}
             isRolling={isMyTurn ? isRolling : isReplayingOpponentRoll}
             isDisabled={!canAct || pendingAction !== null}
-            isRollDisabled={hasPendingHolds || pendingAction !== null}
+            isRollDisabled={pendingAction !== null}
             isObserver={!isMyTurn}
             highlightedDieIndex={!isMyTurn ? highlightedOpponentDie : null}
             label={isMyTurn ? `Les dés de ${localName}` : `Les dés de ${opponentName}`}
