@@ -23,6 +23,7 @@ export function useYazzyGame() {
   const botTimerRef = useRef<number | null>(null);
   const botWorkerRef = useRef<Worker | null>(null);
   const botRequestIdRef = useRef(0);
+  const botOpeningDelayRef = useRef(0);
 
   useEffect(() => {
     try {
@@ -76,12 +77,12 @@ export function useYazzyGame() {
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const duration = reducedMotion ? 60 : BOT_ANIMATION_MS;
-    const schedule = (callback: () => void) => {
+    const schedule = (callback: () => void, delay = duration) => {
       clearBotTimer();
       botTimerRef.current = window.setTimeout(() => {
         botTimerRef.current = null;
         callback();
-      }, duration);
+      }, delay);
     };
 
     if (game.botTurn.status === "rolling") {
@@ -92,7 +93,7 @@ export function useYazzyGame() {
         return () => clearBotTimer();
       }
 
-      window.queueMicrotask(() => {
+      const startRolling = () => {
         setGame((current) => {
           if (current.activePlayer !== "bot" || current.botTurn.status !== "rolling") return current;
           return {
@@ -101,7 +102,11 @@ export function useYazzyGame() {
             botTurn: { ...current.botTurn, status: "waiting", message: "Le bot joue…" },
           };
         });
-      });
+      };
+      const openingDelay = game.bot.rollNumber === 0 ? botOpeningDelayRef.current : 0;
+      botOpeningDelayRef.current = 0;
+      if (openingDelay > 0) schedule(startRolling, openingDelay);
+      else window.queueMicrotask(startRolling);
     } else if (game.botTurn.status === "waiting") {
       schedule(() => {
         runBotStep("prepare", game).then((nextState) => {
@@ -136,7 +141,8 @@ export function useYazzyGame() {
       : current);
   }, []);
 
-  const score = useCallback((category: CategoryId) => {
+  const score = useCallback((category: CategoryId, botOpeningDelay = 0) => {
+    botOpeningDelayRef.current = botOpeningDelay;
     setGame((current) => scoreHumanTurn(current, category));
   }, []);
 

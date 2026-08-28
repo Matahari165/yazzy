@@ -35,20 +35,28 @@ describe("réactions du bot", () => {
   });
 
   it("varie le résultat et applique une probabilité aux coups non légendaires", () => {
-    expect(chooseBotReaction(event(), INITIAL_BOT_REACTION_HISTORY, () => 0, 10_000)).toBe("😈");
-    expect(chooseBotReaction(event(), INITIAL_BOT_REACTION_HISTORY, () => 0.999, 10_000)).toBeNull();
+    const bigMove = event({ category: "fullHouse", points: 28 });
+    expect(chooseBotReaction(bigMove, INITIAL_BOT_REACTION_HISTORY, () => 0, 10_000)).toBe("😈");
+    expect(chooseBotReaction(bigMove, INITIAL_BOT_REACTION_HISTORY, () => 0.999, 10_000)).toBeNull();
+  });
+
+  it("réserve ses propres réactions aux gros enjeux", () => {
+    expect(chooseBotReaction(event({ category: "pair", points: 12 }), INITIAL_BOT_REACTION_HISTORY, () => 0, 10_000)).toBeNull();
+    expect(chooseBotReaction(event({ category: "yatzy", points: 0 }), INITIAL_BOT_REACTION_HISTORY, () => 0, 10_000)).toBe("😭");
+    expect(chooseBotReaction(event({ category: "sixes", points: 24, isEndgame: true }), INITIAL_BOT_REACTION_HISTORY, () => 0, 10_000)).toBe("😈");
+    expect(chooseBotReaction(event({ category: "fullHouse", points: 28 }), INITIAL_BOT_REACTION_HISTORY, () => 0.999, 10_000)).toBeNull();
   });
 
   it("évite de répéter immédiatement le même emoji", () => {
     const history = { ...INITIAL_BOT_REACTION_HISTORY, lastEmoji: "😈" as const };
-    expect(chooseBotReaction(event(), history, () => 0, 10_000)).toBe("🤑");
+    expect(chooseBotReaction(event({ category: "fullHouse", points: 28 }), history, () => 0, 10_000)).toBe("🤑");
   });
 
   it("respecte les délais par score et par temps", () => {
     const history = recordBotReaction(INITIAL_BOT_REACTION_HISTORY, 2, "🔥", 10_000);
     expect(chooseBotReaction(event({ scoredCount: 3 }), history, () => 0, 20_000)).toBeNull();
     expect(chooseBotReaction(event({ scoredCount: 5 }), history, () => 0, 12_000)).toBeNull();
-    expect(chooseBotReaction(event({ scoredCount: 5 }), history, () => 0, 20_000)).toBe("😈");
+    expect(chooseBotReaction(event({ category: "fullHouse", points: 28, scoredCount: 5 }), history, () => 0, 20_000)).toBe("😈");
   });
 
   it("limite une partie à six réactions", () => {

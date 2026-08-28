@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { CATEGORIES, type CategoryId } from "@/domain/yatzy";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CATEGORIES, scoreDice, type CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useYazzyGame } from "@/hooks/useYazzyGame";
 import {
@@ -19,6 +19,7 @@ import { readBotDemonTheme } from "@/lib/botThemeStorage";
 
 const HUMAN_ROLL_ANIMATION_MS = 360;
 const BOT_REACTION_DURATION_MS = 2_400;
+const HUMAN_REACTION_LEAD_MS = 700;
 
 type VisibleBotReaction = {
   id: string;
@@ -38,8 +39,18 @@ export function GameBoard() {
   const reactionSequenceRef = useRef(0);
   const reactionHistoryRef = useRef(INITIAL_BOT_REACTION_HISTORY);
   const reactionTrackingReadyRef = useRef(false);
-  const previousHumanScoresRef = useRef(game.human.scores);
   const previousBotScoresRef = useRef(game.bot.scores);
+
+  const showBotReaction = useCallback((emoji: BotReactionEmoji, scoredCount: number) => {
+    reactionHistoryRef.current = recordBotReaction(reactionHistoryRef.current, scoredCount, emoji);
+    reactionSequenceRef.current += 1;
+    setVisibleBotReaction({ id: `bot-reaction-${reactionSequenceRef.current}`, emoji });
+    if (reactionTimerRef.current !== null) window.clearTimeout(reactionTimerRef.current);
+    reactionTimerRef.current = window.setTimeout(() => {
+      reactionTimerRef.current = null;
+      setVisibleBotReaction(null);
+    }, BOT_REACTION_DURATION_MS);
+  }, []);
 
   useEffect(() => () => {
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
@@ -60,45 +71,29 @@ export function GameBoard() {
   useEffect(() => {
     if (!hasLoaded) return;
     if (!reactionTrackingReadyRef.current) {
-      previousHumanScoresRef.current = game.human.scores;
       previousBotScoresRef.current = game.bot.scores;
       reactionTrackingReadyRef.current = true;
       return;
     }
 
-    const previousHumanScores = previousHumanScoresRef.current;
     const previousScores = previousBotScoresRef.current;
-    const newlyFilledHumanCategory = CATEGORIES.find(
-      ({ id }) => previousHumanScores[id] === undefined && game.human.scores[id] !== undefined,
-    )?.id;
     const newlyFilledBotCategory = CATEGORIES.find(
       ({ id }) => previousScores[id] === undefined && game.bot.scores[id] !== undefined,
     )?.id;
-    previousHumanScoresRef.current = game.human.scores;
     previousBotScoresRef.current = game.bot.scores;
     if (newlyFilledBotCategory) setHighlightedOpponentCategory(newlyFilledBotCategory);
 
-    const category = newlyFilledHumanCategory ?? newlyFilledBotCategory;
+    const category = newlyFilledBotCategory;
     if (!category) return;
-    const actor = newlyFilledHumanCategory ? "human" : "bot";
-    const scores = actor === "human" ? game.human.scores : game.bot.scores;
-    const points = scores[category] ?? 0;
+    const points = game.bot.scores[category] ?? 0;
     const scoredCount = Object.keys(game.human.scores).length + Object.keys(game.bot.scores).length;
     const emoji = chooseBotReaction(
-      { actor, category, points, scoredCount },
+      { actor: "bot", category, points, scoredCount, isEndgame: scoredCount >= 24 },
       reactionHistoryRef.current,
     );
     if (!emoji) return;
-
-    reactionHistoryRef.current = recordBotReaction(reactionHistoryRef.current, scoredCount, emoji);
-    reactionSequenceRef.current += 1;
-    setVisibleBotReaction({ id: `bot-reaction-${reactionSequenceRef.current}`, emoji });
-    if (reactionTimerRef.current !== null) window.clearTimeout(reactionTimerRef.current);
-    reactionTimerRef.current = window.setTimeout(() => {
-      reactionTimerRef.current = null;
-      setVisibleBotReaction(null);
-    }, BOT_REACTION_DURATION_MS);
-  }, [game.bot.scores, game.human.scores, hasLoaded]);
+    showBotReaction(emoji, scoredCount);
+  }, [game.bot.scores, game.human.scores, hasLoaded, showBotReaction]);
 
   const handleRoll = () => {
     if (game.activePlayer !== "human" || isRolling || game.human.rollNumber >= 3) return;
@@ -116,7 +111,19 @@ export function GameBoard() {
   const handleScore = (category = selectedCategory) => {
     if (!category || game.activePlayer !== "human" || isRolling) return;
     setHighlightedPlayerCategory(category);
-    score(category);
+    const scoredCount = Object.keys(game.human.scores).length + Object.keys(game.bot.scores).length + 1;
+    const emoji = chooseBotReaction(
+      {
+        actor: "human",
+        category,
+        points: scoreDice(category, game.human.dice),
+        scoredCount,
+        isEndgame: scoredCount >= 24,
+      },
+      reactionHistoryRef.current,
+    );
+    if (emoji) showBotReaction(emoji, scoredCount);
+    score(category, emoji ? HUMAN_REACTION_LEAD_MS : 0);
     setSelectedCategory(null);
   };
 

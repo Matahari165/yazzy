@@ -6,6 +6,7 @@ export type BotReactionEvent = {
   category: CategoryId;
   points: number;
   scoredCount: number;
+  isEndgame?: boolean;
 };
 
 export type BotReactionHistory = {
@@ -29,6 +30,8 @@ const BOT_POOLS: Record<"human" | "bot", readonly BotReactionEmoji[]> = {
   human: ["👏", "🔥", "🤯", "😮", "🫡", "😂", "😱", "👑", "💀", "😅"],
 };
 const HUMAN_MOCKERY_POOL: readonly BotReactionEmoji[] = ["😂", "😏", "🤪", "💀", "😈"];
+const BOT_FAILURE_POOL: readonly BotReactionEmoji[] = ["😭", "💀", "😅", "🤬"];
+const HIGH_STAKES_CATEGORIES: CategoryId[] = ["fourOfAKind", "smallStraight", "largeStraight", "fullHouse", "yatzy"];
 
 function pickEmoji(pool: readonly BotReactionEmoji[], previous: BotReactionEmoji | null, rng: () => number) {
   const available = pool.filter((emoji) => emoji !== previous);
@@ -56,24 +59,42 @@ export function chooseBotReaction(
   const isBadHumanMove = event.actor === "human" && (
     event.points === 0 || (!definition.fixedScore && scoreRatio <= 0.3)
   );
-  if (event.points <= 0 && !isBadHumanMove) return null;
+  const isBigBotMiss = event.actor === "bot"
+    && event.points === 0
+    && HIGH_STAKES_CATEGORIES.includes(event.category);
+  if (event.points <= 0 && !isBadHumanMove && !isBigBotMiss) return null;
 
   if (isBadHumanMove) {
     if (rng() >= 0.8) return null;
     return pickEmoji(HUMAN_MOCKERY_POOL, history.lastEmoji, rng);
   }
 
+  if (isBigBotMiss) {
+    if (rng() >= (event.isEndgame ? 0.45 : 0.25)) return null;
+    return pickEmoji(BOT_FAILURE_POOL, history.lastEmoji, rng);
+  }
+
   const isBigCombo = STRAIGHT_CATEGORIES.includes(event.category)
     || COMBO_CATEGORIES.includes(event.category);
-  const probability = isYatzy
-    ? 1
-    : isBigCombo
-      ? 0.82
-      : scoreRatio >= 1
-        ? 0.72
-        : scoreRatio >= 0.8
-          ? 0.56
-          : 0;
+  const probability = event.actor === "human"
+    ? isYatzy
+      ? 1
+      : isBigCombo
+        ? 0.82
+        : scoreRatio >= 1
+          ? 0.72
+          : scoreRatio >= 0.8
+            ? 0.56
+            : 0
+    : isYatzy
+      ? 1
+      : event.isEndgame && (isBigCombo || scoreRatio >= 0.8)
+        ? 0.55
+        : isBigCombo
+          ? 0.35
+          : scoreRatio >= 0.9 && definition.maximumScore >= 20
+            ? 0.25
+            : 0;
 
   if (rng() >= probability) return null;
   return pickEmoji(BOT_POOLS[event.actor], history.lastEmoji, rng);
