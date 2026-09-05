@@ -177,7 +177,6 @@ export function BotTurnPanel({ game, onSkip }: BotTurnPanelProps) {
 
   return (
     <section className="bot-turn-panel" aria-labelledby="bot-turn-title" aria-live="polite">
-      <p className="bot-status" id="bot-turn-title">{botStatus}</p>
       <DiceTray
         dice={game.bot.dice}
         held={game.bot.held}
@@ -189,7 +188,16 @@ export function BotTurnPanel({ game, onSkip }: BotTurnPanelProps) {
         label="Les dés du bot"
         tone="opponent"
       />
-      {isAnimating ? <button className="secondary-action" type="button" onClick={onSkip}>Passer</button> : null}
+      <div className="roll-controls bot-turn-controls">
+        <p className="bot-status" id="bot-turn-title">{botStatus}</p>
+        {isAnimating ? (
+          <button className="secondary-action bot-skip-action" type="button" onClick={onSkip}>
+            Passer
+          </button>
+        ) : (
+          <span className="roll-control-spacer" aria-hidden="true" />
+        )}
+      </div>
     </section>
   );
 }

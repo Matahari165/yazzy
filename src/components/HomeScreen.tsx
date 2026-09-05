@@ -268,7 +268,6 @@ export function HomeScreen() {
       </div>
 
       <header className="lobby-hero">
-        <span className="logo-mark" aria-hidden="true"><span /><span /><span /><em className="logo-spark" /></span>
         <h1 id="lobby-title" className="hero-title" aria-label={TITLE}>
           {TITLE.split("").map((letter, index) => (
             <span key={index} aria-hidden="true" style={{ "--i": index } as CSSProperties}>

@@ -100,7 +100,7 @@ export function ScoreCard({
               <div
                 className="score-row"
                 data-actionable={!filled && !isReadOnly && canSelect}
-                data-filled={visuallyFilledColumn !== "none"}
+                data-filled={filled}
                 data-filled-column={visuallyFilledColumn}
                 data-player-filled={filled}
                 data-opponent-filled={botScore !== undefined}

@@ -136,16 +136,18 @@
 .score-row {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: 44px;
   min-height: 44px;
+  max-height: 44px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px 36px;
+  grid-template-columns: minmax(0, 1fr) 42px 42px;
   gap: 6px;
   align-items: center;
-  padding: 3px 12px;
+  padding: 0 12px;
+  box-sizing: border-box;
   color: var(--ink);
   background: var(--score-row-surface);
-  transition: background-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
+  transition: background-color var(--motion-fast) var(--ease-out);
 }
 .score-row-details { position: absolute; z-index: 0; inset: 0; width: 100%; padding: 0; background: transparent; border: 0; }
 .score-row-details:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
@@ -198,10 +200,12 @@
   z-index: 1;
   width: 38px;
   min-width: 38px;
+  height: 32px;
   min-height: 32px;
   display: grid;
   justify-self: center;
   place-items: center;
+  box-sizing: border-box;
   color: var(--score-player-ink);
   background: var(--score-player-cell);
   border: 1.5px solid var(--score-player-ink);
@@ -222,12 +226,10 @@
 .score-value[data-state="preview"] {
   border: 1.5px solid var(--score-player-ink);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--score-player-ink) 20%, transparent);
-  transform: translateX(2px);
 }
 .score-value-bot[data-state="preview"] {
   border-color: var(--score-opponent-ink);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--score-opponent-ink) 20%, transparent);
-  transform: translateX(2px);
 }
 .score-value[data-highlighted="true"] { animation: player-score-choice var(--motion-emphasis) var(--ease-emphasized); }
 .score-value-bot[data-highlighted="true"] { animation-name: opponent-score-choice; }
@@ -237,27 +239,40 @@
   color: var(--score-filled-ink);
 }
 
-.score-value-direct { width: 44px; min-width: 44px; min-height: 44px; padding: 0; cursor: pointer; transition: transform var(--motion-fast) var(--ease-out); background: transparent; border: 0; }
+.score-value-direct {
+  width: 42px;
+  min-width: 42px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+}
 .score-value-direct:disabled { cursor: default; opacity: 1; }
 .score-value-direct > span {
   width: 38px;
+  min-width: 38px;
+  height: 32px;
   min-height: 32px;
   display: grid;
   place-items: center;
+  box-sizing: border-box;
   color: var(--score-player-ink);
   background: var(--score-player-cell);
   border: 1.5px solid var(--score-player-ink);
   border-radius: 8px;
   box-shadow: 0 3px 0 var(--score-player-ink);
-  transition: transform var(--motion-fast) var(--ease-spring), border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
+  transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
 }
 .score-value-direct:hover > span {
   border-color: var(--coral-deep);
   box-shadow: 0 4px 0 var(--score-player-ink);
-  transform: translateY(-1px);
 }
 .score-value-direct:active > span {
-  transform: translateY(2px);
   box-shadow: 0 1px 0 var(--score-player-ink);
 }
 .score-value-direct[data-state="preview"] { background: transparent; border: 0; box-shadow: none; }
@@ -306,19 +321,21 @@
 
 .total-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 52px 52px;
-  gap: 8px;
-  padding: 8px 14px;
+  grid-template-columns: minmax(0, 1fr) 42px 42px;
+  gap: 6px;
+  padding: 8px 12px;
   align-items: center;
   background: var(--surface-muted);
   border-top: 2px solid var(--line-strong);
   border-bottom-left-radius: 18px;
   border-bottom-right-radius: 18px;
+  box-sizing: border-box;
 }
 .total-row .score-value {
-  width: 48px;
-  min-width: 48px;
-  min-height: 36px;
+  width: 38px;
+  min-width: 38px;
+  height: 32px;
+  min-height: 32px;
   font-size: 19px;
   border-radius: 8px;
   box-shadow: 0 2px 0 rgb(30 27 24 / 10%);
@@ -341,7 +358,6 @@
     inset 0 2px 0 rgb(255 255 255 / 75%),
     0 6px 0 var(--line-strong),
     0 14px 28px rgb(30 27 24 / 10%);
-  animation: panel-enter var(--motion-emphasis) var(--ease-emphasized);
 }
 .game-table[data-observer="true"] { border-color: var(--opponent); background: var(--opponent-soft); }
 .dice-tray {
@@ -397,7 +413,7 @@
 .die-face .pip { width: 9px; height: 9px; align-self: center; justify-self: center; background: var(--die-pip); border-radius: 50%; opacity: 0; }
 .die-face .pip[data-visible="true"] { opacity: 1; }
 
-.roll-controls { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 16px; }
+.roll-controls { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 16px; min-height: 48px; height: 48px; }
 .roll-controls[data-has-trailing-control="true"] { grid-template-columns: auto minmax(0, 1fr) 48px; gap: 8px; }
 .roll-controls .primary-action, .roll-controls .secondary-action { width: 100%; min-width: 0; }
 .roll-controls .primary-action {
@@ -417,15 +433,53 @@
 
 /* 6. Bot turn */
 .bot-turn-panel {
-  display: grid; gap: 12px; padding: 16px;
-  background: var(--opponent-soft); border: 1.5px solid var(--opponent);
-  border-radius: var(--radius-md); box-shadow: 0 1px 0 rgb(30 27 24 / 4%), 0 3px 10px rgb(30 27 24 / 7%);
-  animation: panel-enter var(--motion-emphasis) var(--ease-emphasized);
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  overflow: visible;
+  background: var(--opponent-soft);
+  border: 2px solid var(--board-border);
+  border-radius: 20px;
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 75%),
+    0 6px 0 var(--line-strong),
+    0 14px 28px rgb(30 27 24 / 10%);
 }
-.bot-status { display: flex; align-items: center; min-height: 44px; margin: 0; color: var(--opponent); font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+.bot-turn-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  height: 48px;
+}
+.bot-status {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  margin: 0;
+  color: var(--opponent);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .bot-status::before {
-  width: 9px; height: 9px; flex: none; margin-right: 10px; background: var(--danger); border-radius: 50%; content: "";
+  width: 9px;
+  height: 9px;
+  flex: none;
+  margin-right: 10px;
+  background: var(--danger);
+  border-radius: 50%;
+  content: "";
   animation: st-blink 1.2s ease-in-out infinite, bot-breathe 1.6s var(--ease-out) infinite;
+}
+.bot-skip-action {
+  min-width: 84px;
+  min-height: 44px;
 }
 
 /* 7. Reactions */
@@ -706,19 +760,19 @@ body:has(.game-shell[data-game-mode="bot"][data-demon-theme="on"]) { background:
   .multiplayer-total-summary { gap: 8px; }
   .reaction-trigger, .multiplayer-quit-link { width: 44px; min-width: 44px; }
   .quit-link { padding-inline: 8px; font-size: 12px; }
-  .game-content { min-height: 0; display: grid; flex: 1; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; align-items: stretch; gap: 8px; overflow: hidden; }
+  .game-content { min-height: 0; display: grid; flex: 1; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 152px; align-items: stretch; gap: 8px; overflow: hidden; }
   .score-card { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
   .score-list { min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(44px, auto); flex: 1; overflow-y: auto; overscroll-behavior: contain; }
-  .score-row { min-height: 44px; gap: 5px; padding: 2px 8px; }
-  .score-category { font-size: 15px; }
-  .score-value { width: 34px; min-width: 28px; min-height: 29px; font-size: 18px; }
-  .score-value-direct { min-width: 44px; min-height: 44px; justify-self: center; background: transparent; border: 0; box-shadow: none; }
-  .score-value-direct > span { width: 34px; height: 34px; display: grid; place-items: center; color: var(--score-player-ink); background: var(--score-player-cell); border: 1.5px solid var(--score-player-ink); border-radius: 6px; }
+  .score-row { height: 44px; min-height: 44px; max-height: 44px; gap: 4px; padding: 0 6px; grid-template-columns: minmax(0, 1fr) 34px 34px; box-sizing: border-box; }
+  .score-category { font-size: 14px; }
+  .score-value { width: 32px; min-width: 32px; height: 28px; min-height: 28px; font-size: 17px; }
+  .score-value-direct { width: 34px; min-width: 34px; height: 28px; min-height: 28px; justify-self: center; background: transparent; border: 0; box-shadow: none; }
+  .score-value-direct > span { width: 32px; height: 28px; display: grid; place-items: center; color: var(--score-player-ink); background: var(--score-player-cell); border: 1.5px solid var(--score-player-ink); border-radius: 6px; }
   .score-value-direct:hover { box-shadow: none; }
   .score-help-popover[data-placement] { position: fixed; inset: auto 12px max(12px, env(safe-area-inset-bottom)); width: auto; max-height: calc(100dvh - 24px); overflow-y: auto; transform-origin: bottom center; }
   .score-help-calculation { grid-template-columns: minmax(0, 1fr) !important; gap: 10px !important; }
   .score-help-metrics { justify-content: space-between; text-align: left; }
-  .game-table, .bot-turn-panel { gap: 8px; padding: 10px; }
+  .game-table, .bot-turn-panel { gap: 8px; padding: 10px; height: 152px; min-height: 152px; max-height: 152px; box-sizing: border-box; }
   .dice-tray { grid-template-columns: repeat(5, minmax(48px, 1fr)); gap: 5px; padding: 8px 4px; }
   .die-placeholder, .die-button { min-width: 44px; min-height: 70px; }
   .die-placeholder::before, .die-face { width: 48px; height: 48px; }
