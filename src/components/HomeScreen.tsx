@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   generateRoomCode,
   isRoomCode,
@@ -19,6 +19,8 @@ import { createGame } from "@/domain/game";
 import { writeStoredGame } from "@/lib/gameStorage";
 import { readBotDemonTheme, writeBotDemonTheme } from "@/lib/botThemeStorage";
 import { botAudio } from "@/lib/botAudio";
+import type { DieValue } from "@/domain/yatzy";
+import { DieGlyph } from "./Dice";
 
 function ModeDiceIcon({ pair = false }: { pair?: boolean }) {
   return (
@@ -43,6 +45,71 @@ function ModeDiceIcon({ pair = false }: { pair?: boolean }) {
   );
 }
 
+/** Cinq dés qui se relancent tout seuls ; un clic relance ce dé seul. */
+function HeroDice() {
+  const [round, setRound] = useState(0);
+  const [values, setValues] = useState<DieValue[]>([6, 1, 4, 3, 5]);
+  const [bumps, setBumps] = useState<number[]>([0, 0, 0, 0, 0]);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(() => {
+      setValues(Array.from({ length: 5 }, () => (1 + Math.floor(Math.random() * 6)) as DieValue));
+      setRound((n) => n + 1);
+    }, 2800);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const rerollOne = (index: number) => {
+    setValues((prev) => {
+      let next: DieValue = (1 + Math.floor(Math.random() * 6)) as DieValue;
+      if (prev.length > 1) {
+        while (next === prev[index]) {
+          next = (1 + Math.floor(Math.random() * 6)) as DieValue;
+        }
+      }
+      const copy = [...prev];
+      copy[index] = next;
+      return copy;
+    });
+    setBumps((prev) => {
+      const copy = [...prev];
+      copy[index] += 1;
+      return copy;
+    });
+  };
+
+  return (
+    <div className="hero-dice" role="group" aria-label="Cinq dés qui roulent tout seuls, touche un dé pour le relancer">
+      {values.map((value, index) => (
+        <button
+          key={`${round}-${bumps[index]}-${index}`}
+          className="hero-die"
+          style={{ "--i": index } as CSSProperties}
+          type="button"
+          onClick={() => rerollOne(index)}
+          aria-label={`Relancer le dé ${index + 1}, valeur ${value}`}
+        >
+          <DieGlyph value={value} className="hero-die-face" />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const TITLE = "Yazzy";
+
+const SHAPES = [
+  { kind: "ring", depth: 34 },
+  { kind: "plus", depth: 22 },
+  { kind: "dot", depth: 46 },
+  { kind: "trian", depth: 28 },
+  { kind: "square", depth: 40 },
+  { kind: "dot", depth: 18 },
+  { kind: "star", depth: 26 },
+  { kind: "zig", depth: 32 },
+] as const;
+
 export function HomeScreen() {
   const router = useRouter();
   const [roomCode, setRoomCode] = useState("");
@@ -51,8 +118,11 @@ export function HomeScreen() {
   const [playerNameError, setPlayerNameError] = useState("");
   const [isMultiplayerOpen, setIsMultiplayerOpen] = useState(false);
   const [isDemonThemeEnabled, setIsDemonThemeEnabled] = useState(true);
+  const shellRef = useRef<HTMLElement>(null);
+  const reduceMotionRef = useRef(false);
 
   useEffect(() => {
+    reduceMotionRef.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const timeout = window.setTimeout(() => {
       setPlayerName(readStoredPlayerName());
       setIsDemonThemeEnabled(readBotDemonTheme());
@@ -62,6 +132,21 @@ export function HomeScreen() {
     }, 0);
     return () => window.clearTimeout(timeout);
   }, []);
+
+  // Projecteur + parallaxe suivent le pointeur, sans re-rendu.
+  // En reduced-motion : décor fixe, aucune variable de mouvement.
+  const followPointer = (event: React.PointerEvent) => {
+    if (reduceMotionRef.current) return;
+    const el = shellRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    el.style.setProperty("--mx", `${x}px`);
+    el.style.setProperty("--my", `${y}px`);
+    el.style.setProperty("--px", (x / rect.width - 0.5).toFixed(3));
+    el.style.setProperty("--py", (y / rect.height - 0.5).toFixed(3));
+  };
 
   const savePlayerName = () => {
     const normalizedName = normalizePlayerName(playerName);
@@ -135,141 +220,187 @@ export function HomeScreen() {
   return (
     <main
       id="main-content"
+      ref={shellRef}
       className="lobby-shell"
       data-multiplayer-open={isMultiplayerOpen}
+      onPointerMove={followPointer}
     >
-      <section className="lobby-card" aria-labelledby="lobby-title">
-        <header className="lobby-brand">
-          <span className="logo-mark" aria-hidden="true"><span /><span /><span /></span>
-          <h1 id="lobby-title">Yazzy</h1>
-        </header>
+      <div className="lobby-bg" aria-hidden="true">
+        <span className="lobby-spot" />
+        <span className="lobby-grid" />
+        <span className="lobby-ghost">Jouer</span>
+        <span className="lobby-shapes">
+          {SHAPES.map((shape, index) => (
+            <span
+              key={index}
+              className="lobby-shape"
+              data-shape={index}
+              style={{ "--pd": shape.depth, "--i": index } as CSSProperties}
+            >
+              <i className={`shape-${shape.kind}`} />
+            </span>
+          ))}
+        </span>
+      </div>
 
-        <div className="lobby-actions">
-          <section className="new-game" aria-label="Modes de jeu">
-            <div className="game-mode-grid">
-              <button className="game-mode-action game-mode-action-primary" type="button" onClick={startBotGame}>
-                <ModeDiceIcon />
-                <span>
-                  <strong>Solo</strong>
-                  <small>Contre un bot</small>
-                </span>
-              </button>
-              <button
-                className="game-mode-action"
-                type="button"
-                aria-expanded={isMultiplayerOpen}
-                aria-controls="multiplayer-options"
-                data-active={isMultiplayerOpen}
-                onClick={() => setIsMultiplayerOpen((isOpen) => !isOpen)}
-              >
-                <ModeDiceIcon pair />
-                <span>
-                  <strong>Duo</strong>
-                  <small>Avec un ami</small>
-                </span>
-              </button>
-              <button
-                className="game-mode-action game-mode-action-quiz"
-                type="button"
-                onClick={startQuiz}
-              >
-                <span className="mode-quiz-icon" aria-hidden="true">?</span>
-                <span>
-                  <strong>Quiz</strong>
-                  <small>Culture G</small>
-                </span>
-              </button>
-            </div>
-            <label className="demon-theme-toggle">
-              <input
-                type="checkbox"
-                checked={isDemonThemeEnabled}
-                onChange={(event) => {
-                  const enabled = event.currentTarget.checked;
-                  setIsDemonThemeEnabled(enabled);
-                  writeBotDemonTheme(enabled);
-                }}
-              />
-              <span aria-hidden="true">😈</span>
-              <span>
-                <strong>Mode démon</strong>
-                <small>Ambiance du boss en Solo</small>
-              </span>
-            </label>
-          </section>
+      <header className="lobby-hero">
+        <span className="logo-mark" aria-hidden="true"><span /><span /><span /><em className="logo-spark" /></span>
+        <h1 id="lobby-title" className="hero-title" aria-label={TITLE}>
+          {TITLE.split("").map((letter, index) => (
+            <span key={index} aria-hidden="true" style={{ "--i": index } as CSSProperties}>
+              {letter}
+            </span>
+          ))}
+        </h1>
+        <p className="lobby-tagline">Le Yatzy qui explique chaque décision.</p>
+        <HeroDice />
+      </header>
 
-          {isMultiplayerOpen ? (
-            <section id="multiplayer-options" className="multiplayer-options" aria-label="Partie avec un ami">
-              <div className="player-name-field">
-                <label htmlFor="player-name">Pseudo</label>
-                <input
-                  id="player-name"
-                  name="player-name"
-                  type="text"
-                  value={playerName}
-                  onChange={(event) => {
-                    setPlayerName(event.currentTarget.value.slice(0, PLAYER_NAME_MAX_LENGTH));
-                    setPlayerNameError("");
-                  }}
-                  onBlur={() => {
-                    const normalizedName = normalizePlayerName(playerName);
-                    setPlayerName(normalizedName);
-                    if (normalizedName) writeStoredPlayerName(normalizedName);
-                  }}
-                  placeholder="Alex"
-                  autoComplete="nickname"
-                  spellCheck={false}
-                  maxLength={PLAYER_NAME_MAX_LENGTH}
-                  aria-describedby={playerNameError ? "player-name-error" : undefined}
-                  aria-invalid={playerNameError ? true : undefined}
-                />
-                {playerNameError ? (
-                  <p id="player-name-error" className="form-error" role="alert">{playerNameError}</p>
-                ) : null}
-              </div>
-
-              <button className="primary-action create-room-action" type="button" onClick={startMultiplayer}>
-                Créer une partie
-              </button>
-
-              <div className="lobby-divider" aria-hidden="true"><span>ou</span></div>
-
-              <form className="lobby-code-form" onSubmit={joinMultiplayer} noValidate>
-                <label className="sr-only" htmlFor="room-code">Code de partie</label>
-                <div className="lobby-code-controls">
-                  <div className="room-code-field">
-                    <input
-                      id="room-code"
-                      name="room-code"
-                      type="text"
-                      value={roomCode}
-                      onChange={(event) => {
-                        setRoomCode(normalizeRoomCode(event.currentTarget.value));
-                        setRoomCodeError("");
-                      }}
-                      onPaste={pasteRoomCodeFromField}
-                      placeholder="ABC123"
-                      autoComplete="off"
-                      autoCapitalize="characters"
-                      spellCheck={false}
-                      inputMode="text"
-                      maxLength={6}
-                      aria-describedby={roomCodeError ? "room-code-error" : undefined}
-                      aria-invalid={roomCodeError ? true : undefined}
-                    />
-                    <button className="paste-code-action" type="button" onClick={pasteRoomCode}>
-                      Coller
-                    </button>
-                  </div>
-                </div>
-                {roomCodeError ? (
-                  <p id="room-code-error" className="form-error" role="alert">{roomCodeError}</p>
-                ) : null}
-              </form>
-            </section>
-          ) : null}
+      <div className="lobby-ticker" aria-hidden="true">
+        <div className="lobby-ticker-track">
+          {[0, 1].map((copy) => (
+            <span key={copy}>
+              Lance les dés <b>◆</b> Garde tes figures <b>◆</b> Inscris ton score <b>◆</b> 3
+              lancers par tour <b>◆</b> Solo · Duo · Quiz <b>◆</b> Lance les dés <b>◆</b> Garde
+              tes figures <b>◆</b> Inscris ton score <b>◆</b> 3 lancers par tour <b>◆</b> Solo ·
+              Duo · Quiz <b>◆</b>{" "}
+            </span>
+          ))}
         </div>
-      </section>
+      </div>
+
+      <nav className="game-mode-grid" aria-label="Modes de jeu">
+        <button className="game-mode-action game-mode-action-primary st-rise" style={{ "--i": 0 } as CSSProperties} type="button" onClick={startBotGame}>
+          <span className="game-mode-stub" aria-hidden="true">Solo</span>
+          <ModeDiceIcon />
+          <span>
+            <strong>Solo</strong>
+            <small>Contre un bot</small>
+          </span>
+          <span className="game-mode-go" aria-hidden="true">→</span>
+        </button>
+        <button
+          className="game-mode-action st-rise"
+          style={{ "--i": 1 } as CSSProperties}
+          type="button"
+          aria-expanded={isMultiplayerOpen}
+          aria-controls="multiplayer-options"
+          data-active={isMultiplayerOpen}
+          onClick={() => setIsMultiplayerOpen((isOpen) => !isOpen)}
+        >
+          <span className="game-mode-stub" aria-hidden="true">Duo</span>
+          <ModeDiceIcon pair />
+          <span>
+            <strong>Duo</strong>
+            <small>Avec un ami</small>
+          </span>
+          <span className="game-mode-go" aria-hidden="true">→</span>
+        </button>
+        <button
+          className="game-mode-action game-mode-action-quiz st-rise"
+          style={{ "--i": 2 } as CSSProperties}
+          type="button"
+          onClick={startQuiz}
+        >
+          <span className="game-mode-stub" aria-hidden="true">Quiz</span>
+          <span className="mode-quiz-icon" aria-hidden="true">?</span>
+          <span>
+            <strong>Quiz</strong>
+            <small>Culture G</small>
+          </span>
+          <span className="game-mode-go" aria-hidden="true">→</span>
+        </button>
+      </nav>
+
+      <div className="lobby-foot">
+        <label className="demon-theme-toggle">
+          <span className="demon-stub" aria-hidden="true">Boss</span>
+          <input
+            type="checkbox"
+            checked={isDemonThemeEnabled}
+            onChange={(event) => {
+              const enabled = event.currentTarget.checked;
+              setIsDemonThemeEnabled(enabled);
+              writeBotDemonTheme(enabled);
+            }}
+          />
+          <span>
+            <strong>Mode démon</strong>
+            <small>Ambiance du boss en Solo</small>
+          </span>
+        </label>
+
+        {isMultiplayerOpen ? (
+          <section id="multiplayer-options" className="multiplayer-options" aria-label="Partie avec un ami">
+            <div className="player-name-field">
+              <label htmlFor="player-name">Pseudo</label>
+              <input
+                id="player-name"
+                name="player-name"
+                type="text"
+                value={playerName}
+                onChange={(event) => {
+                  setPlayerName(event.currentTarget.value.slice(0, PLAYER_NAME_MAX_LENGTH));
+                  setPlayerNameError("");
+                }}
+                onBlur={() => {
+                  const normalizedName = normalizePlayerName(playerName);
+                  setPlayerName(normalizedName);
+                  if (normalizedName) writeStoredPlayerName(normalizedName);
+                }}
+                placeholder="Alex"
+                autoComplete="nickname"
+                spellCheck={false}
+                maxLength={PLAYER_NAME_MAX_LENGTH}
+                aria-describedby={playerNameError ? "player-name-error" : undefined}
+                aria-invalid={playerNameError ? true : undefined}
+              />
+              {playerNameError ? (
+                <p id="player-name-error" className="form-error" role="alert">{playerNameError}</p>
+              ) : null}
+            </div>
+
+            <button className="primary-action create-room-action" type="button" onClick={startMultiplayer}>
+              Créer une partie
+            </button>
+
+            <div className="lobby-divider" aria-hidden="true"><span>ou</span></div>
+
+            <form className="lobby-code-form" onSubmit={joinMultiplayer} noValidate>
+              <label className="sr-only" htmlFor="room-code">Code de partie</label>
+              <div className="lobby-code-controls">
+                <div className="room-code-field">
+                  <input
+                    id="room-code"
+                    name="room-code"
+                    type="text"
+                    value={roomCode}
+                    onChange={(event) => {
+                      setRoomCode(normalizeRoomCode(event.currentTarget.value));
+                      setRoomCodeError("");
+                    }}
+                    onPaste={pasteRoomCodeFromField}
+                    placeholder="ABC123"
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    inputMode="text"
+                    maxLength={6}
+                    aria-describedby={roomCodeError ? "room-code-error" : undefined}
+                    aria-invalid={roomCodeError ? true : undefined}
+                  />
+                  <button className="paste-code-action" type="button" onClick={pasteRoomCode}>
+                    Coller
+                  </button>
+                </div>
+              </div>
+              {roomCodeError ? (
+                <p id="room-code-error" className="form-error" role="alert">{roomCodeError}</p>
+              ) : null}
+            </form>
+          </section>
+        ) : null}
+      </div>
     </main>
   );
 }

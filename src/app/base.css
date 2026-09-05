@@ -1,46 +1,46 @@
 :root {
-  color-scheme: light;
-  --page: #f7f1e8;
-  --surface: #fffdf8;
-  --surface-muted: #f1ebe2;
-  --ink: #25292b;
-  --ink-soft: #5c6261;
-  --line: #ddd6cc;
-  --line-strong: #c8c0b5;
-  --coral: #ed896e;
-  --coral-deep: #c96350;
-  --coral-ink: #a94735;
-  --coral-soft: #fbe1d8;
-  --green: #237a58;
-  --green-ink: #176346;
-  --green-soft: #dcefe5;
-  --yellow-soft: #fff0c7;
-  --focus: #174b5c;
-  --danger: #a33b3d;
-  --board-border: #7d756b;
-  --player: #1f5f9c;
-  --player-soft: #dceaf7;
-  --opponent: #a33b3d;
-  --opponent-soft: #f7dddd;
-  --score-row-surface: #f5efe6;
-  --score-player-cell: var(--player-soft);
-  --score-opponent-cell: var(--opponent-soft);
-  --score-opponent-preview: #f9e9e9;
-  --score-opponent-preview-border: #b86568;
-  --score-player-ink: var(--player);
-  --score-opponent-ink: #94383b;
-  --score-filled-surface: #ddd8d0;
-  --score-filled-cell: #c9c5be;
-  --score-filled-border: #77736d;
-  --score-filled-ink: #515756;
-  --game-green-strong: #176346;
-  --score-selected-surface: #cfe2f3;
-  --dice-zone-surface: #e7f0f8;
-  --die-face-surface: #fffefa;
-  --die-face-border: #686c6b;
-  --die-pip: #202526;
-  --shadow-soft: 0 8px 24px rgb(37 41 43 / 8%);
-  --shadow-button: 0 4px 0 rgb(37 41 43 / 16%);
+  color-scheme: dark;
+  --page: #0b241c;
+  --surface: #103228;
+  --surface-muted: #16402f;
+  --ink: #f3edda;
+  --ink-soft: #b9c4b6;
+  --line: rgb(243 237 218 / 14%);
+  --line-strong: rgb(243 237 218 / 38%);
+  --coral: #ffb020;
+  --coral-deep: #c77f00;
+  --coral-ink: #ffb020;
+  --coral-soft: #3a2a08;
+  --green: #57e6a8;
+  --green-ink: #8aebb8;
+  --green-soft: #0f3b2a;
+  --yellow-soft: #2e250c;
+  --focus: #ffb020;
+  --danger: #ff7d6b;
+  --board-border: #43584d;
+  --player: #8fd0ff;
+  --player-soft: #12333f;
+  --opponent: #ff7d6b;
+  --opponent-soft: #33201c;
+  --score-row-surface: #103228;
+  --score-player-cell: #12333f;
+  --score-opponent-cell: #33201c;
+  --score-opponent-preview: #2e1d19;
+  --score-opponent-preview-border: #c96a5a;
+  --score-player-ink: #a8d8ff;
+  --score-opponent-ink: #ffa192;
+  --score-filled-surface: #2b3831;
+  --score-filled-cell: #43554b;
+  --score-filled-border: #93a29a;
+  --score-filled-ink: #aeb8ac;
+  --game-green-strong: #57e6a8;
+  --score-selected-surface: rgb(143 208 255 / 14%);
+  --dice-zone-surface: #0c2a20;
+  --die-face-surface: #fff8e8;
+  --die-face-border: #0b241c;
+  --die-pip: #14201b;
+  --shadow-soft: 0 8px 24px rgb(0 0 0 / 45%);
+  --shadow-button: 0 4px 0 rgb(0 0 0 / 45%);
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 24px;
@@ -51,8 +51,9 @@
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
-  --font-body: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
-  --font-display: ui-rounded, "Arial Rounded MT Bold", "Avenir Next", "Trebuchet MS", sans-serif;
+  --font-body: var(--yazzy-body, "Space Grotesk"), "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+  --font-display: var(--yazzy-display, "Bricolage Grotesque"), "Avenir Next", "Trebuchet MS", system-ui, sans-serif;
+  --ease-spring: cubic-bezier(0.2, 1.4, 0.3, 1);
 }
 
 * { box-sizing: border-box; }
@@ -143,12 +144,45 @@ h3 { font-size: 18px; line-height: 1.2; }
 .skip-link:focus { transform: translateY(0); }
 
 .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 8px;
   color: var(--coral-ink);
   font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-weight: 800;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+.eyebrow::before {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  background: var(--coral);
+  border-radius: 50%;
+  content: "";
+}
+
+/* Mouvements partagés du Studio (même ressort partout). */
+@keyframes st-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes st-pop {
+  0% { transform: scale(0.96); }
+  55% { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+
+@keyframes st-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .st-rise { animation: none !important; }
 }
 
 .primary-action,
@@ -169,13 +203,13 @@ h3 { font-size: 18px; line-height: 1.2; }
 }
 
 .primary-action {
-  color: var(--ink);
+  color: #2a1a00;
   background: var(--coral);
   box-shadow: var(--shadow-button);
 }
 
-.primary-action:hover:not(:disabled) { background: #f19a82; }
-.primary-action:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 rgb(37 41 43 / 16%); }
+.primary-action:hover:not(:disabled) { background: #ffc95e; }
+.primary-action:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 rgb(0 0 0 / 45%); }
 
 .secondary-action {
   color: var(--ink);
@@ -210,9 +244,10 @@ h3 { font-size: 18px; line-height: 1.2; }
   padding: clamp(28px, 6vw, 52px);
   text-align: center;
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 2px solid var(--board-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 8px 0 rgb(0 0 0 / 45%), 0 18px 44px rgb(0 0 0 / 35%);
+  animation: st-rise 0.5s var(--ease-spring, cubic-bezier(0.2, 1.4, 0.3, 1)) both;
 }
 
 .multiplayer-state-card > p:not(.eyebrow),
@@ -236,13 +271,15 @@ h3 { font-size: 18px; line-height: 1.2; }
   display: grid;
   place-items: center;
   margin: 0 auto 22px;
-  color: var(--ink);
+  color: #2a1a00;
   background: var(--coral);
+  border: 2px solid var(--line-strong);
   border-radius: var(--radius-md);
   font-size: 28px;
   font-weight: 800;
   letter-spacing: 3px;
   transform: rotate(-4deg);
+  box-shadow: var(--shadow-button);
 }
 .room-code-block {
   display: grid;
@@ -250,8 +287,8 @@ h3 { font-size: 18px; line-height: 1.2; }
   margin: 22px 0 14px;
   padding: 14px;
   background: var(--page);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
+  border: 2px dashed var(--line-strong);
+  border-radius: 14px;
 }
 .room-code-block span { color: var(--ink-soft); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 .room-code-block strong { font: 800 clamp(28px, 8vw, 40px)/1.1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.16em; }

@@ -14,6 +14,8 @@ type DiceTrayProps = {
   disabled: boolean;
   finalResult?: boolean;
   label: string;
+  /** Ton du cadre : "player" (tes dés) ou "opponent" (dés du bot). */
+  tone?: "player" | "opponent";
   onToggle?: (index: number) => void;
 };
 
@@ -28,6 +30,7 @@ function DiceTray({
   disabled,
   finalResult,
   label,
+  tone = "player",
   onToggle,
 }: DiceTrayProps) {
   const rollAnimationStyle = (index: number): CSSProperties => {
@@ -50,7 +53,7 @@ function DiceTray({
   };
 
   return (
-    <div className="dice-tray" role="group" aria-label={label}>
+    <div className="dice-tray" data-tone={tone} role="group" aria-label={label}>
       {dice.length === 5
         ? dice.map((value, index) => (
             <Dice
@@ -133,11 +136,12 @@ export function GameTable({
         rolling={isRolling}
         disabled={isRolling || isDisabled}
         label={label}
+        tone={isObserver ? "opponent" : "player"}
         onToggle={onToggleDie}
       />
 
       <div className="roll-controls" data-has-trailing-control={Boolean(trailingControl)}>
-        <span className="roll-indicator" aria-label={rollStatus}>
+        <span className="roll-indicator" aria-label={rollStatus} aria-live="polite">
           <strong>{usedRolls}</strong><span aria-hidden="true">/</span><span aria-hidden="true">3</span>
         </span>
         {isObserver ? (
@@ -183,6 +187,7 @@ export function BotTurnPanel({ game, onSkip }: BotTurnPanelProps) {
         disabled
         finalResult={game.bot.rollNumber >= 3}
         label="Les dés du bot"
+        tone="opponent"
       />
       {isAnimating ? <button className="secondary-action" type="button" onClick={onSkip}>Passer</button> : null}
     </section>

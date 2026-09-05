@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuizGame } from "@/hooks/useQuizGame";
 import {
   QUIZ_CATEGORY_LABELS,
@@ -10,34 +10,66 @@ import {
   QUIZ_SURVIVAL_LIVES,
   QUIZ_TIMEOUT_CHOICE,
   scoreQuizGame,
+  type QuizCategory,
   type QuizFormat,
   type QuizMode,
 } from "@/domain/quiz";
 
-const THEME_EMOJI: Record<QuizMode, string> = {
-  aleatoire: "🎲",
-  science: "🔬",
-  histoire: "📜",
-  art: "🎨",
-  pays: "🌍",
+const QA_MODE_CODE: Record<QuizMode, string> = {
+  aleatoire: "MIX",
+  science: "SC",
+  histoire: "HI",
+  art: "AR",
+  pays: "PY",
 };
 
-const FORMAT_EMOJI: Record<QuizFormat, string> = {
-  classique: "🎯",
-  survie: "❤️‍🔥",
+const QA_MODE_BLURB: Record<QuizMode, string> = {
+  aleatoire: "Tous thèmes",
+  science: "Labo & espace",
+  histoire: "Époques & récits",
+  art: "Toiles & scènes",
+  pays: "Cartes & capitales",
 };
 
-const FORMAT_HINT: Record<QuizFormat, string> = {
+const QA_FORMAT_BLURB: Record<QuizFormat, string> = {
   classique: "10 questions",
-  survie: "3 vies, sans fin",
+  survie: "Sans fin · 3 vies",
 };
+
+const QA_LETTERS = ["A", "B", "C", "D"] as const;
 
 function resultMessage(score: number, total: number): string {
   const ratio = total === 0 ? 0 : score / total;
-  if (ratio === 1) return "Sans faute.";
-  if (ratio >= 0.8) return "Très bien.";
-  if (ratio >= 0.5) return "Pas mal.";
-  return "À revoir.";
+  if (ratio === 1) return "Sans faute. Le studio est debout.";
+  if (ratio >= 0.8) return "Très bien. Encore un round ?";
+  if (ratio >= 0.5) return "Pas mal. Le buzzer te connaît déjà.";
+  return "Échauffement terminé. On remet ça ?";
+}
+
+/** Compte animé vers la valeur cible (jackpot, score final). */
+function useCountUp(target: number, durationMs = 600): number {
+  const [display, setDisplay] = useState(target);
+  const fromRef = useRef(target);
+  useEffect(() => {
+    const from = fromRef.current;
+    if (from === target) return;
+    let frame = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / durationMs);
+      const eased = 1 - (1 - t) * (1 - t) * (1 - t);
+      const value = Math.round(from + (target - from) * eased);
+      setDisplay(value);
+      if (t < 1) frame = requestAnimationFrame(tick);
+      else fromRef.current = target;
+    };
+    frame = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(frame);
+      fromRef.current = target;
+    };
+  }, [target, durationMs]);
+  return display;
 }
 
 export function QuizBoard() {
@@ -54,13 +86,81 @@ export function QuizBoard() {
     total,
   } = useQuizGame();
   const [format, setFormat] = useState<QuizFormat>("classique");
+  const [failCtx, setFailCtx] = useState<{ mode: QuizMode; format: QuizFormat } | null>(null);
+  const handleStart = (mode: QuizMode) => {
+    const ok = start(mode, format);
+    setFailCtx(ok ? null : { mode, format });
+  };
+  const retryLast = () => {
+    const ctx = failCtx ?? { mode: "aleatoire" as QuizMode, format };
+    if (ctx.format !== format) setFormat(ctx.format);
+    const ok = start(ctx.mode, ctx.format);
+    setFailCtx(ok ? null : ctx);
+  };
+  const goToThemes = () => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document
+      .getElementById("quiz-themes")
+      ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "nearest" });
+  };
   const resultTitleRef = useRef<HTMLHeadingElement>(null);
   const questionTitleRef = useRef<HTMLHeadingElement>(null);
+  const stageRef = useRef<HTMLElement>(null);
 
   const isFinished = game?.isFinished ?? false;
   const current = game && !isFinished ? game.questions[game.currentIndex] : null;
   const score = game ? scoreQuizGame(game) : 0;
+  const displayScore = useCountUp(score, 450);
+  const finalScore = useCountUp(isFinished ? score : 0, 900);
   const timerRatio = Math.max(0, Math.min(1, timeLeft / timePerQuestion));
+  const secondsLeft = Math.ceil(timeLeft);
+  const urgent = !!game && !isFinished && game.selected === null && timeLeft <= 5;
+
+  const { streak, bestStreak } = useMemo(() => {
+    if (!game) return { streak: 0, bestStreak: 0 };
+    let run = 0;
+    let best = 0;
+    // Série en cours : bonnes réponses consécutives en partant de la fin.
+    for (let i = game.answers.length - 1; i >= 0; i -= 1) {
+      const round = game.questions[i];
+      if (round && game.answers[i] === round.correctShuffledIndex) run += 1;
+      else break;
+    }
+    let cursor = 0;
+    game.answers.forEach((choice, index) => {
+      const round = game.questions[index];
+      if (round && choice === round.correctShuffledIndex) {
+        cursor += 1;
+        best = Math.max(best, cursor);
+      } else cursor = 0;
+    });
+    return { streak: run, bestStreak: best };
+  }, [game]);
+
+  const burstPieces = useMemo(() => {
+    if (!current || game?.selected !== current.correctShuffledIndex) return [];
+    const colors = ["#FFB020", "#FF6B4A", "#57E6A8", "#FFC62E", "#8FD0FF"];
+    return Array.from({ length: 16 }, (_, i) => {
+      const angle = (i / 16) * Math.PI * 2 + Math.random() * 0.5;
+      const dist = 46 + Math.random() * 58;
+      return {
+        x: Math.cos(angle) * dist,
+        y: Math.sin(angle) * dist,
+        rot: Math.round(Math.random() * 360),
+        color: colors[i % colors.length],
+        size: 5 + Math.round(Math.random() * 5),
+      };
+    });
+  }, [current, game?.selected]);
+
+  // Le projecteur suit le pointeur (variables CSS, sans re-rendu).
+  const followSpot = (event: React.PointerEvent) => {
+    const el = stageRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    el.style.setProperty("--mx", `${event.clientX - rect.left}px`);
+    el.style.setProperty("--my", `${event.clientY - rect.top}px`);
+  };
 
   useEffect(() => {
     if (!game || !isFinished) return;
@@ -76,9 +176,13 @@ export function QuizBoard() {
   useEffect(() => {
     if (!game || isFinished || game.selected !== null) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key >= "1" && event.key <= "4") {
+      const key = event.key.toLowerCase();
+      const digit = key >= "1" && key <= "4" ? Number(key) - 1 : -1;
+      const letter = ["a", "b", "c", "d"].indexOf(key);
+      const index = digit >= 0 ? digit : letter;
+      if (index >= 0) {
         event.preventDefault();
-        answer(Number(event.key) - 1);
+        answer(index);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -101,21 +205,58 @@ export function QuizBoard() {
 
   if (!hasLoaded) {
     return (
-      <main id="main-content" className="app-loading" aria-busy="true">
-        <p role="status">Chargement du quiz…</p>
+      <main id="main-content" className="qa" aria-busy="true">
+        <p className="qa-loading" role="status">
+          <span className="qa-loading-dots" aria-hidden="true">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="qa-loading-dot" style={{ "--i": i } as React.CSSProperties} />
+            ))}
+          </span>
+          Le studio chauffe…
+          <span className="qa-loading-rail" aria-hidden="true">
+            <i />
+          </span>
+        </p>
       </main>
     );
   }
 
   return (
-    <main id="main-content" className="quiz-shell">
-      <header className="game-header quiz-header">
-        <Link className="game-logo" href="/" aria-label="Yazzy, revenir à l’accueil">
-          YAZZY
+    <main
+      id="main-content"
+      ref={stageRef}
+      className="qa"
+      data-urgent={urgent}
+      onPointerMove={followSpot}
+    >
+      <div className="qa-bg" aria-hidden="true">
+        <span className="qa-spot" />
+        <span className="qa-grid" />
+        <span className="qa-ghost">
+          {game && !isFinished ? String(game.currentIndex + 1).padStart(2, "0") : "QZ"}
+        </span>
+      </div>
+
+      <header className="qa-bar">
+        <Link className="qa-brand" href="/" aria-label="Yazzy, revenir à l’accueil">
+          <span className="qa-brand-tile" aria-hidden="true">
+            Y<span>!</span>
+          </span>
+          <span className="qa-brand-text">
+            <strong>Yazzy Quiz</strong>
+            <small>culture G</small>
+          </span>
         </Link>
-        <span className="mode-label">Quiz</span>
+
+        {game && !isFinished ? (
+          <span className="qa-live">
+            <i aria-hidden="true" />
+            Direct
+          </span>
+        ) : null}
+
         <Link
-          className="quit-link multiplayer-quit-link"
+          className="qa-quit"
           href="/"
           aria-label="Quitter le quiz"
           onClick={(event) => {
@@ -126,150 +267,312 @@ export function QuizBoard() {
         </Link>
       </header>
 
+      <div className="qa-ticker" aria-hidden="true">
+        <div className="qa-ticker-track">
+          {[0, 1].map((copy) => (
+            <span key={copy}>
+              15 secondes par question <b>◆</b> 4 buzzers <b>◆</b> touches 1–4 ou A–D{" "}
+              <b>◆</b> survie : 3 vies <b>◆</b> 15 secondes par question <b>◆</b> 4 buzzers{" "}
+              <b>◆</b> touches 1–4 ou A–D <b>◆</b> survie : 3 vies <b>◆</b>{" "}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {!game ? (
-        <section className="quiz-card" aria-labelledby="quiz-theme-title">
-          <p className="eyebrow">Culture générale</p>
-          <h1 id="quiz-theme-title">Quiz</h1>
-          <p className="quiz-intro">15 secondes par question.</p>
-          <div className="quiz-format-grid" role="group" aria-label="Format de partie">
-            {(["classique", "survie"] as QuizFormat[]).map((option) => (
+        <section className="qa-hero" aria-labelledby="quiz-theme-title">
+          <div className="qa-hero-top">
+            <p className="qa-kicker">
+              <span className="qa-kicker-pulse" aria-hidden="true" />
+              Culture G · 15 s par question
+            </p>
+            <h1 id="quiz-theme-title">
+              Choisis ton <em>match.</em>
+            </h1>
+            <p className="qa-sub">Quatre buzzers. Un chrono. Zéro pitié.</p>
+          </div>
+
+          <div className="qa-formats" role="group" aria-label="Format de partie">
+            {(["classique", "survie"] as QuizFormat[]).map((option, i) => (
               <button
                 key={option}
                 type="button"
-                className="quiz-format-action"
+                className="qa-format qa-rise"
+                style={{ "--i": i } as React.CSSProperties}
                 data-active={format === option}
                 aria-pressed={format === option}
                 onClick={() => setFormat(option)}
               >
-                <span aria-hidden="true">{FORMAT_EMOJI[option]}</span>
-                <span>
+                <span className="qa-format-code" aria-hidden="true">
+                  {option === "classique" ? "10Q" : "∞"}
+                </span>
+                <span className="qa-format-text">
                   <strong>{QUIZ_FORMAT_LABELS[option]}</strong>
-                  <small>{FORMAT_HINT[option]}</small>
+                  <small>{QA_FORMAT_BLURB[option]}</small>
+                </span>
+                <span className="qa-format-check" aria-hidden="true">
+                  →
                 </span>
               </button>
             ))}
           </div>
+
           {startFailed ? (
-            <p className="form-error" role="alert">Impossible de démarrer : aucune question disponible.</p>
+            <div className="qa-fail">
+              <p className="qa-error" role="alert">
+                Impossible de démarrer : aucune question disponible.
+              </p>
+              <div className="qa-fail-actions">
+                <button type="button" className="qa-retry" onClick={retryLast}>
+                  Réessayer <span aria-hidden="true">↻</span>
+                </button>
+              </div>
+              <p className="qa-empty">
+                <span>
+                  {failCtx && failCtx.mode !== "aleatoire"
+                    ? `Aucune question en ${QUIZ_CATEGORY_LABELS[failCtx.mode as QuizCategory]} pour le moment.`
+                    : "Aucune question dans ce thème pour le moment."}
+                </span>
+                <button type="button" className="qa-empty-btn" onClick={goToThemes}>
+                  Changer de thème
+                </button>
+              </p>
+            </div>
           ) : null}
-          <div className="quiz-theme-grid">
-            {(["aleatoire", ...QUIZ_CATEGORIES] as QuizMode[]).map((mode) => (
+
+          <div className="qa-themes" id="quiz-themes">
+            {(["aleatoire", ...QUIZ_CATEGORIES] as QuizMode[]).map((mode, i) => (
               <button
                 key={mode}
                 type="button"
-                className="quiz-theme-action"
-                data-primary={mode === "aleatoire"}
-                onClick={() => start(mode, format)}
+                className="qa-theme qa-rise"
+                style={{ "--i": i } as React.CSSProperties}
+                data-hero={mode === "aleatoire"}
+                data-cat={mode}
+                onClick={() => handleStart(mode)}
               >
-                <span aria-hidden="true">{THEME_EMOJI[mode]}</span>
-                <span>
-                  <strong>{mode === "aleatoire" ? "Aléatoire" : QUIZ_CATEGORY_LABELS[mode]}</strong>
-                  <small>{mode === "aleatoire" ? "Tous thèmes" : "Par thème"}</small>
+                <span className="qa-theme-stub" aria-hidden="true">
+                  {QA_MODE_CODE[mode]}
+                </span>
+                <span className="qa-theme-text">
+                  <strong>{mode === "aleatoire" ? "Aléatoire" : QUIZ_CATEGORY_LABELS[mode as QuizCategory]}</strong>
+                  <small>{QA_MODE_BLURB[mode]}</small>
+                </span>
+                <span className="qa-theme-go" aria-hidden="true">
+                  Jouer
                 </span>
               </button>
             ))}
           </div>
         </section>
       ) : isFinished ? (
-        <section className="quiz-card quiz-result" aria-labelledby="quiz-result-title">
-          <p className="eyebrow">
-            {game.format === "survie" ? "Survie" : null}
-            {game.format === "survie" ? " · " : ""}
+        <section className="qa-panel qa-result" aria-labelledby="quiz-result-title">
+          <p className="qa-kicker">
+            {game.format === "survie" ? "Survie" : "Partie"} ·{" "}
             {game.mode === "aleatoire" ? "Aléatoire" : QUIZ_CATEGORY_LABELS[game.mode]}
           </p>
-          <h1 id="quiz-result-title" ref={resultTitleRef} tabIndex={-1}>
-            {game.format === "survie" ? `${score} pts` : `${score}/${game.questions.length}`}
+          {score === game.questions.length && game.questions.length > 0 ? (
+            <p className="qa-stamp" aria-hidden="true">
+              Sans faute
+            </p>
+          ) : null}
+          <h1 id="quiz-result-title" ref={resultTitleRef} tabIndex={-1} className="qa-final">
+            <span className="qa-final-num" aria-label={`${score} points`}>
+              {game.format === "survie" ? `${finalScore} pts` : `${finalScore}/${game.questions.length}`}
+            </span>
           </h1>
-          <p className="quiz-intro">
+          <p className="qa-sub">
             {game.format === "survie"
               ? `${game.answers.length} questions, ${score} bonnes réponses.`
               : resultMessage(score, game.questions.length)}
           </p>
-          <ol className="quiz-review">
+
+          <dl className="qa-stats">
+            <div>
+              <dt>Bonnes</dt>
+              <dd>{score}</dd>
+            </div>
+            <div>
+              <dt>Jouées</dt>
+              <dd>{game.answers.length}</dd>
+            </div>
+            <div>
+              <dt>Série max</dt>
+              <dd>×{Math.max(bestStreak, score > 0 ? 1 : 0)}</dd>
+            </div>
+          </dl>
+
+          <ol className="qa-review">
             {game.questions.slice(0, game.answers.length).map((round, index) => {
               const good = game.answers[index] === round.correctShuffledIndex;
+              const correct = round.shuffledChoices[round.correctShuffledIndex];
               return (
-                <li key={round.question.id} data-good={good}>
-                  <span aria-hidden="true">{good ? "✓" : "✗"}</span>
-                  <span>{round.question.question}</span>
+                <li key={round.question.id} data-good={good} style={{ "--i": Math.min(index, 3) } as React.CSSProperties}>
+                  <span className="qa-review-mark" aria-hidden="true">
+                    {good ? "✓" : "✗"}
+                  </span>
+                  <span className="qa-review-text">
+                    <span className="qa-review-q">{round.question.question}</span>
+                    {good ? null : <small>Réponse : {correct}</small>}
+                    <span className="sr-only">{good ? "Bonne réponse." : `Raté. Bonne réponse : ${correct}.`}</span>
+                  </span>
                 </li>
               );
             })}
           </ol>
-          <div className="quiz-actions">
-            <button type="button" className="primary-action" onClick={() => start(game.mode, game.format)}>
-              Rejouer
+
+          <div className="qa-actions">
+            <button type="button" className="qa-primary" onClick={() => start(game.mode, game.format)}>
+              Rejouer <span aria-hidden="true">↻</span>
             </button>
-            <button type="button" className="secondary-action" onClick={quitToThemes}>
+            <button type="button" className="qa-ghost-btn" onClick={quitToThemes}>
               Thèmes
             </button>
-            <Link className="secondary-action" href="/">
+            <Link className="qa-ghost-btn" href="/">
               Accueil
             </Link>
           </div>
         </section>
       ) : (
         current && (
-          <section className="quiz-card" aria-labelledby="quiz-question-title">
-            <div className="quiz-topbar">
-              <span className="quiz-progress" aria-live="polite">
-                {game.format === "survie" ? `N°${game.currentIndex + 1}` : `${game.currentIndex + 1}/${game.questions.length}`}
-              </span>
-              <span className="quiz-theme-badge">
-                {game.mode === "aleatoire"
-                  ? QUIZ_CATEGORY_LABELS[current.question.category]
-                  : QUIZ_CATEGORY_LABELS[game.mode]}
-              </span>
-              {game.format === "survie" ? (
-                <span className="quiz-lives" role="img" aria-label={`${game.lives} vie${game.lives > 1 ? "s" : ""} restante${game.lives > 1 ? "s" : ""}`}>
-                  {"❤️".repeat(game.lives)}{"🖤".repeat(QUIZ_SURVIVAL_LIVES - game.lives)}
+          <section className="qa-panel qa-round" aria-labelledby="quiz-question-title" key={game.currentIndex}>
+            <div className="qa-hud">
+              <div className="qa-hud-left">
+                <span className="qa-count" aria-live="polite">
+                  {game.format === "survie"
+                    ? `N°${game.currentIndex + 1}`
+                    : `${game.currentIndex + 1}/${game.questions.length}`}
+                </span>
+                <span className="qa-ticket" data-cat={current.question.category}>
+                  <i aria-hidden="true" />
+                  {QUIZ_CATEGORY_LABELS[current.question.category]}
+                </span>
+                {game.format === "survie" ? (
+                  <span
+                    className="qa-lives"
+                    role="img"
+                    aria-label={`${game.lives} vie${game.lives > 1 ? "s" : ""} restante${game.lives > 1 ? "s" : ""}`}
+                  >
+                    {Array.from({ length: QUIZ_SURVIVAL_LIVES }, (_, i) => (
+                      <b key={i} data-on={i < game.lives} aria-hidden="true" />
+                    ))}
+                  </span>
+                ) : (
+                  <span className="qa-segments" aria-hidden="true">
+                    {game.questions.map((_, i) => (
+                      <b
+                        key={i}
+                        data-done={i < game.currentIndex}
+                        data-now={i === game.currentIndex}
+                      />
+                    ))}
+                  </span>
+                )}
+              </div>
+              <div className="qa-hud-right">
+                {streak >= 2 ? (
+                  <span className="qa-streak" key={streak}>
+                    série ×{streak}
+                  </span>
+                ) : null}
+                <span className="qa-jackpot" aria-label={`${score} points`}>
+                  <small>Jackpot</small>
+                  <strong key={score}>{String(displayScore).padStart(2, "0")}</strong>
+                </span>
+              </div>
+            </div>
+
+            <div className="qa-timer">
+              <span className="sr-only">Temps restant : {secondsLeft} secondes</span>
+              {urgent && secondsLeft === 5 ? (
+                <span className="sr-only" role="status">
+                  Plus que 5 secondes.
                 </span>
               ) : null}
-              <span className="quiz-score">{score} pt</span>
+              <div className="qa-timer-rail" aria-hidden="true">
+                <i data-urgent={urgent} style={{ width: `${timerRatio * 100}%` }} />
+              </div>
+              <span className="qa-timer-num" data-urgent={urgent} aria-hidden="true">
+                {secondsLeft}s
+              </span>
             </div>
-            <div className="quiz-timer" aria-hidden="true">
-              <i data-urgent={timeLeft <= 5} style={{ width: `${timerRatio * 100}%` }} />
-            </div>
-            <h1
-              id="quiz-question-title"
-              ref={questionTitleRef}
-              tabIndex={-1}
-              className="quiz-question"
-            >
+
+            <h1 id="quiz-question-title" ref={questionTitleRef} tabIndex={-1} className="qa-question">
               {current.question.question}
             </h1>
-            <div className="quiz-options" role="group" aria-label="Options">
+
+            <div className="qa-options" role="group" aria-label="Options">
               {current.shuffledChoices.map((choice, index) => {
                 const isSelected = game.selected === index;
                 const isCorrect = index === current.correctShuffledIndex;
                 const state = game.selected === null ? "idle" : isCorrect ? "good" : isSelected ? "bad" : "dim";
                 return (
                   <button
-                    key={index}
+                    key={`${game.currentIndex}-${index}`}
                     type="button"
-                    className="quiz-option"
+                    className="qa-option"
                     data-state={state}
                     disabled={game.selected !== null}
                     aria-pressed={isSelected}
+                    aria-keyshortcuts={`${index + 1} ${QA_LETTERS[index].toLowerCase()}`}
+                    aria-label={`${QA_LETTERS[index]} : ${choice}${game.selected !== null && isCorrect ? " (bonne réponse)" : ""}`}
                     onClick={() => answer(index)}
                   >
-                    <span className="quiz-option-key" aria-hidden="true">{index + 1}</span>
-                    <span>{choice}</span>
+                    <span className="qa-option-key" aria-hidden="true">
+                      {QA_LETTERS[index]}
+                    </span>
+                    <span className="qa-option-label">{choice}</span>
+                    <span className="qa-option-touch" aria-hidden="true">
+                      {index + 1}
+                    </span>
+                    {state === "good" && burstPieces.length > 0 ? (
+                      <span className="qa-burst" aria-hidden="true">
+                        {burstPieces.map((p, i) => (
+                          <i
+                            key={i}
+                            style={
+                              {
+                                "--dx": `${p.x}px`,
+                                "--dy": `${p.y}px`,
+                                "--rot": `${p.rot}deg`,
+                                background: p.color,
+                                width: p.size,
+                                height: Math.max(3, p.size - 2),
+                              } as React.CSSProperties
+                            }
+                          />
+                        ))}
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
             </div>
+
             {game.selected !== null ? (
-              <div className="quiz-feedback" aria-live="polite">
-                <p data-good={game.selected === current.correctShuffledIndex}>
-                  {game.selected === current.correctShuffledIndex
-                    ? "Bonne réponse."
-                    : game.selected === QUIZ_TIMEOUT_CHOICE
-                      ? `Temps écoulé : ${current.shuffledChoices[current.correctShuffledIndex]}.`
-                      : `Raté : ${current.shuffledChoices[current.correctShuffledIndex]}.`}
+              <div className="qa-sheet" aria-live="polite">
+                <p className="qa-verdict" data-good={game.selected === current.correctShuffledIndex}>
+                  <span className="qa-verdict-stamp" aria-hidden="true">
+                    {game.selected === current.correctShuffledIndex
+                      ? "Bonne réponse"
+                      : game.selected === QUIZ_TIMEOUT_CHOICE
+                        ? "Temps écoulé"
+                        : "Raté"}
+                  </span>
+                  <span className="qa-verdict-text">
+                    {game.selected === current.correctShuffledIndex
+                      ? streak >= 2
+                        ? `Série ×${streak}. Le public exulte.`
+                        : "Net et sans bavure."
+                      : game.selected === QUIZ_TIMEOUT_CHOICE
+                        ? `Trop tard : ${current.shuffledChoices[current.correctShuffledIndex]}.`
+                        : `C’était : ${current.shuffledChoices[current.correctShuffledIndex]}.`}
+                  </span>
                 </p>
-                {current.question.explanation ? <p className="quiz-explanation">{current.question.explanation}</p> : null}
-                <button type="button" className="primary-action quiz-next" onClick={next} autoFocus>
+                {current.question.explanation ? (
+                  <p className="qa-explain">{current.question.explanation}</p>
+                ) : null}
+                <button type="button" className="qa-primary qa-next" onClick={next} autoFocus>
                   {game.format === "survie"
                     ? game.lives <= 0
                       ? "Voir le résultat"
@@ -277,6 +580,7 @@ export function QuizBoard() {
                     : game.currentIndex >= total - 1
                       ? "Voir le résultat"
                       : "Suivant"}
+                  <span aria-hidden="true">→</span>
                 </button>
               </div>
             ) : null}
