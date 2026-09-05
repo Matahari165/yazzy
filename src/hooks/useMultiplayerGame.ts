@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   holdActiveDie,
+  rollActivePlayer,
   type MultiplayerGameState,
   type MultiplayerRole,
 } from "../domain/multiplayer";
@@ -16,18 +17,19 @@ import {
   type RoomSuccess,
 } from "../domain/multiplayerRoomProtocol";
 import type { ClientAction } from "../domain/protocol";
-import type { CategoryId } from "../domain/yatzy";
+import type { CategoryId, DieValue } from "../domain/yatzy";
 
 const PLAYER_TOKEN_PREFIX = "yazzy.multiplayer.token.v2.";
 export const FOREGROUND_POLL_INTERVAL_MS = 800;
-export const ACTIVE_TURN_POLL_INTERVAL_MS = 1_200;
-export const OPPONENT_TURN_POLL_INTERVAL_MS = 400;
+export const ACTIVE_TURN_POLL_INTERVAL_MS = 1_000;
+export const OPPONENT_TURN_POLL_INTERVAL_MS = 250;
 export const BACKGROUND_POLL_INTERVAL_MS = 4_000;
 export const MAX_POLL_INTERVAL_MS = 4_000;
+export const FAST_FOLLOWUP_POLL_INTERVAL_MS = 120;
 const REQUEST_TIMEOUT_MS = 8_000;
 const MAX_SILENT_FAILURES = 3;
 const REPLAY_ROLL_DELAY_MS = 360;
-const REPLAY_STEP_DELAY_MS = 120;
+const REPLAY_STEP_DELAY_MS = 90;
 
 type RoomResponseSource = "connect" | "sync" | "action" | "reaction";
 type PendingHold = { actionId: string; index: number };
@@ -99,8 +101,9 @@ export function shouldDisplayResponseImmediately(
 }
 
 function replayDelay(event: RoomActionEvent): number {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return 80;
   if (event.action.type !== "ROLL") return REPLAY_STEP_DELAY_MS;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 80 : REPLAY_ROLL_DELAY_MS;
+  return REPLAY_ROLL_DELAY_MS;
 }
 
 function playerToken(roomId: string, role: MultiplayerRole, preferredToken?: string): string {
@@ -308,7 +311,7 @@ export function useMultiplayerGame(
     tokenRef.current = token;
     resetReplay();
 
-    const schedulePoll = () => {
+    const schedulePoll = (overrideDelay?: number) => {
       if (!cancelled) {
         const currentGame = canonicalGameRef.current;
         const turn = currentGame?.status !== "playing"
@@ -321,12 +324,13 @@ export function useMultiplayerGame(
             pollTimer = null;
             void poll();
           },
-          multiplayerPollDelay(document.visibilityState === "hidden", consecutiveFailures, turn),
+          overrideDelay ?? multiplayerPollDelay(document.visibilityState === "hidden", consecutiveFailures, turn),
         );
       }
     };
 
     const poll = async () => {
+      let followUpDelay: number | undefined;
       try {
         const response = await sendRoomCommand(roomId, {
           type: "SYNC",
@@ -339,6 +343,11 @@ export function useMultiplayerGame(
         if (response.ok) {
           consecutiveFailures = 0;
           applySuccess(response, "sync");
+          // Rafale adverse : un SYNC qui ramène des évènements en annonce souvent d'autres.
+          // On re-sonde vite une fois au lieu d'attendre le prochain tick.
+          if (response.events.length > 0 && document.visibilityState !== "hidden") {
+            followUpDelay = FAST_FOLLOWUP_POLL_INTERVAL_MS;
+          }
         } else {
           consecutiveFailures += 1;
           if (consecutiveFailures >= MAX_SILENT_FAILURES) {
@@ -355,7 +364,7 @@ export function useMultiplayerGame(
           setConnectionError("La connexion au salon est interrompue. Yazzy essaie de la rétablir.");
         }
       }
-      schedulePoll();
+      schedulePoll(followUpDelay);
     };
 
     const connect = async (attempt = 0): Promise<void> => {
@@ -433,8 +442,9 @@ export function useMultiplayerGame(
     if (!role || !token) return;
 
     const isHold = action.type === "HOLD";
-    if (isHold && actionPendingRef.current) return;
-    if (!isHold && (actionPendingRef.current || pendingHoldsRef.current.length > 0)) return;
+    // Anti double-clic : un seul ROLL/SCORE/REMATCH en vol. Les HOLD restent
+    // optimistes et mis en file même pendant un ROLL, pour garder le rythme solo.
+    if (!isHold && actionPendingRef.current) return;
 
     const actionId = crypto.randomUUID();
     const generation = actionGenerationRef.current;
@@ -445,6 +455,12 @@ export function useMultiplayerGame(
     } else {
       actionPendingRef.current = true;
       setPendingAction(action.type);
+      if (action.type === "ROLL") {
+        // Preview locale immédiate : l'animation part sur de nouveaux dés sans
+        // attendre le RTT. Le serveur reste autoritaire et réconcilie à l'arrivée.
+        const previewDie = () => (Math.floor(Math.random() * 6) + 1) as DieValue;
+        setGame((current) => current ? rollActivePlayer(current, role, previewDie) : current);
+      }
     }
 
     actionQueueRef.current = actionQueueRef.current.then(async () => {
@@ -470,7 +486,18 @@ export function useMultiplayerGame(
           if (response.code === "OPPONENT_OFFLINE") setOpponentOnline(false);
           else if (response.code === "ROOM_FULL") setRoomFull(true);
           else setConnectionError(connectionMessage(response));
-          setGame(gameWithPendingHolds(canonicalGameRef.current, role, pendingHoldsRef.current));
+          if (action.type === "ROLL") {
+            // Le preview est invalide : on annule les HOLD pipelinés derrière lui,
+            // sinon ils partiraient sur les anciens dés (rollNumber N au lieu de N+1).
+            pendingHoldsRef.current = [];
+            setPendingHoldCount(0);
+            setGame(canonicalGameRef.current);
+            actionGenerationRef.current += 1;
+            actionPendingRef.current = false;
+            setPendingAction(null);
+          } else {
+            setGame(gameWithPendingHolds(canonicalGameRef.current, role, pendingHoldsRef.current));
+          }
         }
       } catch {
         if (generation !== actionGenerationRef.current) return;
@@ -479,8 +506,17 @@ export function useMultiplayerGame(
             (pending) => pending.actionId !== actionId,
           );
           setPendingHoldCount(pendingHoldsRef.current.length);
+          setGame(gameWithPendingHolds(canonicalGameRef.current, role, pendingHoldsRef.current));
+        } else if (action.type === "ROLL") {
+          pendingHoldsRef.current = [];
+          setPendingHoldCount(0);
+          setGame(canonicalGameRef.current);
+          actionGenerationRef.current += 1;
+          actionPendingRef.current = false;
+          setPendingAction(null);
+        } else {
+          setGame(gameWithPendingHolds(canonicalGameRef.current, role, pendingHoldsRef.current));
         }
-        setGame(gameWithPendingHolds(canonicalGameRef.current, role, pendingHoldsRef.current));
         setIsConnected(false);
         setConnectionError("L’action n’a pas été envoyée. Yazzy va tenter de se reconnecter.");
       } finally {

@@ -11,6 +11,7 @@ import type { RoomActionEvent } from "@/domain/multiplayerRoomProtocol";
 import { CATEGORY_BY_ID, totalScore, type CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
+import { botAudio } from "@/lib/botAudio";
 import { readStoredPlayerName, writeStoredPlayerName } from "@/lib/playerNameStorage";
 
 const HUMAN_ROLL_ANIMATION_MS = 360;
@@ -60,7 +61,6 @@ export function MultiplayerClient({
     isReplayingOpponentRoll,
     replayedOpponentEvent,
     replayGapDetected,
-    hasPendingHolds,
     pendingAction,
   } = useMultiplayerGame(roomId, isHost, playerName);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
@@ -101,8 +101,9 @@ export function MultiplayerClient({
   }, [status]);
 
   const handleRoll = () => {
-    if (!canAct || isRolling || hasPendingHolds || pendingAction || !localState || localState.rollNumber >= 3) return;
+    if (!canAct || isRolling || pendingAction || !localState || localState.rollNumber >= 3) return;
     if (localState.rollNumber > 0 && localState.held.every(Boolean)) return;
+    botAudio.playEffect("dice");
     roll();
     setIsRolling(true);
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
@@ -114,19 +115,29 @@ export function MultiplayerClient({
   };
 
   const handleScore = (category = selectedCategory) => {
-    if (!category || !canAct || isRolling || hasPendingHolds || pendingAction) return;
+    if (!category || !canAct || isRolling || pendingAction) return;
     setHighlightedPlayerCategory(category);
+    botAudio.playEffect("score");
     score(category);
     setSelectedCategory(null);
   };
 
+  const handleToggleDie = (index: number) => {
+    if (!canAct || isRolling) return;
+    if (pendingAction !== null && pendingAction !== "ROLL") return;
+    if ((localState?.rollNumber ?? 0) === 0) return;
+    const isHeld = localState?.held[index] ?? false;
+    botAudio.playEffect(isHeld ? "release" : "hold");
+    toggleHeld(index);
+  };
+
   useGameKeyboard({
-    disabled: status !== "playing" || !canAct || isRolling || hasPendingHolds || pendingAction !== null,
+    disabled: status !== "playing" || !canAct || isRolling,
     canRoll: Boolean(localState && localState.rollNumber < 3 && !localState.held.every(Boolean)),
-    canScore: selectedCategory !== null && !isRolling,
+    canScore: selectedCategory !== null && !isRolling && pendingAction === null,
     onRoll: handleRoll,
     onScore: handleScore,
-    onToggleDie: toggleHeld,
+    onToggleDie: handleToggleDie,
   });
 
   const handleCopyLink = async () => {
@@ -302,7 +313,7 @@ export function MultiplayerClient({
             dice={localState.dice}
             opponentDice={opponentState.dice}
             selected={canAct ? selectedCategory : null}
-            canSelect={canAct && localState.rollNumber > 0 && !isRolling && !hasPendingHolds && pendingAction === null}
+            canSelect={canAct && localState.rollNumber > 0 && !isRolling && pendingAction === null}
             isReadOnly={!canAct}
             activeColumn={isMyTurn ? "player" : "opponent"}
             highlightedPlayerCategory={highlightedPlayerCategory}
@@ -317,9 +328,11 @@ export function MultiplayerClient({
             held={isMyTurn ? localState.held : opponentState.held}
             rollNumber={isMyTurn ? localState.rollNumber : opponentState.rollNumber}
             selectedCategory={isMyTurn ? selectedCategory : null}
-            animationSeed={replayedOpponentEvent?.version ?? game.turn * 20 + (isMyTurn ? 1 : 2) * 5 + (isMyTurn ? localState.rollNumber : opponentState.rollNumber)}
+            animationSeed={isMyTurn
+              ? game.turn * 20 + 5 + localState.rollNumber
+              : (replayedOpponentEvent?.version ?? game.turn * 20 + 10 + opponentState.rollNumber)}
             isRolling={isMyTurn ? isRolling : isReplayingOpponentRoll}
-            isDisabled={!canAct || pendingAction !== null}
+            isDisabled={!canAct || (pendingAction !== null && pendingAction !== "ROLL")}
             isRollDisabled={pendingAction !== null}
             isObserver={!isMyTurn}
             highlightedDieIndex={!isMyTurn ? highlightedOpponentDie : null}
@@ -334,7 +347,7 @@ export function MultiplayerClient({
                 onSend={sendReaction}
               />
             )}
-            onToggleDie={toggleHeld}
+            onToggleDie={handleToggleDie}
             onRoll={handleRoll}
           />
         </div>

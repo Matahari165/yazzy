@@ -107,7 +107,10 @@ export function GameTable({
 }: GameTableProps) {
   const heldCount = held.filter(Boolean).length;
   const [localAnimationSeed, setLocalAnimationSeed] = useState(0);
-  const animationSeed = animationSeedProp ?? localAnimationSeed;
+  // Combine la graine serveur (réconciliation duo) et la graine locale du clic :
+  // en duo la prop serveur seule ignorait le clic, l'animation rejouait les
+  // anciennes faces. Ici chaque clic varie l'animation en <50ms.
+  const animationSeed = (animationSeedProp ?? 0) + localAnimationSeed;
   const canRoll = rollNumber < 3 && !(rollNumber > 0 && heldCount === 5) && !isRolling && !isDisabled && !isRollDisabled;
   const actionLabel = rollNumber === 0 ? "Lancer" : "Relancer";
   const usedRolls = Math.min(rollNumber, 3);
