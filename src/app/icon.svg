@@ -1,9 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Yazzy">
-  <rect width="512" height="512" fill="#F7F1E8" />
-  <g transform="rotate(-4 256 256)">
-    <rect x="126" y="126" width="260" height="260" rx="76" fill="#ED896E" />
-    <circle cx="196" cy="196" r="24" fill="#25292B" />
-    <circle cx="256" cy="256" r="24" fill="#25292B" />
-    <circle cx="316" cy="316" r="24" fill="#25292B" />
+  <rect width="512" height="512" rx="112" fill="#E8E0D0" />
+  <g transform="rotate(-6 256 256)">
+    <rect x="132" y="144" width="252" height="252" rx="60" fill="#B83D28" opacity="0.45" />
+    <rect x="128" y="128" width="252" height="252" rx="60" fill="#D94E35" stroke="#1E1B18" stroke-width="14" />
+    <circle cx="190" cy="190" r="26" fill="#FFFDF8" stroke="#1E1B18" stroke-width="6" />
+    <circle cx="254" cy="254" r="26" fill="#FFFDF8" stroke="#1E1B18" stroke-width="6" />
+    <circle cx="318" cy="318" r="26" fill="#FFFDF8" stroke="#1E1B18" stroke-width="6" />
   </g>
 </svg>

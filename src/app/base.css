@@ -1,49 +1,69 @@
 :root {
-  color-scheme: dark;
-  --page: #0b241c;
-  --surface: #103228;
-  --surface-muted: #16402f;
-  --ink: #f3edda;
-  --ink-soft: #b9c4b6;
-  --line: rgb(243 237 218 / 14%);
-  --line-strong: rgb(243 237 218 / 38%);
-  --coral: #ffb020;
-  --coral-deep: #c77f00;
-  --coral-ink: #ffb020;
-  --coral-soft: #3a2a08;
-  --green: #57e6a8;
-  --green-ink: #8aebb8;
-  --green-soft: #0f3b2a;
-  --yellow-soft: #2e250c;
-  --focus: #ffb020;
-  --danger: #ff7d6b;
-  --board-border: #43584d;
-  --player: #8fd0ff;
-  --player-soft: #12333f;
-  --opponent: #ff7d6b;
-  --opponent-soft: #33201c;
-  --score-row-surface: #103228;
-  --score-player-cell: #12333f;
-  --score-opponent-cell: #33201c;
-  --score-opponent-preview: #2e1d19;
-  --score-opponent-preview-border: #c96a5a;
-  --score-player-ink: #a8d8ff;
-  --score-opponent-ink: #ffa192;
-  --score-filled-surface: #2b3831;
-  --score-filled-cell: #43554b;
-  --score-filled-border: #93a29a;
-  --score-filled-ink: #aeb8ac;
-  --game-green-strong: #57e6a8;
-  --score-selected-surface: rgb(143 208 255 / 14%);
-  --dice-zone-surface: #0c2a20;
-  --die-face-surface: #fff8e8;
-  --die-face-border: #0b241c;
-  --die-pip: #14201b;
-  --shadow-soft: 0 8px 24px rgb(0 0 0 / 45%);
-  --shadow-button: 0 4px 0 rgb(0 0 0 / 45%);
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  color-scheme: light;
+
+  /* — Papier & Tampon — palette chaude artisanale — */
+  --page: #e8e0d0;
+  --surface: #faf7f0;
+  --surface-muted: #f0ebe2;
+  --ink: #1e1b18;
+  --ink-soft: #706b63;
+  --line: #d6cfc3;
+  --line-strong: #b8b0a3;
+
+  /* Tampon rouge — action primaire */
+  --coral: #d94e35;
+  --coral-deep: #b83d28;
+  --coral-ink: #c43e28;
+  --coral-soft: #faeae6;
+
+  /* Encre verte — gardé / confirmé */
+  --green: #2d845e;
+  --green-ink: #1e6b48;
+  --green-soft: #e4f2ea;
+
+  /* Divers */
+  --yellow-soft: #fff5e0;
+  --focus: #d94e35;
+  --danger: #d94e35;
+  --board-border: #c8c0b4;
+
+  /* Joueur vs adversaire */
+  --player: #2968a8;
+  --player-soft: #e3eff8;
+  --opponent: #b83b2e;
+  --opponent-soft: #f8e8e6;
+
+  /* Feuille de score */
+  --score-row-surface: #faf7f0;
+  --score-player-cell: #e3eff8;
+  --score-player-ink: #1e5590;
+  --score-opponent-cell: #f8e8e6;
+  --score-opponent-ink: #a03228;
+  --score-opponent-preview: #fdf0ee;
+  --score-opponent-preview-border: #d4756a;
+  --score-filled-surface: #ede9e2;
+  --score-filled-cell: #ddd8d0;
+  --score-filled-border: #b8b0a3;
+  --score-filled-ink: #8a857e;
+  --score-selected-surface: rgb(41 104 168 / 8%);
+  --game-green-strong: #1e6b48;
+
+  /* Dés */
+  --dice-zone-surface: #ddd6c8;
+  --die-face-surface: #fffdf8;
+  --die-face-border: #c8c0b4;
+  --die-pip: #1e1b18;
+
+  /* Relief & profondeur */
+  --shadow-soft: 0 1px 3px rgb(30 27 24 / 6%), 0 1px 0 rgb(30 27 24 / 4%);
+  --shadow-button: 0 3px 0 rgb(30 27 24 / 14%);
+
+  /* Formes */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  /* Mouvement */
   --motion-fast: 120ms;
   --motion-state: 180ms;
   --motion-emphasis: 260ms;
@@ -51,9 +71,11 @@
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --ease-spring: cubic-bezier(0.2, 1.4, 0.3, 1);
+
+  /* Typographie */
   --font-body: var(--yazzy-body, "Space Grotesk"), "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
   --font-display: var(--yazzy-display, "Bricolage Grotesque"), "Avenir Next", "Trebuchet MS", system-ui, sans-serif;
-  --ease-spring: cubic-bezier(0.2, 1.4, 0.3, 1);
 }
 
 * { box-sizing: border-box; }
@@ -95,7 +117,7 @@ a:focus-visible {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.58;
+  opacity: 0.48;
 }
 
 h1,
@@ -138,6 +160,8 @@ h3 { font-size: 18px; line-height: 1.2; }
   color: var(--surface);
   background: var(--ink);
   border-radius: var(--radius-sm);
+  font-weight: 700;
+  text-decoration: none;
   transform: translateY(-180%);
 }
 
@@ -185,6 +209,7 @@ h3 { font-size: 18px; line-height: 1.2; }
   .st-rise { animation: none !important; }
 }
 
+/* ---- Boutons partagés : style tampon / papeterie ---- */
 .primary-action,
 .secondary-action {
   min-height: 48px;
@@ -193,23 +218,36 @@ h3 { font-size: 18px; line-height: 1.2; }
   justify-content: center;
   gap: 8px;
   padding: 12px 18px;
-  border: 1px solid transparent;
+  border: 1.5px solid transparent;
   border-radius: var(--radius-sm);
   font-size: 15px;
   font-weight: 700;
   line-height: 1.2;
   text-decoration: none;
-  transition: background-color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
+  transition:
+    background-color var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
 }
 
 .primary-action {
-  color: #2a1a00;
+  color: #fff;
   background: var(--coral);
+  border-color: var(--coral-deep);
   box-shadow: var(--shadow-button);
 }
 
-.primary-action:hover:not(:disabled) { background: #ffc95e; }
-.primary-action:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 rgb(0 0 0 / 45%); }
+.primary-action:hover:not(:disabled) {
+  background: #e05a42;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 rgb(30 27 24 / 14%);
+}
+
+.primary-action:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgb(30 27 24 / 14%);
+}
 
 .secondary-action {
   color: var(--ink);
@@ -217,8 +255,15 @@ h3 { font-size: 18px; line-height: 1.2; }
   border-color: var(--line-strong);
 }
 
-.secondary-action:hover:not(:disabled) { background: var(--surface-muted); border-color: var(--ink-soft); }
-.secondary-action:active:not(:disabled) { transform: translateY(1px); }
+.secondary-action:hover:not(:disabled) {
+  background: var(--surface-muted);
+  border-color: var(--ink-soft);
+  transform: translateY(-1px);
+}
+
+.secondary-action:active:not(:disabled) {
+  transform: translateY(1px);
+}
 
 .secondary-action small,
 .primary-action small {
@@ -234,9 +279,11 @@ h3 { font-size: 18px; line-height: 1.2; }
   place-items: center;
   padding: 24px;
   background: var(--page);
+  color: var(--ink-soft);
   font-size: 16px;
 }
 
+/* ---- Cartes multiplayer partagées ---- */
 .multiplayer-state-card,
 .waiting-room {
   width: min(calc(100% - 32px), 560px);
@@ -244,10 +291,12 @@ h3 { font-size: 18px; line-height: 1.2; }
   padding: clamp(28px, 6vw, 52px);
   text-align: center;
   background: var(--surface);
-  border: 2px solid var(--board-border);
+  border: 1.5px solid var(--board-border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 0 rgb(0 0 0 / 45%), 0 18px 44px rgb(0 0 0 / 35%);
-  animation: st-rise 0.5s var(--ease-spring, cubic-bezier(0.2, 1.4, 0.3, 1)) both;
+  box-shadow:
+    0 2px 0 rgb(30 27 24 / 5%),
+    0 8px 24px rgb(30 27 24 / 10%);
+  animation: st-rise 0.5s var(--ease-spring) both;
 }
 
 .multiplayer-state-card > p:not(.eyebrow),
@@ -265,15 +314,16 @@ h3 { font-size: 18px; line-height: 1.2; }
 .waiting-header .quit-link { margin-left: auto; }
 .waiting-room { margin-top: clamp(8px, 4vh, 36px); }
 .waiting-room h1 { margin-bottom: 10px; }
+
 .waiting-dice {
   width: 64px;
   height: 64px;
   display: grid;
   place-items: center;
   margin: 0 auto 22px;
-  color: #2a1a00;
+  color: #fff;
   background: var(--coral);
-  border: 2px solid var(--line-strong);
+  border: 1.5px solid var(--coral-deep);
   border-radius: var(--radius-md);
   font-size: 28px;
   font-weight: 800;
@@ -281,6 +331,7 @@ h3 { font-size: 18px; line-height: 1.2; }
   transform: rotate(-4deg);
   box-shadow: var(--shadow-button);
 }
+
 .room-code-block {
   display: grid;
   gap: 4px;
@@ -288,25 +339,79 @@ h3 { font-size: 18px; line-height: 1.2; }
   padding: 14px;
   background: var(--page);
   border: 2px dashed var(--line-strong);
-  border-radius: 14px;
+  border-radius: 12px;
 }
-.room-code-block span { color: var(--ink-soft); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
-.room-code-block strong { font: 800 clamp(28px, 8vw, 40px)/1.1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.16em; }
-.invite-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+
+.room-code-block span {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.room-code-block strong {
+  font: 800 clamp(28px, 8vw, 40px)/1.1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+}
+
+.invite-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .invite-field { margin-top: 28px; text-align: left; }
-.invite-field label { color: var(--ink-soft); font-size: 12px; font-weight: 800; text-transform: uppercase; }
+
+.invite-field label {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .invite-field input {
   width: 100%;
   min-height: 48px;
   padding: 10px 12px;
   color: var(--ink);
-  background: var(--page);
-  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  border: 1.5px solid var(--line-strong);
   border-radius: var(--radius-sm);
   font: 14px ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-.invite-field input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-.copy-status { min-height: 18px; margin: 10px 0 20px; color: var(--ink-soft); font-size: 12px; }
-.waiting-status { display: inline-flex; align-items: center; gap: 8px; margin: 0; color: var(--green-ink); font-size: 14px; font-weight: 700; }
-.waiting-status i { width: 8px; height: 8px; background: var(--green-ink); border-radius: 50%; animation: waiting-pulse 1.6s var(--ease-standard) infinite; }
-@keyframes waiting-pulse { 50% { opacity: 0.35; transform: scale(0.75); } }
+
+.invite-field input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.copy-status {
+  min-height: 18px;
+  margin: 10px 0 20px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.waiting-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--green-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.waiting-status i {
+  width: 8px;
+  height: 8px;
+  background: var(--green-ink);
+  border-radius: 50%;
+  animation: waiting-pulse 1.6s var(--ease-standard) infinite;
+}
+
+@keyframes waiting-pulse {
+  50% { opacity: 0.35; transform: scale(0.75); }
+}
