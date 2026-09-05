@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./base.css";
 import "./lobby.css";
 import "./game.css";
+import "./quiz.css";
 
 export const metadata: Metadata = {
   title: "Yazzy",

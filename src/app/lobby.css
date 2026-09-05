@@ -74,6 +74,24 @@
 
 .new-game { display: grid; gap: 10px; }
 .game-mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.game-mode-action-quiz {
+  grid-column: 1 / -1;
+  min-height: 88px;
+  flex-direction: row;
+  align-items: center;
+}
+.mode-quiz-icon {
+  width: 52px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 900;
+}
 .demon-theme-toggle {
   min-height: 48px;
   display: grid;

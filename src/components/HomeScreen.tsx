@@ -88,6 +88,10 @@ export function HomeScreen() {
     router.push("/game");
   };
 
+  const startQuiz = () => {
+    router.push("/quiz");
+  };
+
   const joinRoom = (code: string, invalidMessage = "Saisis les 6 caractères du code envoyé par ton ami.") => {
     const normalizedCode = normalizeRoomCode(code);
     if (!isRoomCode(normalizedCode)) {
@@ -162,6 +166,17 @@ export function HomeScreen() {
                 <span>
                   <strong>Duo</strong>
                   <small>Avec un ami</small>
+                </span>
+              </button>
+              <button
+                className="game-mode-action game-mode-action-quiz"
+                type="button"
+                onClick={startQuiz}
+              >
+                <span className="mode-quiz-icon" aria-hidden="true">?</span>
+                <span>
+                  <strong>Quiz</strong>
+                  <small>Culture G</small>
                 </span>
               </button>
             </div>
