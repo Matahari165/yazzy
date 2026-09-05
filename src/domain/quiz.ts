@@ -1,11 +1,17 @@
-export const QUIZ_VERSION = 1;
+export const QUIZ_VERSION = 2;
 export const QUIZ_STORAGE_KEY = "yazzy.quiz.v1";
 export const QUIZ_QUESTIONS_PER_GAME = 10;
 export const QUIZ_RECENT_IDS_MAX = 100;
+export const QUIZ_TIME_PER_QUESTION_S = 15;
+export const QUIZ_SURVIVAL_LIVES = 3;
+/** Choix enregistré quand le chrono de 15 s expire sans réponse. */
+export const QUIZ_TIMEOUT_CHOICE = -1;
 
 export const QUIZ_CATEGORIES = ["science", "histoire", "art", "pays"] as const;
 export type QuizCategory = (typeof QUIZ_CATEGORIES)[number];
 export type QuizMode = QuizCategory | "aleatoire";
+
+export type QuizFormat = "classique" | "survie";
 
 export const QUIZ_MODES: QuizMode[] = ["aleatoire", ...QUIZ_CATEGORIES];
 
@@ -19,6 +25,11 @@ export const QUIZ_CATEGORY_LABELS: Record<QuizCategory, string> = {
 export const QUIZ_MODE_LABELS: Record<QuizMode, string> = {
   aleatoire: "Aléatoire",
   ...QUIZ_CATEGORY_LABELS,
+};
+
+export const QUIZ_FORMAT_LABELS: Record<QuizFormat, string> = {
+  classique: "Partie",
+  survie: "Survie",
 };
 
 export type QuizQuestion = {
@@ -39,10 +50,13 @@ export type QuizRoundQuestion = {
 export type QuizState = {
   version: typeof QUIZ_VERSION;
   mode: QuizMode;
+  format: QuizFormat;
   questions: QuizRoundQuestion[];
   currentIndex: number;
   selected: number | null;
   answers: number[];
+  /** Vies restantes en survie (3 au départ), 0 en classique. */
+  lives: number;
   isFinished: boolean;
 };
 
@@ -52,6 +66,10 @@ export function isQuizCategory(value: unknown): value is QuizCategory {
 
 export function isQuizMode(value: unknown): value is QuizMode {
   return value === "aleatoire" || isQuizCategory(value);
+}
+
+export function isQuizFormat(value: unknown): value is QuizFormat {
+  return value === "classique" || value === "survie";
 }
 
 export function isQuizQuestion(value: unknown): value is QuizQuestion {
@@ -123,32 +141,55 @@ export function createQuizGame(
   rand: () => number = Math.random,
   recentIds: readonly string[] = [],
   count: number = QUIZ_QUESTIONS_PER_GAME,
+  format: QuizFormat = "classique",
 ): QuizState | null {
-  const picked = pickQuizQuestions(pool, mode, count, rand, recentIds);
+  // En survie on enchaîne tout le thème jusqu'à épuisement des vies.
+  const effectiveCount = format === "survie" ? Number.MAX_SAFE_INTEGER : count;
+  const picked = pickQuizQuestions(pool, mode, effectiveCount, rand, recentIds);
   if (picked.length === 0) return null;
   return {
     version: QUIZ_VERSION,
     mode,
+    format,
     questions: picked.map((q) => toRoundQuestion(q, rand)),
     currentIndex: 0,
     selected: null,
     answers: [],
+    lives: format === "survie" ? QUIZ_SURVIVAL_LIVES : 0,
     isFinished: false,
   };
 }
 
 export function selectQuizAnswer(current: QuizState, choiceIndex: number): QuizState {
   if (current.isFinished || current.selected !== null) return current;
-  if (!Number.isInteger(choiceIndex) || choiceIndex < 0 || choiceIndex > 3) return current;
+  if (!Number.isInteger(choiceIndex) || choiceIndex < QUIZ_TIMEOUT_CHOICE || choiceIndex > 3)
+    return current;
+  const round = current.questions[current.currentIndex];
+  if (!round) return current;
+  const isWrong = choiceIndex !== round.correctShuffledIndex;
   const answers = [...current.answers];
   answers[current.currentIndex] = choiceIndex;
-  return { ...current, selected: choiceIndex, answers };
+  return {
+    ...current,
+    selected: choiceIndex,
+    answers,
+    lives:
+      current.format === "survie" && isWrong
+        ? Math.max(0, current.lives - 1)
+        : current.lives,
+  };
+}
+
+/** Le chrono de 15 s a expiré : enregistré comme une mauvaise réponse. */
+export function timeoutQuizAnswer(current: QuizState): QuizState {
+  return selectQuizAnswer(current, QUIZ_TIMEOUT_CHOICE);
 }
 
 export function nextQuizQuestion(current: QuizState): QuizState {
   if (current.isFinished || current.selected === null) return current;
   const isLast = current.currentIndex >= current.questions.length - 1;
-  if (isLast) return { ...current, isFinished: true };
+  const outOfLives = current.format === "survie" && current.lives <= 0;
+  if (isLast || outOfLives) return { ...current, isFinished: true };
   return { ...current, currentIndex: current.currentIndex + 1, selected: null };
 }
 
@@ -162,7 +203,8 @@ export function scoreQuizGame(current: QuizState): number {
 export function isStoredQuizGame(value: unknown): value is QuizState {
   if (!value || typeof value !== "object") return false;
   const game = value as Partial<QuizState>;
-  if (game.version !== QUIZ_VERSION || !isQuizMode(game.mode)) return false;
+  if (game.version !== QUIZ_VERSION || !isQuizMode(game.mode) || !isQuizFormat(game.format))
+    return false;
   if (!Array.isArray(game.questions) || game.questions.length === 0) return false;
   if (
     !game.questions.every(
@@ -172,7 +214,12 @@ export function isStoredQuizGame(value: unknown): value is QuizState {
         isQuizQuestion((round as QuizRoundQuestion).question) &&
         Array.isArray((round as QuizRoundQuestion).shuffledChoices) &&
         (round as QuizRoundQuestion).shuffledChoices.length === 4 &&
-        Number.isInteger((round as QuizRoundQuestion).correctShuffledIndex),
+        (round as QuizRoundQuestion).shuffledChoices.every(
+          (choice) => typeof choice === "string" && choice.trim().length > 0,
+        ) &&
+        Number.isInteger((round as QuizRoundQuestion).correctShuffledIndex) &&
+        (round as QuizRoundQuestion).correctShuffledIndex >= 0 &&
+        (round as QuizRoundQuestion).correctShuffledIndex <= 3,
     )
   )
     return false;
@@ -183,26 +230,25 @@ export function isStoredQuizGame(value: unknown): value is QuizState {
     game.currentIndex >= game.questions.length
   )
     return false;
-  if (game.selected !== null && (typeof game.selected !== "number" || game.selected < 0 || game.selected > 3))
-    return false;
-  if (!Array.isArray(game.answers)) return false;
   if (
-    !game.answers.every(
-      (answer) => Number.isInteger(answer) && (answer as number) >= 0 && (answer as number) <= 3,
-    ) ||
-    game.answers.length > game.questions.length
+    game.selected !== null &&
+    (typeof game.selected !== "number" ||
+      !Number.isInteger(game.selected) ||
+      game.selected < QUIZ_TIMEOUT_CHOICE ||
+      game.selected > 3)
   )
     return false;
-  const rounds = game.questions as QuizRoundQuestion[];
   if (
-    !rounds.every(
-      (round) =>
-        Number.isInteger(round.correctShuffledIndex) &&
-        round.correctShuffledIndex >= 0 &&
-        round.correctShuffledIndex <= 3 &&
-        round.shuffledChoices.every((choice) => typeof choice === "string" && choice.trim().length > 0),
+    !Array.isArray(game.answers) ||
+    game.answers.length > game.questions.length ||
+    !game.answers.every(
+      (answer) =>
+        Number.isInteger(answer) && (answer as number) >= QUIZ_TIMEOUT_CHOICE && (answer as number) <= 3,
     )
   )
     return false;
+  if (typeof game.lives !== "number" || !Number.isInteger(game.lives) || game.lives < 0) return false;
+  if (game.format === "classique" && game.lives !== 0) return false;
+  if (game.format === "survie" && game.lives > QUIZ_SURVIVAL_LIVES) return false;
   return typeof game.isFinished === "boolean";
 }

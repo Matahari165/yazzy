@@ -5,8 +5,11 @@ import {
   nextQuizQuestion,
   pickQuizQuestions,
   QUIZ_QUESTIONS_PER_GAME,
+  QUIZ_SURVIVAL_LIVES,
+  QUIZ_TIMEOUT_CHOICE,
   scoreQuizGame,
   selectQuizAnswer,
+  timeoutQuizAnswer,
   toRoundQuestion,
   type QuizQuestion,
 } from "./quiz";
@@ -25,13 +28,14 @@ const deterministic = (sequence: number[]) => {
 
 describe("quiz domain", () => {
   it("valide le dataset FR embarqué", () => {
-    expect(QUIZ_QUESTIONS_FR.length).toBeGreaterThanOrEqual(80);
+    expect(QUIZ_QUESTIONS_FR.length).toBeGreaterThanOrEqual(100);
     expect(QUIZ_QUESTIONS_FR.every(isQuizQuestion)).toBe(true);
     const ids = new Set(QUIZ_QUESTIONS_FR.map((q) => q.id));
     expect(ids.size).toBe(QUIZ_QUESTIONS_FR.length);
     for (const category of ["science", "histoire", "art", "pays"] as const) {
       expect(QUIZ_QUESTIONS_FR.filter((q) => q.category === category).length).toBeGreaterThanOrEqual(20);
     }
+    expect(QUIZ_QUESTIONS_FR.filter((q) => q.category === "science").length).toBeGreaterThanOrEqual(35);
   });
 
   it("filtre par thème et mélange sans remise", () => {
@@ -79,5 +83,43 @@ describe("quiz domain", () => {
     expect(scoreQuizGame(answered)).toBe(1);
     expect(finished.isFinished).toBe(true);
     expect(QUIZ_QUESTIONS_PER_GAME).toBe(10);
+  });
+
+  it("crée une survie avec tout le thème et 3 vies", () => {
+    const game = createQuizGame(pool, "science", deterministic([0.1]), [], 10, "survie");
+    expect(game).not.toBeNull();
+    if (!game) return;
+    expect(game.format).toBe("survie");
+    expect(game.lives).toBe(QUIZ_SURVIVAL_LIVES);
+    expect(game.questions).toHaveLength(2);
+  });
+
+  it("perd une vie par mauvaise réponse en survie et termine à 0 vie", () => {
+    let game = createQuizGame(pool, "aleatoire", deterministic([0]), [], 10, "survie");
+    if (!game) throw new Error("no game");
+    for (let life = QUIZ_SURVIVAL_LIVES; life > 0; life -= 1) {
+      const round = game.questions[game.currentIndex];
+      const wrong = (round.correctShuffledIndex + 1) % 4;
+      game = selectQuizAnswer(game, wrong);
+      expect(game.lives).toBe(life - 1);
+      game = nextQuizQuestion(game);
+    }
+    expect(game.isFinished).toBe(true);
+  });
+
+  it("ne perd pas de vie sur une bonne réponse en survie", () => {
+    const game = createQuizGame(pool, "aleatoire", deterministic([0]), [], 2, "survie");
+    if (!game) throw new Error("no game");
+    const correct = game.questions[0].correctShuffledIndex;
+    expect(selectQuizAnswer(game, correct).lives).toBe(QUIZ_SURVIVAL_LIVES);
+  });
+
+  it("compte le timeout comme une mauvaise réponse", () => {
+    const game = createQuizGame(pool, "aleatoire", deterministic([0]), [], 1);
+    if (!game) throw new Error("no game");
+    const timedOut = timeoutQuizAnswer(game);
+    expect(timedOut.selected).toBe(QUIZ_TIMEOUT_CHOICE);
+    expect(scoreQuizGame(timedOut)).toBe(0);
+    expect(nextQuizQuestion(timedOut).isFinished).toBe(true);
   });
 });

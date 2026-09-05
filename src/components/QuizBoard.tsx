@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuizGame } from "@/hooks/useQuizGame";
 import {
   QUIZ_CATEGORY_LABELS,
   QUIZ_CATEGORIES,
+  QUIZ_FORMAT_LABELS,
+  QUIZ_SURVIVAL_LIVES,
+  QUIZ_TIMEOUT_CHOICE,
   scoreQuizGame,
+  type QuizFormat,
   type QuizMode,
 } from "@/domain/quiz";
 
@@ -18,6 +22,16 @@ const THEME_EMOJI: Record<QuizMode, string> = {
   pays: "🌍",
 };
 
+const FORMAT_EMOJI: Record<QuizFormat, string> = {
+  classique: "🎯",
+  survie: "❤️‍🔥",
+};
+
+const FORMAT_HINT: Record<QuizFormat, string> = {
+  classique: "10 questions",
+  survie: "3 vies, sans fin",
+};
+
 function resultMessage(score: number, total: number): string {
   const ratio = total === 0 ? 0 : score / total;
   if (ratio === 1) return "Sans faute.";
@@ -27,14 +41,26 @@ function resultMessage(score: number, total: number): string {
 }
 
 export function QuizBoard() {
-  const { game, hasLoaded, start, answer, next, quitToThemes, startFailed, total } = useQuizGame();
+  const {
+    game,
+    hasLoaded,
+    start,
+    answer,
+    next,
+    quitToThemes,
+    startFailed,
+    timeLeft,
+    timePerQuestion,
+    total,
+  } = useQuizGame();
+  const [format, setFormat] = useState<QuizFormat>("classique");
   const resultTitleRef = useRef<HTMLHeadingElement>(null);
   const questionTitleRef = useRef<HTMLHeadingElement>(null);
 
   const isFinished = game?.isFinished ?? false;
   const current = game && !isFinished ? game.questions[game.currentIndex] : null;
-  const revealed = game?.selected !== null && game?.selected !== undefined && game !== null;
   const score = game ? scoreQuizGame(game) : 0;
+  const timerRatio = Math.max(0, Math.min(1, timeLeft / timePerQuestion));
 
   useEffect(() => {
     if (!game || !isFinished) return;
@@ -104,7 +130,25 @@ export function QuizBoard() {
         <section className="quiz-card" aria-labelledby="quiz-theme-title">
           <p className="eyebrow">Culture générale</p>
           <h1 id="quiz-theme-title">Quiz</h1>
-          <p className="quiz-intro">10 questions, 4 options.</p>
+          <p className="quiz-intro">15 secondes par question.</p>
+          <div className="quiz-format-grid" role="group" aria-label="Format de partie">
+            {(["classique", "survie"] as QuizFormat[]).map((option) => (
+              <button
+                key={option}
+                type="button"
+                className="quiz-format-action"
+                data-active={format === option}
+                aria-pressed={format === option}
+                onClick={() => setFormat(option)}
+              >
+                <span aria-hidden="true">{FORMAT_EMOJI[option]}</span>
+                <span>
+                  <strong>{QUIZ_FORMAT_LABELS[option]}</strong>
+                  <small>{FORMAT_HINT[option]}</small>
+                </span>
+              </button>
+            ))}
+          </div>
           {startFailed ? (
             <p className="form-error" role="alert">Impossible de démarrer : aucune question disponible.</p>
           ) : null}
@@ -115,12 +159,12 @@ export function QuizBoard() {
                 type="button"
                 className="quiz-theme-action"
                 data-primary={mode === "aleatoire"}
-                onClick={() => start(mode)}
+                onClick={() => start(mode, format)}
               >
                 <span aria-hidden="true">{THEME_EMOJI[mode]}</span>
                 <span>
                   <strong>{mode === "aleatoire" ? "Aléatoire" : QUIZ_CATEGORY_LABELS[mode]}</strong>
-                  <small>{mode === "aleatoire" ? "Tous thèmes" : "20 questions"}</small>
+                  <small>{mode === "aleatoire" ? "Tous thèmes" : "Par thème"}</small>
                 </span>
               </button>
             ))}
@@ -128,13 +172,21 @@ export function QuizBoard() {
         </section>
       ) : isFinished ? (
         <section className="quiz-card quiz-result" aria-labelledby="quiz-result-title">
-          <p className="eyebrow">{game.mode === "aleatoire" ? "Aléatoire" : QUIZ_CATEGORY_LABELS[game.mode]}</p>
+          <p className="eyebrow">
+            {game.format === "survie" ? "Survie" : null}
+            {game.format === "survie" ? " · " : ""}
+            {game.mode === "aleatoire" ? "Aléatoire" : QUIZ_CATEGORY_LABELS[game.mode]}
+          </p>
           <h1 id="quiz-result-title" ref={resultTitleRef} tabIndex={-1}>
-            {score}/{game.questions.length}
+            {game.format === "survie" ? `${score} pts` : `${score}/${game.questions.length}`}
           </h1>
-          <p className="quiz-intro">{resultMessage(score, game.questions.length)}</p>
+          <p className="quiz-intro">
+            {game.format === "survie"
+              ? `${game.answers.length} questions, ${score} bonnes réponses.`
+              : resultMessage(score, game.questions.length)}
+          </p>
           <ol className="quiz-review">
-            {game.questions.map((round, index) => {
+            {game.questions.slice(0, game.answers.length).map((round, index) => {
               const good = game.answers[index] === round.correctShuffledIndex;
               return (
                 <li key={round.question.id} data-good={good}>
@@ -145,7 +197,7 @@ export function QuizBoard() {
             })}
           </ol>
           <div className="quiz-actions">
-            <button type="button" className="primary-action" onClick={() => start(game.mode)}>
+            <button type="button" className="primary-action" onClick={() => start(game.mode, game.format)}>
               Rejouer
             </button>
             <button type="button" className="secondary-action" onClick={quitToThemes}>
@@ -161,17 +213,22 @@ export function QuizBoard() {
           <section className="quiz-card" aria-labelledby="quiz-question-title">
             <div className="quiz-topbar">
               <span className="quiz-progress" aria-live="polite">
-                {game.currentIndex + 1}/{game.questions.length}
+                {game.format === "survie" ? `N°${game.currentIndex + 1}` : `${game.currentIndex + 1}/${game.questions.length}`}
               </span>
               <span className="quiz-theme-badge">
                 {game.mode === "aleatoire"
                   ? QUIZ_CATEGORY_LABELS[current.question.category]
                   : QUIZ_CATEGORY_LABELS[game.mode]}
               </span>
+              {game.format === "survie" ? (
+                <span className="quiz-lives" role="img" aria-label={`${game.lives} vie${game.lives > 1 ? "s" : ""} restante${game.lives > 1 ? "s" : ""}`}>
+                  {"❤️".repeat(game.lives)}{"🖤".repeat(QUIZ_SURVIVAL_LIVES - game.lives)}
+                </span>
+              ) : null}
               <span className="quiz-score">{score} pt</span>
             </div>
-            <div className="quiz-progressbar" aria-hidden="true">
-              <i style={{ width: `${((game.currentIndex + 1) / game.questions.length) * 100}%` }} />
+            <div className="quiz-timer" aria-hidden="true">
+              <i data-urgent={timeLeft <= 5} style={{ width: `${timerRatio * 100}%` }} />
             </div>
             <h1
               id="quiz-question-title"
@@ -205,11 +262,21 @@ export function QuizBoard() {
             {game.selected !== null ? (
               <div className="quiz-feedback" aria-live="polite">
                 <p data-good={game.selected === current.correctShuffledIndex}>
-                  {game.selected === current.correctShuffledIndex ? "Bonne réponse." : `Raté : ${current.shuffledChoices[current.correctShuffledIndex]}.`}
+                  {game.selected === current.correctShuffledIndex
+                    ? "Bonne réponse."
+                    : game.selected === QUIZ_TIMEOUT_CHOICE
+                      ? `Temps écoulé : ${current.shuffledChoices[current.correctShuffledIndex]}.`
+                      : `Raté : ${current.shuffledChoices[current.correctShuffledIndex]}.`}
                 </p>
                 {current.question.explanation ? <p className="quiz-explanation">{current.question.explanation}</p> : null}
                 <button type="button" className="primary-action quiz-next" onClick={next} autoFocus>
-                  {game.currentIndex >= total - 1 ? "Voir le résultat" : "Suivant"}
+                  {game.format === "survie"
+                    ? game.lives <= 0
+                      ? "Voir le résultat"
+                      : "Suivant"
+                    : game.currentIndex >= total - 1
+                      ? "Voir le résultat"
+                      : "Suivant"}
                 </button>
               </div>
             ) : null}
