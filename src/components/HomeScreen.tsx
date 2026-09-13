@@ -132,18 +132,11 @@ export function HomeScreen() {
   };
 
   const toggleMultiplayer = () => {
-    setIsMultiplayerOpen((prev) => {
-      const next = !prev;
-      if (next) {
-        window.setTimeout(() => {
-          const panel = document.querySelector<HTMLElement>(".multiplayer-options, [id='multiplayer-options']");
-          panel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-          const input = panel?.querySelector<HTMLInputElement>("input#player-name");
-          input?.focus();
-        }, 50);
-      }
-      return next;
-    });
+    setIsMultiplayerOpen((prev) => !prev);
+  };
+
+  const closeMultiplayer = () => {
+    setIsMultiplayerOpen(false);
   };
 
   const joinRoom = (code: string, invalidMessage = "6 caractères requis.") => {
@@ -198,10 +191,12 @@ export function HomeScreen() {
     onStartQuiz: startQuiz,
     onStartMultiplayer: startMultiplayer,
     onToggleMultiplayer: toggleMultiplayer,
+    onCloseMultiplayer: closeMultiplayer,
     onJoinMultiplayer: joinMultiplayer,
     onPlayerNameChange: (name) => {
       setPlayerName(name);
       setPlayerNameError("");
+      writeStoredPlayerName(name);
     },
     onPlayerNameBlur: () => {
       const normalizedName = normalizePlayerName(playerName);

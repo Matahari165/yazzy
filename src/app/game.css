@@ -64,41 +64,67 @@
 .sound-toggle {
   width: 44px;
   min-width: 44px;
+  height: 44px;
   min-height: 44px;
   display: grid;
   place-items: center;
   padding: 0;
-  color: var(--ink-soft);
-  background: var(--surface);
-  border: 1.5px solid var(--line);
+  color: var(--ink);
+  background: transparent;
+  border: 0;
   border-radius: 9999px;
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 800;
-  line-height: 1;
-  box-shadow: 0 3px 8px rgb(43 35 30 / 5%);
+  box-shadow: none;
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
 }
-.sound-toggle:hover { color: var(--ink); background: var(--surface-muted); }
-.sound-toggle:active { transform: scale(0.94); }
-.sound-toggle[aria-pressed="false"] { color: var(--ink-soft); opacity: 0.6; }
+.sound-toggle svg {
+  display: block;
+}
+.sound-toggle:hover {
+  color: var(--coral);
+  background: transparent;
+}
+.sound-toggle:active {
+  transform: scale(0.92);
+  background: transparent;
+}
+.sound-toggle:focus-visible {
+  outline: 2px solid var(--accent, #4f46e5);
+  outline-offset: 2px;
+}
+.sound-toggle[aria-pressed="false"] {
+  color: var(--ink-soft);
+  opacity: 0.45;
+}
 .quit-link {
   min-height: 44px;
   min-width: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px;
+  padding: 10px 14px;
   color: var(--ink-soft);
   background: var(--surface);
   border: 1.5px solid var(--line);
   border-radius: 9999px;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   text-decoration: none;
   box-shadow: 0 3px 8px rgb(43 35 30 / 5%);
-  transition: transform 0.15s ease, color 0.15s ease;
+  transition: transform 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.quit-link.multiplayer-quit-link {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.quit-link.multiplayer-quit-link svg {
+  display: block;
 }
 .quit-link:hover { color: var(--coral); background: var(--coral-soft); }
 .quit-link:active { transform: scale(0.94); }
@@ -683,8 +709,18 @@
 .multiplayer-game-header .game-logo { font-size: 19px; }
 .multiplayer-total-summary { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 48px 48px; align-items: center; gap: 8px; flex: 1; margin-left: auto; }
 .multiplayer-total-summary .total-label { padding-left: 2px; }
-.multiplayer-total-summary .score-value { width: 48px; min-width: 48px; min-height: 34px; font-size: 19px; }
-.multiplayer-quit-link { width: 44px; min-width: 44px; min-height: 44px; padding: 0; font-size: 25px; line-height: 1; }
+.multiplayer-quit-link {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.multiplayer-quit-link svg {
+  display: block;
+}
 
 /* 9. Écran de fin (Sculpture Céramique) */
 .finished-card {
@@ -1015,15 +1051,26 @@ body:has(.game-shell[data-game-mode="bot"][data-demon-theme="on"]) { background:
   .sound-toggle {
     width: 44px;
     min-width: 44px;
+    height: 44px;
     min-height: 44px;
-    font-size: 18px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
   }
   .mode-label { font-size: 11px; }
   .multiplayer-game-header { gap: 6px; margin-bottom: 0; min-height: 44px; }
   .multiplayer-game-header .game-logo { display: none; }
   .multiplayer-total-summary { gap: 8px; }
-  .reaction-trigger, .multiplayer-quit-link { width: 44px; min-width: 44px; min-height: 44px; }
-  .quit-link { min-height: 44px; min-width: 44px; padding-inline: 10px; font-size: 15px; }
+  .reaction-trigger, .multiplayer-quit-link {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+  }
+  .quit-link:not(.multiplayer-quit-link) { min-height: 44px; min-width: 44px; padding-inline: 10px; font-size: 15px; }
   .game-content {
     min-height: 0;
     display: grid;

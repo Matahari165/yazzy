@@ -51,11 +51,82 @@ class BotAudioEngine {
   private wantsMusic = false;
   private isUnlockingMusic = false;
   private enabled = true;
+  private unlockListenersAttached = false;
+
+  constructor() {
+    this.setupUnlockListeners();
+  }
+
+  setupUnlockListeners() {
+    if (typeof window === "undefined" || this.unlockListenersAttached) return;
+    this.unlockListenersAttached = true;
+    const events = ["pointerdown", "touchstart", "click", "keydown"] as const;
+    const unlockHandler = () => {
+      this.unlock();
+      const ctx = this.context;
+      if (ctx && ctx.state === "running") {
+        events.forEach((evt) => {
+          window.removeEventListener(evt, unlockHandler, true);
+        });
+        this.unlockListenersAttached = false;
+      }
+    };
+    events.forEach((evt) => {
+      window.addEventListener(evt, unlockHandler, { capture: true, passive: true });
+    });
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          if (this.context && this.context.state === "suspended" && this.wantsMusic) {
+            void this.context.resume().catch(() => {});
+          }
+        }
+      });
+    }
+  }
+
+  unlock() {
+    if (typeof window === "undefined") return;
+    const context = this.getContext();
+    if (!context) return;
+
+    if (context.state === "suspended") {
+      void context.resume().then(() => {
+        if (this.wantsMusic && this.enabled && (this.musicGain === null || this.musicTimer === null)) {
+          this.startMusic(this.demonTrack !== null);
+        }
+      }).catch(() => {});
+    }
+
+    try {
+      const buffer = context.createBuffer(1, 1, context.sampleRate || 44100);
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(context.destination);
+      source.start(0);
+    } catch {}
+
+    if (this.demonAudio && this.demonAudio.paused && this.wantsMusic) {
+      void this.demonAudio.play().catch(() => {});
+    }
+
+    if (this.wantsMusic && this.enabled && (this.musicGain === null || this.musicTimer === null) && context.state === "running") {
+      this.startMusic(this.demonTrack !== null);
+    }
+  }
 
   setEnabled(enabled: boolean) {
     this.enabled = enabled;
     writeSoundEnabled(enabled);
-    if (!enabled) this.stopMusic(0.08);
+    if (!enabled) {
+      this.stopMusic(0.08);
+    } else {
+      this.unlock();
+      if (this.wantsMusic && (this.musicGain === null || this.musicTimer === null)) {
+        this.startMusic(this.demonTrack !== null);
+      }
+    }
   }
 
   syncPreference() {
@@ -65,6 +136,7 @@ class BotAudioEngine {
 
   startGame(demonTheme = false) {
     if (!this.enabled) return;
+    this.unlock();
     this.playEffect("button");
     this.startMusic(demonTheme);
   }
@@ -76,27 +148,47 @@ class BotAudioEngine {
       return;
     }
     this.stopDemonTrack(0.18);
-    if (!this.enabled || this.musicTimer !== null || this.isUnlockingMusic) return;
+    if (!this.enabled) return;
+
+    // Si la musique procédurale tourne déjà activement, on la préserve sans coupure
+    if (this.musicGain !== null && this.musicTimer !== null) {
+      return;
+    }
+
     const context = this.getContext();
     if (!context) return;
     if (context.state !== "running") {
       this.isUnlockingMusic = true;
       void context.resume().then(() => {
         this.isUnlockingMusic = false;
-        if (this.wantsMusic) this.startMusic(false);
+        if (this.wantsMusic && this.enabled && (this.musicGain === null || this.musicTimer === null)) {
+          this.startMusic(false);
+        }
       }).catch(() => {
         this.isUnlockingMusic = false;
       });
       return;
     }
 
+    this.isUnlockingMusic = false;
     try {
-      this.musicGain = context.createGain();
-      this.musicGain.gain.setValueAtTime(0.0001, context.currentTime);
-      this.musicGain.gain.exponentialRampToValueAtTime(0.16, context.currentTime + 0.9);
-      this.musicGain.connect(this.getMasterOutput());
+      if (this.musicTimer !== null) {
+        window.clearTimeout(this.musicTimer);
+        this.musicTimer = null;
+      }
+      if (this.musicGain !== null) {
+        try {
+          this.musicGain.disconnect();
+        } catch {}
+        this.musicGain = null;
+      }
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(0.0001, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.38, context.currentTime + 0.8);
+      gain.connect(this.getMasterOutput());
+      this.musicGain = gain;
       this.musicBar = 0;
-      this.nextMusicBarAt = context.currentTime + 0.08;
+      this.nextMusicBarAt = context.currentTime + 0.05;
       this.runMusicScheduler();
     } catch {
       this.musicGain = null;
@@ -112,6 +204,7 @@ class BotAudioEngine {
     }
     const context = this.context;
     const gain = this.musicGain;
+    this.musicGain = null;
     if (!context || !gain) return;
     try {
       const now = context.currentTime;
@@ -124,11 +217,11 @@ class BotAudioEngine {
         } catch {}
       }, Math.ceil(fadeSeconds * 1_000) + 40);
     } catch {}
-    this.musicGain = null;
   }
 
   playDemonResult(outcome: "win" | "loss") {
     if (!this.enabled) return;
+    this.unlock();
     this.wantsMusic = false;
     this.stopProceduralMusic(0.18);
     this.startDemonTrack(outcome);
@@ -136,61 +229,61 @@ class BotAudioEngine {
 
   playEffect(effect: BotSoundEffect) {
     if (!this.enabled) return;
+    this.unlock();
     const context = this.getContext();
     if (!context) return;
-    void context.resume().catch(() => {});
 
     try {
       const now = context.currentTime;
       switch (effect) {
         case "button":
-          this.materialClick(now, 0.032, 720);
+          this.materialClick(now, 0.065, 720);
           break;
         case "hold":
-          this.materialClick(now, 0.06, 860);
+          this.materialClick(now, 0.12, 860);
           break;
         case "botHold":
-          this.materialClick(now, 0.025, 620);
+          this.materialClick(now, 0.06, 620);
           break;
         case "release":
-          this.materialClick(now, 0.045, 540);
+          this.materialClick(now, 0.09, 540);
           break;
         case "score":
-          this.noise(0.12, 0.022, now, 1_300, 0.45);
-          this.materialClick(now + 0.07, 0.034, 560);
+          this.noise(0.14, 0.05, now, 1_300, 0.45);
+          this.materialClick(now + 0.07, 0.07, 560);
           break;
         case "bot":
-          this.materialClick(now, 0.038, 310);
-          this.noise(0.085, 0.025, now, 190, 0.55, null, "lowpass");
+          this.materialClick(now, 0.07, 310);
+          this.noise(0.09, 0.05, now, 190, 0.55, null, "lowpass");
           break;
         case "dice":
           // Roulement feutré doux et chaleureux
-          this.noise(0.42, 0.038, now, 380, 0.85, null, "bandpass");
-          this.noise(0.28, 0.022, now + 0.05, 580, 0.65, null, "bandpass");
+          this.noise(0.42, 0.075, now, 380, 0.85, null, "bandpass");
+          this.noise(0.28, 0.045, now + 0.05, 580, 0.65, null, "bandpass");
           // Cascade de cliquetis marbrés joyeux et physiques (collisions de dés)
           [
-            { t: 0.015, f: 1420, v: 0.075, d: 0.032 },
-            { t: 0.058, f: 1840, v: 0.085, d: 0.028 },
-            { t: 0.112, f: 1260, v: 0.070, d: 0.036 },
-            { t: 0.168, f: 2020, v: 0.080, d: 0.026 },
-            { t: 0.224, f: 1510, v: 0.065, d: 0.034 },
-            { t: 0.285, f: 1680, v: 0.055, d: 0.038 },
+            { t: 0.015, f: 1420, v: 0.14, d: 0.034 },
+            { t: 0.058, f: 1840, v: 0.16, d: 0.030 },
+            { t: 0.112, f: 1260, v: 0.13, d: 0.038 },
+            { t: 0.168, f: 2020, v: 0.15, d: 0.028 },
+            { t: 0.224, f: 1510, v: 0.12, d: 0.036 },
+            { t: 0.285, f: 1680, v: 0.11, d: 0.040 },
           ].forEach((c) => {
             this.diceClack(now + c.t, c.f, c.v, c.d);
             this.materialClick(now + c.t, c.v * 0.45, c.f * 0.7);
           });
           break;
         case "win":
-          this.noise(0.44, 0.04, now, 1_700, 0.35, null, "highpass");
-          this.noise(0.28, 0.028, now + 0.06, 430, 0.4, null, "lowpass");
+          this.noise(0.44, 0.08, now, 1_700, 0.35, null, "highpass");
+          this.noise(0.28, 0.06, now + 0.06, 430, 0.4, null, "lowpass");
           break;
         case "loss":
-          this.noise(0.34, 0.034, now, 310, 0.38, null, "lowpass");
-          this.noise(0.2, 0.018, now + 0.09, 1_100, 0.35, null, "highpass");
+          this.noise(0.34, 0.07, now, 310, 0.38, null, "lowpass");
+          this.noise(0.2, 0.04, now + 0.09, 1_100, 0.35, null, "highpass");
           break;
         case "tie":
-          this.materialClick(now, 0.042, 520);
-          this.materialClick(now + 0.15, 0.042, 520);
+          this.materialClick(now, 0.08, 520);
+          this.materialClick(now + 0.15, 0.08, 520);
           break;
       }
     } catch {
@@ -200,35 +293,35 @@ class BotAudioEngine {
 
   playBotRollSequence(rollCount: number) {
     if (!this.enabled || rollCount <= 0) return;
+    this.unlock();
     const context = this.getContext();
     if (!context) return;
-    void context.resume().catch(() => {});
 
     try {
       const count = Math.min(3, rollCount);
       const now = context.currentTime;
       const duration = 0.12 + count * 0.075;
-      this.noise(duration, 0.028, now, 420, 0.75, null, "bandpass");
+      this.noise(duration, 0.055, now, 420, 0.75, null, "bandpass");
       for (let index = 0; index < count + 1; index += 1) {
         const offset = 0.025 + index * ((duration - 0.045) / count);
         const freq = 1350 + (index % 3) * 280;
-        this.diceClack(now + offset, freq, 0.065, 0.028);
-        this.materialClick(now + offset, 0.03, freq * 0.7);
+        this.diceClack(now + offset, freq, 0.12, 0.030);
+        this.materialClick(now + offset, 0.055, freq * 0.7);
       }
     } catch {}
   }
 
   playDiceClack(freq?: number) {
     if (!this.enabled) return;
+    this.unlock();
     const context = this.getContext();
     if (!context) return;
-    void context.resume().catch(() => {});
 
     try {
       const now = context.currentTime;
       const f = freq ?? (1350 + Math.random() * 550);
-      this.diceClack(now, f, 0.085, 0.032);
-      this.materialClick(now, 0.04, f * 0.7);
+      this.diceClack(now, f, 0.15, 0.034);
+      this.materialClick(now, 0.07, f * 0.7);
     } catch {}
   }
 
@@ -335,12 +428,12 @@ class BotAudioEngine {
     if (!this.masterOutput) {
       const compressor = context.createDynamicsCompressor();
       const gain = context.createGain();
-      compressor.threshold.value = -18;
+      compressor.threshold.value = -16;
       compressor.knee.value = 12;
-      compressor.ratio.value = 3;
-      compressor.attack.value = 0.006;
-      compressor.release.value = 0.18;
-      gain.gain.value = 0.92;
+      compressor.ratio.value = 3.5;
+      compressor.attack.value = 0.005;
+      compressor.release.value = 0.16;
+      gain.gain.value = 0.95;
       compressor.connect(gain);
       gain.connect(context.destination);
       this.masterOutput = compressor;
@@ -385,7 +478,7 @@ class BotAudioEngine {
     this.noise(0.042, volume * 0.52, startAt, 260, 0.38, null, "lowpass");
   }
 
-  private diceClack(startAt: number, freq: number, volume = 0.08, decay = 0.035) {
+  private diceClack(startAt: number, freq: number, volume = 0.14, decay = 0.036) {
     const context = this.context;
     if (!context) return;
     try {
@@ -399,7 +492,7 @@ class BotAudioEngine {
 
       filter.type = "bandpass";
       filter.frequency.value = freq;
-      filter.Q.value = 3.6;
+      filter.Q.value = 3.2;
 
       gain.gain.setValueAtTime(volume, startAt);
       gain.gain.exponentialRampToValueAtTime(0.0001, startAt + decay);
@@ -524,26 +617,26 @@ class BotAudioEngine {
     const isBreak = section.phase === "break";
     const isPeak = section.phase === "peak";
     section.chord.forEach((frequency, index) => {
-      this.musicVoice(frequency, 3.72, 0.042 * intensity, barStart, output, "sawtooth", 720 + index * 110, 0.28);
+      this.musicVoice(frequency, 3.72, 0.08 * intensity, barStart, output, "sawtooth", 750 + index * 110, 0.25);
     });
 
     notes.forEach((frequency, index) => {
       const start = barStart + index * 0.24;
       if (frequency && (!isBreak || index % 4 === 0)) {
-        this.musicVoice(frequency, 0.18, (index % 4 === 0 ? 0.16 : 0.105) * intensity, start, output, "triangle", 1_850);
+        this.musicVoice(frequency, 0.20, (index % 4 === 0 ? 0.24 : 0.17) * intensity, start, output, "triangle", 1_950);
       }
       if (!isIntro && !isBreak && index % 2 === 0) {
         const arpeggioNote = section.chord[(index / 2) % section.chord.length] * 2;
-        this.musicVoice(arpeggioNote, 0.12, 0.052 * intensity, start + 0.12, output, "sine", 1_400);
+        this.musicVoice(arpeggioNote, 0.14, 0.09 * intensity, start + 0.12, output, "sine", 1_450);
       }
       if (index % (isIntro || isBreak ? 8 : 4) === 0) {
         const bass = section.chord[index === 12 ? 1 : 0];
-        this.musicVoice(bass, 0.32, 0.135 * intensity, start, output, "triangle", 520);
-        this.noise(0.055, 0.048 * intensity, start, index % 8 === 0 ? 150 : 1_650, 0.75, output);
+        this.musicVoice(bass, 0.34, 0.22 * intensity, start, output, "triangle", 540);
+        this.noise(0.06, 0.07 * intensity, start, index % 8 === 0 ? 160 : 1_650, 0.75, output);
       } else if (!isIntro && !isBreak && index % 4 === 2) {
-        this.noise(0.045, 0.03 * intensity, start, 2_400, 1, output);
+        this.noise(0.048, 0.045 * intensity, start, 2_400, 1, output);
       } else if (isPeak && (index === 3 || index === 7 || index === 11 || index === 15)) {
-        this.noise(0.025, 0.022 * intensity, start, 3_600, 1.25, output);
+        this.noise(0.03, 0.035 * intensity, start, 3_600, 1.25, output);
       }
     });
     this.musicBar += 1;

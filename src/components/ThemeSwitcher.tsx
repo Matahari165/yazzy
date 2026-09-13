@@ -8,9 +8,9 @@ export interface ThemeOption {
 }
 
 export const THEME_OPTIONS: ThemeOption[] = [
+  { id: "ceramic", label: "Céramique", dotColor: "#C85A32", fontBadge: "Bricolage" },
   { id: "craft", label: "Atelier", dotColor: "#D95338", fontBadge: "Fraunces" },
   { id: "riviera", label: "Riviera", dotColor: "#F27A6D", fontBadge: "DM Serif" },
-  { id: "ceramic", label: "Céramique", dotColor: "#C85A32", fontBadge: "Bricolage" },
   { id: "botanic", label: "Botanique", dotColor: "#4E8A5E", fontBadge: "Sauge" },
   { id: "pastel", label: "Nuage", dotColor: "#7C62D6", fontBadge: "Syne" },
 ];
@@ -43,11 +43,6 @@ export function ThemeSwitcher({ currentTheme, onSelectTheme }: ThemeSwitcherProp
                 } catch {}
               }}
             >
-              <span
-                className="theme-switcher-dot"
-                style={{ backgroundColor: theme.dotColor }}
-                aria-hidden="true"
-              />
               <span>{theme.label}</span>
             </button>
           );

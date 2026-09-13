@@ -1,20 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { normalizePlayerName, PLAYER_NAME_MAX_LENGTH } from "@/domain/playerName";
+import { readStoredPlayerName, writeStoredPlayerName } from "@/lib/playerNameStorage";
 
 export function MultiplayerNameGate({ onSave }: { onSave: (name: string) => void }) {
-  const [name, setName] = useState("");
+  const [name, setName] = useState(() => readStoredPlayerName());
   const [error, setError] = useState("");
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalizedName = normalizePlayerName(name);
     if (!normalizedName) {
-      setError("Choisis un pseudo pour rejoindre la partie.");
+      setError("Pseudo requis.");
       return;
     }
+    writeStoredPlayerName(normalizedName);
     onSave(normalizedName);
   };
 

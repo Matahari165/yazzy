@@ -27,7 +27,6 @@ export function PebbleLayout(props: LayoutProps) {
           type="button"
           onClick={props.onStartBot}
         >
-          <span className="pebble-dot" aria-hidden="true" />
           <strong>Solo</strong>
         </button>
 
