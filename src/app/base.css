@@ -1,81 +1,81 @@
 :root {
   color-scheme: light;
 
-  /* — Papier & Tampon — palette chaude artisanale — */
-  --page: #e8e0d0;
-  --surface: #faf7f0;
-  --surface-muted: #f0ebe2;
-  --ink: #1e1b18;
-  --ink-soft: #706b63;
-  --line: #d6cfc3;
-  --line-strong: #b8b0a3;
+  /* — Identité Céramique (Source de vérité Yazzy) — */
+  --page: #f3efea;               /* Grès calcaire mat */
+  --surface: #faf8f5;            /* Biscuit céramique émaillé */
+  --surface-muted: #e8dfd3;      /* Surface secondaire douce */
+  --dice-zone-surface: #ede4d8;  /* Alvéole / Coupelle : argile chamottée */
 
-  /* Tampon rouge — action primaire */
-  --coral: #d94e35;
-  --coral-deep: #b83d28;
-  --coral-ink: #c43e28;
-  --coral-soft: #faeae6;
+  --ink: #2b231e;                /* Brun moka d'encre profond */
+  --ink-soft: #6b6055;           /* Terre d'ombre douce */
+  --line: #dfd4c5;               /* Filet doux de potier */
+  --line-strong: #c4b4a0;        /* Bordure délimitée */
+  --board-border: #dfd4c5;
 
-  /* Encre verte — gardé / confirmé */
-  --green: #2d845e;
-  --green-ink: #1e6b48;
-  --green-soft: #e4f2ea;
+  /* Accents Métiers (Les 3 Terres Céramiques) */
+  --coral: #c85a32;              /* Argile cuite / Terracotta dominante */
+  --coral-deep: #aa4622;
+  --coral-ink: #aa4622;
+  --coral-soft: #faede6;
 
-  /* Divers */
-  --yellow-soft: #fff5e0;
-  --focus: #d94e35;
-  --danger: #d94e35;
-  --board-border: #c8c0b4;
+  --green: #4a8072;              /* Sauge Céladon (Dés gardés & Quiz) */
+  --green-ink: #2e594e;
+  --green-soft: #edf5f2;
+  --game-green-strong: #4a8072;
+
+  --yellow-soft: #faf5ea;
+  --focus: #c85a32;
+  --danger: #c84832;             /* Rouge brique */
 
   /* Joueur vs adversaire */
-  --player: #2968a8;
-  --player-soft: #e3eff8;
-  --opponent: #b83b2e;
-  --opponent-soft: #f8e8e6;
+  --player: #3d5a80;             /* Ardoise Céladon */
+  --player-soft: #edf2f7;
+  --opponent: #9c413d;           /* Terre de Sienne */
+  --opponent-soft: #faede6;
 
   /* Feuille de score */
-  --score-row-surface: #faf7f0;
-  --score-player-cell: #e3eff8;
-  --score-player-ink: #1e5590;
-  --score-opponent-cell: #f8e8e6;
-  --score-opponent-ink: #a03228;
-  --score-opponent-preview: #fdf0ee;
-  --score-opponent-preview-border: #d4756a;
-  --score-filled-surface: #ede9e2;
-  --score-filled-cell: #ddd8d0;
-  --score-filled-border: #b8b0a3;
-  --score-filled-ink: #8a857e;
-  --score-selected-surface: rgb(41 104 168 / 8%);
-  --game-green-strong: #1e6b48;
+  --score-row-surface: #faf8f5;
+  --score-player-cell: #edf2f7;
+  --score-player-ink: #2b4566;
+  --score-opponent-cell: #faede6;
+  --score-opponent-ink: #87332f;
+  --score-opponent-preview: #fdf5f2;
+  --score-opponent-preview-border: #d48e84;
+  --score-filled-surface: #ede5da;
+  --score-filled-cell: #e2d9cd;
+  --score-filled-border: #c4b4a0;
+  --score-filled-ink: #7a6e62;
+  --score-selected-surface: rgb(200 90 50 / 10%);
 
   /* Dés */
-  --dice-zone-surface: #ddd6c8;
-  --die-face-surface: #fffdf8;
-  --die-face-border: #c8c0b4;
-  --die-pip: #1e1b18;
+  --die-face-surface: #faf8f5;
+  --die-face-border: #d4c7b8;
+  --die-pip: #2b231e;
 
-  /* Relief & profondeur */
-  --shadow-soft: 0 1px 3px rgb(30 27 24 / 6%), 0 1px 0 rgb(30 27 24 / 4%);
-  --shadow-button: 0 3px 0 rgb(30 27 24 / 14%);
+  /* Relief & profondeur doux */
+  --shadow-soft: 0 4px 16px rgb(43 35 30 / 6%);
+  --shadow-button: 0 8px 24px rgb(200 90 50 / 24%);
 
-  /* Formes */
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
+  /* Formes organiques galets */
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
 
-  /* Mouvement */
+  /* Mouvement & Tactilité */
   --motion-fast: 120ms;
   --motion-state: 180ms;
   --motion-emphasis: 260ms;
   --motion-dice-roll: 340ms;
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
   --ease-spring: cubic-bezier(0.2, 1.4, 0.3, 1);
 
   /* Typographie */
-  --font-body: var(--yazzy-body, "Space Grotesk"), "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
-  --font-display: var(--yazzy-display, "Bricolage Grotesque"), "Avenir Next", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: var(--font-jakarta, var(--yazzy-body)), "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: var(--font-bricolage, var(--yazzy-display)), "Bricolage Grotesque", system-ui, sans-serif;
+  --yazzy-display: var(--font-bricolage);
 }
 
 * { box-sizing: border-box; }

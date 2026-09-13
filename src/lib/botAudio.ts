@@ -164,11 +164,20 @@ class BotAudioEngine {
           this.noise(0.085, 0.025, now, 190, 0.55, null, "lowpass");
           break;
         case "dice":
-          this.noise(0.38, 0.072, now, 2_100, 0.48);
-          this.noise(0.3, 0.045, now, 420, 0.65, null, "lowpass");
-          [0.035, 0.105, 0.19, 0.285].forEach((offset, index) => {
-            this.noise(0.035, 0.11 - index * 0.014, now + offset, 1_450 - index * 170, 0.45);
-            this.noise(0.042, 0.07 - index * 0.008, now + offset, 250, 0.7, null, "lowpass");
+          // Roulement feutré doux et chaleureux
+          this.noise(0.42, 0.038, now, 380, 0.85, null, "bandpass");
+          this.noise(0.28, 0.022, now + 0.05, 580, 0.65, null, "bandpass");
+          // Cascade de cliquetis marbrés joyeux et physiques (collisions de dés)
+          [
+            { t: 0.015, f: 1420, v: 0.075, d: 0.032 },
+            { t: 0.058, f: 1840, v: 0.085, d: 0.028 },
+            { t: 0.112, f: 1260, v: 0.070, d: 0.036 },
+            { t: 0.168, f: 2020, v: 0.080, d: 0.026 },
+            { t: 0.224, f: 1510, v: 0.065, d: 0.034 },
+            { t: 0.285, f: 1680, v: 0.055, d: 0.038 },
+          ].forEach((c) => {
+            this.diceClack(now + c.t, c.f, c.v, c.d);
+            this.materialClick(now + c.t, c.v * 0.45, c.f * 0.7);
           });
           break;
         case "win":
@@ -199,13 +208,27 @@ class BotAudioEngine {
       const count = Math.min(3, rollCount);
       const now = context.currentTime;
       const duration = 0.12 + count * 0.075;
-      this.noise(duration, 0.034, now, 1_350, 0.7);
-      this.noise(duration, 0.018, now, 360, 0.65, null, "lowpass");
+      this.noise(duration, 0.028, now, 420, 0.75, null, "bandpass");
       for (let index = 0; index < count + 1; index += 1) {
         const offset = 0.025 + index * ((duration - 0.045) / count);
-        this.noise(0.028, 0.043 - index * 0.005, now + offset, 1_250 - index * 120, 0.45);
-        this.noise(0.032, 0.025, now + offset, 220, 0.7, null, "lowpass");
+        const freq = 1350 + (index % 3) * 280;
+        this.diceClack(now + offset, freq, 0.065, 0.028);
+        this.materialClick(now + offset, 0.03, freq * 0.7);
       }
+    } catch {}
+  }
+
+  playDiceClack(freq?: number) {
+    if (!this.enabled) return;
+    const context = this.getContext();
+    if (!context) return;
+    void context.resume().catch(() => {});
+
+    try {
+      const now = context.currentTime;
+      const f = freq ?? (1350 + Math.random() * 550);
+      this.diceClack(now, f, 0.085, 0.032);
+      this.materialClick(now, 0.04, f * 0.7);
     } catch {}
   }
 
@@ -360,6 +383,34 @@ class BotAudioEngine {
   private materialClick(startAt: number, volume: number, frequency: number) {
     this.noise(0.026, volume, startAt, Math.max(520, frequency), 0.35, null, "highpass");
     this.noise(0.042, volume * 0.52, startAt, 260, 0.38, null, "lowpass");
+  }
+
+  private diceClack(startAt: number, freq: number, volume = 0.08, decay = 0.035) {
+    const context = this.context;
+    if (!context) return;
+    try {
+      const osc = context.createOscillator();
+      const gain = context.createGain();
+      const filter = context.createBiquadFilter();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq * 1.55, startAt);
+      osc.frequency.exponentialRampToValueAtTime(freq, startAt + decay * 0.42);
+
+      filter.type = "bandpass";
+      filter.frequency.value = freq;
+      filter.Q.value = 3.6;
+
+      gain.gain.setValueAtTime(volume, startAt);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startAt + decay);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.getMasterOutput());
+
+      osc.start(startAt);
+      osc.stop(startAt + decay + 0.015);
+    } catch {}
   }
 
   private noise(

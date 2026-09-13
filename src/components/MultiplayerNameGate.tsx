@@ -20,10 +20,9 @@ export function MultiplayerNameGate({ onSave }: { onSave: (name: string) => void
 
   return (
     <main id="main-content" className="multiplayer-state-card name-gate-card">
-      <p className="eyebrow">PARTIE PRIVÉE</p>
-      <h1>Comment veux-tu apparaître ?</h1>
+      <h1>Pseudo</h1>
       <form className="name-gate-form" onSubmit={handleSubmit} noValidate>
-        <label htmlFor="multiplayer-player-name">Ton pseudo</label>
+        <label htmlFor="multiplayer-player-name" className="sr-only">Pseudo</label>
         <input
           id="multiplayer-player-name"
           name="player-name"
@@ -33,16 +32,16 @@ export function MultiplayerNameGate({ onSave }: { onSave: (name: string) => void
             setName(event.currentTarget.value.slice(0, PLAYER_NAME_MAX_LENGTH));
             setError("");
           }}
-          placeholder="Ex. Alex"
+          placeholder="Alex"
           autoComplete="nickname"
           maxLength={PLAYER_NAME_MAX_LENGTH}
           aria-describedby={error ? "multiplayer-player-name-error" : undefined}
           aria-invalid={error ? true : undefined}
         />
         {error ? <p id="multiplayer-player-name-error" className="form-error" role="alert">{error}</p> : null}
-        <button className="primary-action" type="submit">Rejoindre la partie</button>
+        <button className="primary-action" type="submit">Rejoindre</button>
       </form>
-      <Link className="quit-link" href="/">Retour à l’accueil</Link>
+      <Link className="secondary-action" href="/">Accueil</Link>
     </main>
   );
 }

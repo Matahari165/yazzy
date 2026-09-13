@@ -1,7 +1,6 @@
 # Système de Design Yazzy — Identité « Céramique »
 
 > **Source de vérité unique et absolue** pour toute l'interface utilisateur de Yazzy (Web, Mobile iPhone `390 × 844`, Mac `1440 × 900`).  
-> Voir également le fichier racine [`design.md`](file:///Users/jeremydelloume/Downloads/Yazzy/design.md).
 > Toute nouvelle page, composant, modale ou widget créé dans l'application doit respecter **strictement et intégralement** les spécifications de ce document.
 
 ---

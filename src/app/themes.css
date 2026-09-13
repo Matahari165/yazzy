@@ -1,0 +1,1741 @@
+/* ==========================================================================
+   YAZZY — 5 IDENTITÉS CLAIRES, DOUCES ET ORGANIQUES (AUDIT IMPECCABLE)
+   1. craft    : Atelier Riso (Papeterie d'art, estampe, Fraunces + Space Grotesk)
+   2. riviera  : Café Riviera (Villégiature 1960, galets doux, DM Serif + Outfit)
+   3. ceramic  : Studio Céramique (Grès & argile cuite, Bricolage + Plus Jakarta Sans)
+   4. botanic  : Jardin Botanique (Lin frais & sauge vivifiante, Fraunces + Outfit)
+   5. pastel   : Nuage Pastel (Pop marshmallow doux, Syne + Plus Jakarta Sans)
+   ========================================================================== */
+
+/* ==========================================================================
+   SÉLECTEUR D'IDENTITÉ FLOTTANT (.theme-switcher-*)
+   Capsule tactile iPhone, verre dépoli clair, cibles >= 44px, safe-areas.
+   ========================================================================== */
+
+.theme-switcher-wrapper {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top, 8px));
+  left: 0;
+  right: 0;
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 max(8px, env(safe-area-inset-left, 8px)) 0 max(8px, env(safe-area-inset-right, 8px));
+  pointer-events: none;
+}
+
+.lobby-shell:has(.theme-switcher-wrapper) .lobby-hero {
+  padding-top: clamp(44px, 6vh, 56px);
+}
+
+.theme-switcher-bar {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 5px;
+  background: rgb(255 255 255 / 88%);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgb(0 0 0 / 8%);
+  border-radius: 9999px;
+  box-shadow: 0 4px 20px rgb(0 0 0 / 7%), 0 1px 3px rgb(0 0 0 / 4%);
+  max-width: calc(100vw - 16px);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+}
+.theme-switcher-bar::-webkit-scrollbar { display: none; }
+
+.theme-switcher-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  min-height: 44px;
+  min-width: 44px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  color: #525866;
+  background: transparent;
+  border: 0;
+  border-radius: 9999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  scroll-snap-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.18s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.theme-switcher-btn:hover:not([data-active="true"]) {
+  color: #1a1d24;
+  background: rgb(0 0 0 / 5%);
+}
+
+.theme-switcher-btn:active {
+  transform: scale(0.96);
+}
+
+.theme-switcher-btn[data-active="true"] {
+  color: #ffffff;
+  background: #1e2229;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 18%);
+  font-weight: 800;
+}
+
+.theme-switcher-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 10%);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.theme-switcher-btn[data-active="true"] .theme-switcher-dot {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 1.5px #ffffff;
+}
+
+/* ==========================================================================
+   RÈGLES COMMUNES DE SIMPLIFICATION (DISTILL IMPECCABLE)
+   - Boutons de modes simplifiés : icône + label épuré
+   - Suppression du bruit visuel
+   ========================================================================== */
+
+.game-mode-action {
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
+  gap: 8px !important;
+  min-height: 120px !important;
+  padding: 16px 14px !important;
+}
+
+.game-mode-action strong {
+  font-size: 20px !important;
+  letter-spacing: -0.02em;
+}
+
+.game-mode-action-quiz {
+  flex-direction: row !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  min-height: 84px !important;
+  padding: 14px 20px !important;
+}
+
+.demon-theme-toggle {
+  justify-content: center !important;
+  min-height: 52px !important;
+}
+
+/* ==========================================================================
+   1. ATELIER RISO (data-theme="craft")
+   Papeterie d'artisan, papier vergé cuve, Fraunces + Space Grotesk.
+   Fond #F6F1EA, encre #231F1C, vermillon #D95338, vert sauge #3F7A63.
+   ========================================================================== */
+
+[data-theme="craft"],
+html[data-theme="craft"] {
+  color-scheme: light;
+
+  --font-display: var(--font-fraunces), "Fraunces", Georgia, serif;
+  --font-body: var(--yazzy-body), "Space Grotesk", sans-serif;
+
+  --page: #f6f1ea;
+  --surface: #fffdf9;
+  --surface-muted: #ece5dc;
+  --ink: #231f1c;
+  --ink-soft: #68625b;
+  --line: #ded7cb;
+  --line-strong: #c4bbb0;
+  --board-border: #ded7cb;
+
+  --coral: #d95338;
+  --coral-deep: #b83f27;
+  --coral-ink: #ba361e;
+  --coral-soft: #faede9;
+
+  --green: #3f7a63;
+  --green-ink: #295544;
+  --green-soft: #e7efea;
+  --game-green-strong: #3f7a63;
+
+  --yellow-soft: #fcf5e5;
+  --focus: #d95338;
+  --danger: #d95338;
+
+  --player: #2b5d88;
+  --player-soft: #e8f0f6;
+  --opponent: #b83f27;
+  --opponent-soft: #faede9;
+
+  --dice-zone-surface: #eae3d7;
+  --die-face-surface: #fffdf9;
+  --die-face-border: #dcd3c4;
+  --die-pip: #231f1c;
+
+  --radius-sm: 10px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+
+  --shadow-soft: 0 4px 16px rgb(35 31 28 / 6%);
+  --shadow-button: 0 4px 12px rgb(217 83 56 / 22%);
+}
+
+[data-theme="craft"] {
+  background-color: #f6f1ea;
+  color: #231f1c;
+}
+
+[data-theme="craft"] h1,
+[data-theme="craft"] h2,
+[data-theme="craft"] h3,
+[data-theme="craft"] .hero-title,
+[data-theme="craft"] .game-mode-action strong {
+  font-family: var(--font-fraunces), "Fraunces", Georgia, serif;
+}
+
+[data-theme="craft"] .hero-title > span:nth-child(even) {
+  color: #d95338;
+}
+
+[data-theme="craft"] .hero-die-face {
+  background: #fffdf9;
+  border: 1.5px solid #dcd3c4;
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 #ffffff, 0 3px 8px rgb(35 31 28 / 8%);
+}
+
+[data-theme="craft"] .hero-die-face .pip {
+  background: #d95338;
+}
+
+[data-theme="craft"] .game-mode-action {
+  background-color: #fffdf9;
+  border: 1.5px solid #ded7cb;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgb(35 31 28 / 6%);
+  color: #231f1c;
+  transform: none !important;
+}
+
+[data-theme="craft"] .game-mode-action-primary {
+  color: #ffffff;
+  background-color: #d95338;
+  border-color: #b83f27;
+  box-shadow: 0 6px 18px rgb(217 83 56 / 26%);
+}
+
+[data-theme="craft"] .game-mode-action-primary:hover {
+  background-color: #e25e44;
+  transform: translateY(-2px) !important;
+}
+
+[data-theme="craft"] .game-mode-action-primary strong {
+  color: #ffffff;
+}
+
+[data-theme="craft"] .game-mode-action-duo {
+  background-color: #eef4f8;
+  border-color: #2b5d88;
+}
+
+[data-theme="craft"] .game-mode-action-duo strong {
+  color: #2b5d88;
+}
+
+[data-theme="craft"] .game-mode-action-quiz {
+  background-color: #edf5f1;
+  border-color: #3f7a63;
+}
+
+[data-theme="craft"] .game-mode-action-quiz .mode-quiz-icon {
+  background: #3f7a63;
+  color: #ffffff;
+  border-radius: 12px;
+}
+
+[data-theme="craft"] .game-mode-action-quiz strong {
+  color: #295544;
+}
+
+[data-theme="craft"] .demon-theme-toggle {
+  background: #fffdf9;
+  border: 1.5px solid #ded7cb;
+  border-radius: 18px;
+  box-shadow: 0 3px 10px rgb(35 31 28 / 5%);
+}
+
+/* ==========================================================================
+   2. CAFÉ RIVIERA (data-theme="riviera")
+   Villégiature 1960, galets doux polis, DM Serif Display + Outfit.
+   Fond #FAF5EC, encre #142C47, corail #F27A6D, turquoise #2FA598.
+   ========================================================================== */
+
+[data-theme="riviera"],
+html[data-theme="riviera"] {
+  color-scheme: light;
+
+  --font-display: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
+  --font-body: var(--font-outfit), "Outfit", sans-serif;
+
+  --page: #faf5ec;
+  --surface: #ffffff;
+  --surface-muted: #f2ece2;
+  --ink: #142c47;
+  --ink-soft: #4f6782;
+  --line: #eadbce;
+  --line-strong: #d5c3b2;
+  --board-border: #eadbce;
+
+  --coral: #f27a6d;
+  --coral-deep: #db5f51;
+  --coral-ink: #c94b3d;
+  --coral-soft: #fdeee9;
+
+  --green: #2fa598;
+  --green-ink: #1c7a70;
+  --green-soft: #e5f6f4;
+  --game-green-strong: #2fa598;
+
+  --yellow-soft: #fff9ee;
+  --focus: #2fa598;
+  --danger: #db5f51;
+
+  --player: #142c47;
+  --player-soft: #e7eff6;
+  --opponent: #f27a6d;
+  --opponent-soft: #fdeee9;
+
+  --dice-zone-surface: #f1e9dd;
+  --die-face-surface: #ffffff;
+  --die-face-border: #dfd3c4;
+  --die-pip: #142c47;
+
+  --radius-sm: 14px;
+  --radius-md: 22px;
+  --radius-lg: 30px;
+
+  --shadow-soft: 0 6px 22px rgb(160 135 100 / 10%);
+  --shadow-button: 0 8px 24px rgb(242 122 109 / 30%);
+}
+
+[data-theme="riviera"] {
+  background-color: #faf5ec;
+  color: #142c47;
+}
+
+[data-theme="riviera"] h1,
+[data-theme="riviera"] h2,
+[data-theme="riviera"] h3,
+[data-theme="riviera"] .hero-title,
+[data-theme="riviera"] .game-mode-action strong {
+  font-family: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
+}
+
+[data-theme="riviera"] .hero-title > span:nth-child(even) {
+  color: #f27a6d;
+}
+
+[data-theme="riviera"] .hero-die-face {
+  background: #ffffff;
+  border: 1.5px solid #dfd3c4;
+  border-radius: 18px;
+  box-shadow: 0 4px 12px rgb(160 135 100 / 12%);
+}
+
+[data-theme="riviera"] .hero-die-face .pip {
+  background: #142c47;
+}
+
+[data-theme="riviera"] .game-mode-action {
+  background-color: #ffffff;
+  border: 1.5px solid #eadbce;
+  border-radius: 26px;
+  box-shadow: 0 8px 24px rgb(160 135 100 / 10%);
+  color: #142c47;
+  transform: none !important;
+}
+
+[data-theme="riviera"] .game-mode-action-primary {
+  color: #ffffff;
+  background-color: #f27a6d;
+  border-color: #db5f51;
+  box-shadow: 0 8px 26px rgb(242 122 109 / 34%);
+}
+
+[data-theme="riviera"] .game-mode-action-primary strong {
+  color: #ffffff;
+}
+
+[data-theme="riviera"] .game-mode-action-duo {
+  background-color: #ffffff;
+  border-color: #142c47;
+}
+
+[data-theme="riviera"] .game-mode-action-duo strong {
+  color: #142c47;
+}
+
+[data-theme="riviera"] .game-mode-action-quiz {
+  background-color: #ffffff;
+  border-color: #2fa598;
+  border-radius: 9999px !important;
+}
+
+[data-theme="riviera"] .game-mode-action-quiz .mode-quiz-icon {
+  background: #2fa598;
+  color: #ffffff;
+  border-radius: 16px;
+}
+
+[data-theme="riviera"] .game-mode-action-quiz strong {
+  color: #1c7a70;
+}
+
+[data-theme="riviera"] .demon-theme-toggle {
+  background: #ffffff;
+  border: 1.5px solid #eadbce;
+  border-radius: 24px;
+  box-shadow: 0 4px 14px rgb(160 135 100 / 8%);
+}
+
+/* ==========================================================================
+   3. STUDIO CÉRAMIQUE (data-theme="ceramic")
+   Grès calcaire, terre cuite mate, Bricolage Grotesque + Plus Jakarta Sans.
+   Fond #F3EFEA, encre #2B231E, argile cuite #C85A32, céladon #4A8072.
+   ========================================================================== */
+
+[data-theme="ceramic"],
+html[data-theme="ceramic"] {
+  color-scheme: light;
+
+  --font-display: var(--yazzy-display), "Bricolage Grotesque", sans-serif;
+  --font-body: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
+
+  --page: #f3efea;
+  --surface: #faf8f5;
+  --surface-muted: #e8dfd3;
+  --ink: #2b231e;
+  --ink-soft: #70665f;
+  --line: #e0d6cb;
+  --line-strong: #c8bcaf;
+  --board-border: #e0d6cb;
+
+  --coral: #c85a32;
+  --coral-deep: #a84724;
+  --coral-ink: #9a3c19;
+  --coral-soft: #faeee8;
+
+  --green: #4a8072;
+  --green-ink: #325e53;
+  --green-soft: #eaf3f0;
+  --game-green-strong: #4a8072;
+
+  --yellow-soft: #fcf4e8;
+  --focus: #c85a32;
+  --danger: #a84724;
+
+  --player: #3d5a80;
+  --player-soft: #ebf1f6;
+  --opponent: #a84724;
+  --opponent-soft: #faeee8;
+
+  --dice-zone-surface: #e6ded3;
+  --die-face-surface: #faf8f5;
+  --die-face-border: #d8cec0;
+  --die-pip: #2b231e;
+
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 26px;
+
+  --shadow-soft: 0 6px 20px rgb(43 35 30 / 7%);
+  --shadow-button: 0 6px 18px rgb(200 90 50 / 24%);
+}
+
+[data-theme="ceramic"] {
+  background-color: #f3efea;
+  color: #2b231e;
+}
+
+[data-theme="ceramic"] h1,
+[data-theme="ceramic"] h2,
+[data-theme="ceramic"] h3,
+[data-theme="ceramic"] .hero-title,
+[data-theme="ceramic"] .game-mode-action strong {
+  font-family: var(--yazzy-display), "Bricolage Grotesque", sans-serif;
+  letter-spacing: -0.03em;
+}
+
+[data-theme="ceramic"] .hero-title > span:nth-child(even) {
+  color: #c85a32;
+}
+
+[data-theme="ceramic"] .hero-die-face {
+  background: #faf8f5;
+  border: 1.5px solid #d8cec0;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgb(43 35 30 / 8%);
+}
+
+[data-theme="ceramic"] .hero-die-face .pip {
+  background: #c85a32;
+}
+
+[data-theme="ceramic"] .game-mode-action {
+  background-color: #faf8f5;
+  border: 1.5px solid #e0d6cb;
+  border-radius: 22px;
+  box-shadow: 0 6px 18px rgb(43 35 30 / 6%);
+  color: #2b231e;
+  transform: none !important;
+}
+
+[data-theme="ceramic"] .game-mode-action-primary {
+  color: #ffffff;
+  background-color: #c85a32;
+  border-color: #a84724;
+  box-shadow: 0 8px 24px rgb(200 90 50 / 28%);
+}
+
+[data-theme="ceramic"] .game-mode-action-primary strong {
+  color: #ffffff;
+}
+
+[data-theme="ceramic"] .game-mode-action-duo {
+  background-color: #edf2f7;
+  border-color: #3d5a80;
+}
+
+[data-theme="ceramic"] .game-mode-action-duo strong {
+  color: #3d5a80;
+}
+
+[data-theme="ceramic"] .game-mode-action-quiz {
+  background-color: #edf5f2;
+  border-color: #4a8072;
+}
+
+[data-theme="ceramic"] .game-mode-action-quiz .mode-quiz-icon {
+  background: #4a8072;
+  color: #ffffff;
+  border-radius: 14px;
+}
+
+[data-theme="ceramic"] .game-mode-action-quiz strong {
+  color: #325e53;
+}
+
+[data-theme="ceramic"] .demon-theme-toggle {
+  background: #faf8f5;
+  border: 1.5px solid #e0d6cb;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgb(43 35 30 / 5%);
+}
+
+/* ==========================================================================
+   4. JARDIN BOTANIQUE (data-theme="botanic")
+   Lin frais, vert forêt & sauge, Fraunces + Outfit.
+   Fond #F7F8F4, encre #1E3F20, sauge #4E8A5E, miel #E2952E.
+   ========================================================================== */
+
+[data-theme="botanic"],
+html[data-theme="botanic"] {
+  color-scheme: light;
+
+  --font-display: var(--font-fraunces), "Fraunces", Georgia, serif;
+  --font-body: var(--font-outfit), "Outfit", sans-serif;
+
+  --page: #f7f8f4;
+  --surface: #ffffff;
+  --surface-muted: #ebf0e6;
+  --ink: #1e3f20;
+  --ink-soft: #526e54;
+  --line: #dce5d8;
+  --line-strong: #c2d1bd;
+  --board-border: #dce5d8;
+
+  --coral: #4e8a5e;
+  --coral-deep: #3b6f4a;
+  --coral-ink: #2b5637;
+  --coral-soft: #edf5ef;
+
+  --green: #4e8a5e;
+  --green-ink: #2b5637;
+  --green-soft: #edf5ef;
+  --game-green-strong: #4e8a5e;
+
+  --yellow-soft: #fbf5e6;
+  --focus: #4e8a5e;
+  --danger: #d45952;
+
+  --player: #1e3f20;
+  --player-soft: #eaf2eb;
+  --opponent: #d45952;
+  --opponent-soft: #fbedeb;
+
+  --dice-zone-surface: #e9f0e6;
+  --die-face-surface: #ffffff;
+  --die-face-border: #d2ded0;
+  --die-pip: #1e3f20;
+
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 26px;
+
+  --shadow-soft: 0 6px 20px rgb(30 63 32 / 6%);
+  --shadow-button: 0 6px 18px rgb(78 138 94 / 24%);
+}
+
+[data-theme="botanic"] {
+  background-color: #f7f8f4;
+  color: #1e3f20;
+}
+
+[data-theme="botanic"] h1,
+[data-theme="botanic"] h2,
+[data-theme="botanic"] h3,
+[data-theme="botanic"] .hero-title,
+[data-theme="botanic"] .game-mode-action strong {
+  font-family: var(--font-fraunces), "Fraunces", Georgia, serif;
+}
+
+[data-theme="botanic"] .hero-title > span:nth-child(even) {
+  color: #4e8a5e;
+}
+
+[data-theme="botanic"] .hero-die-face {
+  background: #ffffff;
+  border: 1.5px solid #d2ded0;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgb(30 63 32 / 7%);
+}
+
+[data-theme="botanic"] .hero-die-face .pip {
+  background: #1e3f20;
+}
+
+[data-theme="botanic"] .game-mode-action {
+  background-color: #ffffff;
+  border: 1.5px solid #dce5d8;
+  border-radius: 22px;
+  box-shadow: 0 6px 18px rgb(30 63 32 / 6%);
+  color: #1e3f20;
+  transform: none !important;
+}
+
+[data-theme="botanic"] .game-mode-action-primary {
+  color: #ffffff;
+  background-color: #4e8a5e;
+  border-color: #3b6f4a;
+  box-shadow: 0 8px 24px rgb(78 138 94 / 28%);
+}
+
+[data-theme="botanic"] .game-mode-action-primary strong {
+  color: #ffffff;
+}
+
+[data-theme="botanic"] .game-mode-action-duo {
+  background-color: #ffffff;
+  border-color: #1e3f20;
+}
+
+[data-theme="botanic"] .game-mode-action-duo strong {
+  color: #1e3f20;
+}
+
+[data-theme="botanic"] .game-mode-action-quiz {
+  background-color: #ffffff;
+  border-color: #e2952e;
+}
+
+[data-theme="botanic"] .game-mode-action-quiz .mode-quiz-icon {
+  background: #e2952e;
+  color: #ffffff;
+  border-radius: 14px;
+}
+
+[data-theme="botanic"] .game-mode-action-quiz strong {
+  color: #a06312;
+}
+
+[data-theme="botanic"] .demon-theme-toggle {
+  background: #ffffff;
+  border: 1.5px solid #dce5d8;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgb(30 63 32 / 5%);
+}
+
+/* ==========================================================================
+   5. NUAGE PASTEL (data-theme="pastel")
+   Pop marshmallow doux, formes coussin, Syne + Plus Jakarta Sans.
+   Fond #FDFBF7, encre #242238, lilas #7C62D6, pêche #EE6378, dragée #3A80D2.
+   ========================================================================== */
+
+[data-theme="pastel"],
+html[data-theme="pastel"] {
+  color-scheme: light;
+
+  --font-display: var(--font-syne), "Syne", sans-serif;
+  --font-body: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
+
+  --page: #fdfbf7;
+  --surface: #ffffff;
+  --surface-muted: #f2eefb;
+  --ink: #242238;
+  --ink-soft: #6b6888;
+  --line: #ece7f8;
+  --line-strong: #d5cceb;
+  --board-border: #ece7f8;
+
+  --coral: #7c62d6;
+  --coral-deep: #6449bd;
+  --coral-ink: #553bb0;
+  --coral-soft: #f1edfb;
+
+  --green: #3a80d2;
+  --green-ink: #235fa7;
+  --green-soft: #eaf2fb;
+  --game-green-strong: #3a80d2;
+
+  --yellow-soft: #fef7e6;
+  --focus: #7c62d6;
+  --danger: #ee6378;
+
+  --player: #7c62d6;
+  --player-soft: #f1edfb;
+  --opponent: #ee6378;
+  --opponent-soft: #fdeef0;
+
+  --dice-zone-surface: #f3eefb;
+  --die-face-surface: #ffffff;
+  --die-face-border: #e2dbf5;
+  --die-pip: #242238;
+
+  --radius-sm: 14px;
+  --radius-md: 22px;
+  --radius-lg: 28px;
+
+  --shadow-soft: 0 8px 24px rgb(124 98 214 / 8%);
+  --shadow-button: 0 8px 24px rgb(124 98 214 / 28%);
+}
+
+[data-theme="pastel"] {
+  background-color: #fdfbf7;
+  color: #242238;
+}
+
+[data-theme="pastel"] h1,
+[data-theme="pastel"] h2,
+[data-theme="pastel"] h3,
+[data-theme="pastel"] .hero-title,
+[data-theme="pastel"] .game-mode-action strong {
+  font-family: var(--font-syne), "Syne", sans-serif;
+  letter-spacing: -0.02em;
+}
+
+[data-theme="pastel"] .hero-title > span:nth-child(even) {
+  color: #7c62d6;
+}
+
+[data-theme="pastel"] .hero-die-face {
+  background: #ffffff;
+  border: 1.5px solid #e2dbf5;
+  border-radius: 18px;
+  box-shadow: 0 4px 14px rgb(124 98 214 / 12%);
+}
+
+[data-theme="pastel"] .hero-die-face .pip {
+  background: #7c62d6;
+}
+
+[data-theme="pastel"] .game-mode-action {
+  background-color: #ffffff;
+  border: 1.5px solid #ece7f8;
+  border-radius: 26px;
+  box-shadow: 0 8px 24px rgb(124 98 214 / 8%);
+  color: #242238;
+  transform: none !important;
+}
+
+[data-theme="pastel"] .game-mode-action-primary {
+  color: #ffffff;
+  background-color: #7c62d6;
+  border-color: #6449bd;
+  box-shadow: 0 8px 26px rgb(124 98 214 / 32%);
+}
+
+[data-theme="pastel"] .game-mode-action-primary strong {
+  color: #ffffff;
+}
+
+[data-theme="pastel"] .game-mode-action-duo {
+  background-color: #f7f4fd;
+  border-color: #7c62d6;
+}
+
+[data-theme="pastel"] .game-mode-action-duo strong {
+  color: #7c62d6;
+}
+
+[data-theme="pastel"] .game-mode-action-quiz {
+  background-color: #fef4f6;
+  border-color: #ee6378;
+}
+
+[data-theme="pastel"] .game-mode-action-quiz .mode-quiz-icon {
+  background: #ee6378;
+  color: #ffffff;
+  border-radius: 16px;
+}
+
+[data-theme="pastel"] .game-mode-action-quiz strong {
+  color: #c93b51;
+}
+
+[data-theme="pastel"] .demon-theme-toggle {
+  background: #ffffff;
+  border: 1.5px solid #ece7f8;
+  border-radius: 22px;
+  box-shadow: 0 4px 14px rgb(124 98 214 / 6%);
+}
+
+/* ==========================================================================
+   ADAPTATIONS MOBILE IPHONE (390 × 844) & SAFARI
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  .lobby-shell {
+    padding-top: max(52px, calc(env(safe-area-inset-top) + 12px));
+    padding-bottom: max(32px, calc(env(safe-area-inset-bottom) + 16px));
+  }
+
+  .game-mode-grid {
+    gap: 12px;
+  }
+
+  .game-mode-action {
+    min-height: 112px !important;
+    border-radius: 20px !important;
+  }
+
+  .hero-dice {
+    gap: 8px;
+  }
+
+  .hero-die-face {
+    width: 46px;
+    height: 46px;
+  }
+}
+
+/* ==========================================================================
+   5 ARCHITECTURES & IDENTITÉS VISUELLES UNIQUES (LIGHT MODE ONLY)
+   ========================================================================== */
+
+/* Structure commune des conteneurs de layout */
+.layout-arena,
+.layout-editorial,
+.layout-pebble,
+.layout-pocket,
+.layout-cloud {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 0 16px 32px 16px;
+  position: relative;
+  z-index: 2;
+}
+
+/* --------------------------------------------------------------------------
+   1. ATELIER RISO — L'Arène Feutrée (data-theme="craft")
+   -------------------------------------------------------------------------- */
+.layout-arena {
+  align-items: center;
+  padding-top: max(64px, calc(env(safe-area-inset-top) + 20px));
+}
+
+.arena-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.arena-brand {
+  font-family: var(--font-fraunces), "Fraunces", Georgia, serif;
+  font-size: 44px;
+  font-weight: 800;
+  color: #231f1c;
+  letter-spacing: -0.03em;
+  margin: 0;
+  line-height: 1;
+}
+
+/* Arène centrale ovale feutrée */
+.arena-tray {
+  width: 100%;
+  background: #ede6dc;
+  border: 2px solid #dcd3c4;
+  border-radius: 40px;
+  padding: 20px 14px;
+  box-shadow: inset 0 3px 10px rgb(35 31 28 / 6%), 0 6px 20px rgb(35 31 28 / 4%);
+  /* Vraie marge aérée demandée par l'utilisateur */
+  margin-bottom: 38px;
+}
+
+.arena-felt {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.arena-dice-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.arena-die {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.15s ease;
+}
+
+.arena-die:active {
+  transform: scale(0.92) rotate(-2deg);
+}
+
+.arena-die-face {
+  width: 50px;
+  height: 50px;
+  background: #fffdfa;
+  border: 1.5px solid #dcd3c4;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgb(35 31 28 / 10%);
+}
+
+.arena-die-face .pip {
+  background: #231f1c;
+}
+
+/* Actions Atelier : Palet Solo dominant + Dock Duo/Quiz */
+.arena-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.arena-palet-solo {
+  width: 100%;
+  min-height: 68px;
+  border-radius: 26px;
+  background: #d95338;
+  color: #ffffff;
+  font-family: var(--yazzy-body), "Space Grotesk", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgb(217 83 56 / 28%);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s ease;
+}
+
+.arena-palet-solo:active {
+  transform: scale(0.97);
+  box-shadow: 0 3px 10px rgb(217 83 56 / 20%);
+}
+
+.arena-palet-pip {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: inline-block;
+}
+
+.arena-dock {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.arena-dock-btn {
+  min-height: 54px;
+  border-radius: 20px;
+  background: #fffdf9;
+  border: 1.5px solid #ded7cb;
+  color: #231f1c;
+  font-family: var(--yazzy-body), "Space Grotesk", sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: 0 4px 12px rgb(35 31 28 / 5%);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.arena-dock-btn:active {
+  transform: scale(0.96);
+  background: #ece5dc;
+}
+
+.arena-footer {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.arena-boss-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  background: #fffdf9;
+  border: 1.5px solid #ded7cb;
+  font-size: 13px;
+  font-weight: 700;
+  color: #231f1c;
+  box-shadow: 0 3px 10px rgb(35 31 28 / 5%);
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   2. CAFÉ RIVIERA — L'Éditorial Resort 1960 (data-theme="riviera")
+   -------------------------------------------------------------------------- */
+.layout-editorial {
+  padding-top: max(64px, calc(env(safe-area-inset-top) + 20px));
+}
+
+.editorial-header {
+  border-bottom: 2px solid #16324f;
+  padding-bottom: 6px;
+  margin-bottom: 22px;
+}
+
+.editorial-title {
+  font-family: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
+  font-size: 46px;
+  font-style: italic;
+  font-weight: 400;
+  color: #16324f;
+  letter-spacing: -0.03em;
+  margin: 0;
+  line-height: 1;
+}
+
+.editorial-table {
+  width: 100%;
+  /* Vraie marge aérée */
+  margin-bottom: 38px;
+}
+
+.editorial-dice-strip {
+  background: #ffffff;
+  border: 1.5px solid #d4cbb8;
+  border-radius: 28px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 16px rgb(22 50 79 / 6%);
+}
+
+.editorial-dice {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.editorial-die {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.editorial-die:active {
+  transform: scale(0.92);
+}
+
+.editorial-die-face {
+  width: 48px;
+  height: 48px;
+  background: #ffffff;
+  border: 1.5px solid #d4cbb8;
+  border-radius: 20px;
+  box-shadow: 0 3px 8px rgb(22 50 79 / 8%);
+}
+
+.editorial-die-face .pip {
+  background: #16324f;
+}
+
+.editorial-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.editorial-pill {
+  width: 100%;
+  min-height: 58px;
+  border-radius: 9999px;
+  border: 1.5px solid #16324f;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  font-family: var(--font-outfit), "Outfit", sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: 0 4px 12px rgb(22 50 79 / 5%);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.editorial-pill:active {
+  transform: scale(0.98);
+}
+
+.editorial-num {
+  font-size: 14px;
+  font-weight: 800;
+  color: #2a9d8f;
+  letter-spacing: 0.06em;
+}
+
+.editorial-pill strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: #16324f;
+}
+
+.editorial-arrow {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f07167;
+}
+
+.editorial-pill-solo {
+  background: #16324f;
+  border-color: #16324f;
+  box-shadow: 0 6px 18px rgb(22 50 79 / 24%);
+}
+
+.editorial-pill-solo strong {
+  color: #ffffff;
+}
+
+.editorial-pill-solo .editorial-num {
+  color: #a8d5e5;
+}
+
+.editorial-pill-solo .editorial-arrow {
+  color: #f07167;
+}
+
+.editorial-footer {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.editorial-boss-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid #d4cbb8;
+  font-size: 13px;
+  font-weight: 700;
+  color: #16324f;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   3. STUDIO CÉRAMIQUE — Galets Asymétriques (data-theme="ceramic")
+   -------------------------------------------------------------------------- */
+.layout-pebble {
+  align-items: center;
+  padding-top: max(64px, calc(env(safe-area-inset-top) + 20px));
+}
+
+.pebble-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.pebble-title {
+  font-family: var(--font-bricolage), "Bricolage Grotesque", sans-serif;
+  font-size: 46px;
+  font-weight: 800;
+  color: #2b231e;
+  letter-spacing: -0.04em;
+  margin: 0;
+  line-height: 1;
+}
+
+.pebble-tray {
+  width: 100%;
+  background: #ede4d8;
+  border: 2px solid #dfd4c5;
+  border-radius: 36px 36px 26px 26px;
+  padding: 20px 14px;
+  box-shadow: inset 0 3px 10px rgb(43 35 30 / 6%);
+  /* Vraie marge aérée */
+  margin-bottom: 40px;
+}
+
+.pebble-dice-cluster {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.pebble-die {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pebble-die:active {
+  transform: scale(0.92);
+}
+
+.pebble-die-face {
+  width: 48px;
+  height: 48px;
+  background: #faf8f5;
+  border: 2px solid #d4c7b8;
+  border-radius: 20px;
+  box-shadow: 0 4px 10px rgb(43 35 30 / 10%);
+}
+
+.pebble-die-face .pip {
+  background: #2b231e;
+}
+
+.pebble-cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.pebble-shape {
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  transition: transform 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.pebble-shape:active {
+  transform: scale(0.96);
+}
+
+.pebble-solo {
+  width: 100%;
+  min-height: 80px;
+  border-radius: 36px 22px 36px 24px;
+  background: #c85a32;
+  color: #ffffff;
+  font-size: 22px;
+  gap: 10px;
+  box-shadow: 0 10px 26px rgb(200 90 50 / 28%);
+}
+
+.pebble-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: inline-block;
+}
+
+.pebble-duo {
+  width: 88%;
+  align-self: flex-start;
+  min-height: 62px;
+  border-radius: 22px 34px 22px 34px;
+  background: #3d5a80;
+  color: #ffffff;
+  font-size: 18px;
+  box-shadow: 0 8px 20px rgb(61 90 128 / 24%);
+}
+
+.pebble-quiz {
+  width: 90%;
+  align-self: flex-end;
+  min-height: 58px;
+  border-radius: 30px 20px 32px 20px;
+  background: #4a8072;
+  color: #ffffff;
+  font-size: 18px;
+  box-shadow: 0 8px 20px rgb(74 128 114 / 24%);
+}
+
+.pebble-footer {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.pebble-boss-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: #faf8f5;
+  border: 1.5px solid #e0d6cb;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2b231e;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   4. CONSOLE BOTANIQUE — Pupitre de Poche Tout-en-un (data-theme="botanic")
+   -------------------------------------------------------------------------- */
+.layout-pocket {
+  padding-top: max(56px, calc(env(safe-area-inset-top) + 12px));
+}
+
+.pocket-console {
+  background: #ffffff;
+  border: 2px solid #1e3f20;
+  border-radius: 34px;
+  padding: 20px 16px;
+  box-shadow: 0 12px 36px rgb(30 63 32 / 12%);
+}
+
+.pocket-screen {
+  /* Vraie marge aérée */
+  margin-bottom: 34px;
+}
+
+.pocket-screen-glass {
+  background: #ebf0e6;
+  border: 1.5px solid #c2d1bd;
+  border-radius: 24px;
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.pocket-brand {
+  font-family: var(--font-outfit), "Outfit", sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #1e3f20;
+  margin: 0 0 14px 0;
+  line-height: 1;
+}
+
+.pocket-dice {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pocket-die {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pocket-die:active {
+  transform: scale(0.92);
+}
+
+.pocket-die-face {
+  width: 46px;
+  height: 46px;
+  background: #ffffff;
+  border: 1.5px solid #1e3f20;
+  border-radius: 14px;
+  box-shadow: 0 3px 6px rgb(30 63 32 / 10%);
+}
+
+.pocket-die-face .pip {
+  background: #1e3f20;
+}
+
+.pocket-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pocket-btn-primary {
+  width: 100%;
+  min-height: 64px;
+  border-radius: 20px;
+  background: #4e8a5e;
+  border: 2px solid #2b5637;
+  color: #ffffff;
+  font-family: var(--font-outfit), "Outfit", sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: 0 4px 0 #2b5637;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.pocket-btn-primary:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #2b5637;
+}
+
+.pocket-btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.pocket-btn-sub {
+  min-height: 52px;
+  border-radius: 16px;
+  border: 2px solid #1e3f20;
+  background: #ebf0e6;
+  color: #1e3f20;
+  font-family: var(--font-outfit), "Outfit", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: 0 3px 0 #1e3f20;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.pocket-btn-sub:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #1e3f20;
+}
+
+.pocket-boss-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.pocket-boss-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3f20;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   5. NUAGE PASTEL — Guimauve 3D (data-theme="pastel")
+   -------------------------------------------------------------------------- */
+.layout-cloud {
+  align-items: center;
+  padding-top: max(64px, calc(env(safe-area-inset-top) + 20px));
+}
+
+.cloud-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.cloud-title {
+  font-family: var(--font-syne), "Syne", sans-serif;
+  font-size: 46px;
+  font-weight: 800;
+  color: #7c62d6;
+  letter-spacing: -0.03em;
+  margin: 0;
+  line-height: 1;
+}
+
+.cloud-pillow-stage {
+  width: 100%;
+  /* Vraie marge aérée */
+  margin-bottom: 38px;
+}
+
+.cloud-pillow {
+  background: #f2eefb;
+  border: 2px solid #d5cceb;
+  border-radius: 40px;
+  padding: 22px 14px;
+  box-shadow: 0 10px 30px rgb(124 98 214 / 12%);
+}
+
+.cloud-dice {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.cloud-die {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.cloud-die:active {
+  transform: scale(0.92);
+}
+
+.cloud-die-face {
+  width: 50px;
+  height: 50px;
+  background: #ffffff;
+  border: 2px solid #e2dbf5;
+  border-radius: 22px;
+  box-shadow: 0 6px 16px rgb(124 98 214 / 14%);
+}
+
+.cloud-die-face .pip {
+  background: #7c62d6;
+}
+
+.cloud-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.cloud-btn {
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  transition: transform 0.15s ease;
+}
+
+.cloud-btn:active {
+  transform: scale(0.96);
+}
+
+.cloud-btn-solo {
+  width: 100%;
+  min-height: 72px;
+  border-radius: 30px;
+  background: #7c62d6;
+  color: #ffffff;
+  font-size: 22px;
+  box-shadow: 0 10px 28px rgb(124 98 214 / 32%);
+}
+
+.cloud-duo-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.cloud-btn-duo {
+  min-height: 58px;
+  border-radius: 24px;
+  background: #3a80d2;
+  color: #ffffff;
+  font-size: 17px;
+  box-shadow: 0 8px 22px rgb(58 128 210 / 28%);
+}
+
+.cloud-btn-quiz {
+  min-height: 58px;
+  border-radius: 24px;
+  background: #ee6378;
+  color: #ffffff;
+  font-size: 17px;
+  box-shadow: 0 8px 22px rgb(238 99 120 / 28%);
+}
+
+.cloud-footer {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.cloud-boss-capsule {
+  padding: 8px 18px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1.5px solid #ece7f8;
+  font-size: 13px;
+  font-weight: 700;
+  color: #7c62d6;
+  box-shadow: 0 4px 12px rgb(124 98 214 / 6%);
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   Panneaux multijoueur partagés dans les 5 layouts
+   -------------------------------------------------------------------------- */
+.arena-multiplayer-panel,
+.editorial-multiplayer-panel,
+.pebble-multiplayer-panel,
+.pocket-multiplayer-panel,
+.cloud-multiplayer-panel {
+  width: 100%;
+  margin-top: 18px;
+  background: #ffffff;
+  border: 1.5px solid var(--line, #ded7cb);
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: var(--shadow-soft, 0 4px 16px rgb(0 0 0 / 6%));
+  box-sizing: border-box;
+}
+
+.pocket-multiplayer-panel {
+  background: #f7f8f4;
+  border-color: #1e3f20;
+  border-radius: 18px;
+}
+
+.pebble-multiplayer-panel {
+  background: #faf8f5;
+  border: 2px solid #dfd4c5;
+  border-radius: 28px;
+  padding: 22px 18px;
+  box-shadow: 0 8px 24px rgb(43 35 30 / 8%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pebble-multiplayer-panel .player-name-field label {
+  display: block;
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2b231e;
+  margin-bottom: 6px;
+}
+
+.pebble-multiplayer-panel input {
+  width: 100%;
+  min-height: 48px;
+  background: #ede4d8;
+  border: 1.5px solid #dfd4c5;
+  border-radius: 18px;
+  padding: 0 16px;
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #2b231e;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pebble-multiplayer-panel input:focus {
+  border-color: #c85a32;
+  box-shadow: 0 0 0 3px rgb(200 90 50 / 18%);
+}
+
+.pebble-multiplayer-panel .create-room-action {
+  width: 100%;
+  min-height: 54px;
+  border-radius: 20px;
+  background: #c85a32;
+  color: #ffffff;
+  border: none;
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgb(200 90 50 / 26%);
+  transition: transform 0.15s ease;
+}
+
+.pebble-multiplayer-panel .create-room-action:active {
+  transform: scale(0.97);
+}
+
+.pebble-multiplayer-panel .lobby-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #6b6055;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.pebble-multiplayer-panel .lobby-divider::before,
+.pebble-multiplayer-panel .lobby-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #dfd4c5;
+}
+
+.pebble-multiplayer-panel .room-code-field {
+  display: flex;
+  gap: 8px;
+}
+
+.pebble-multiplayer-panel .paste-code-action,
+.pebble-multiplayer-panel .join-code-action {
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: 18px;
+  background: #3d5a80;
+  color: #ffffff;
+  border: none;
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgb(61 90 128 / 20%);
+  transition: transform 0.15s ease;
+  white-space: nowrap;
+}
+
+.pebble-multiplayer-panel .join-code-action {
+  background: #4a8072;
+  box-shadow: 0 4px 12px rgb(74 128 114 / 20%);
+}
+
+.pebble-multiplayer-panel .paste-code-action:active,
+.pebble-multiplayer-panel .join-code-action:active {
+  transform: scale(0.96);
+}

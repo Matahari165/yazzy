@@ -90,7 +90,7 @@ export function ScoreHelpPopover({
 
       {scoreAction ? (
         <button className="primary-action score-help-action" type="button" onClick={scoreAction}>
-          Sélectionner cette option
+          Inscrire
         </button>
       ) : null}
 

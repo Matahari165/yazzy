@@ -163,7 +163,8 @@
 .lobby-hero {
   display: grid;
   justify-items: center;
-  padding: clamp(4px, 1.5vh, 14px) 0 2px;
+  padding: clamp(8px, 2vh, 20px) 0 0;
+  margin-bottom: clamp(36px, 7vh, 58px);
   text-align: center;
 }
 
@@ -330,46 +331,6 @@
   }
 }
 
-/* ---- bandeau défilant ---- */
-.lobby-ticker {
-  margin: 12px -16px;
-  padding: 8px 0;
-  overflow: hidden;
-  color: #fff;
-  background: var(--coral);
-  border-top: 2px solid var(--coral-deep);
-  border-bottom: 2px solid var(--coral-deep);
-  box-shadow: 0 4px 12px rgb(217 78 53 / 22%);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  animation: ticker-unfurl 0.65s 0.35s var(--ease-spring) backwards;
-}
-.lobby-ticker-track { display: inline-flex; width: max-content; animation: lobby-scroll 30s linear infinite; }
-.lobby-ticker:hover .lobby-ticker-track,
-.lobby-ticker:focus-within .lobby-ticker-track { animation-play-state: paused; }
-.lobby-ticker b { margin: 0 10px; font-weight: 400; }
-
-@keyframes ticker-unfurl {
-  0% {
-    opacity: 0;
-    transform: scaleY(0) scaleX(0.7);
-  }
-  65% {
-    opacity: 1;
-    transform: scaleY(1.25) scaleX(1.02);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes lobby-scroll {
-  to { transform: translateX(-50%); }
-}
 
 /* ---- modes de jeu ---- */
 .game-mode-grid {
@@ -840,12 +801,10 @@
   .game-mode-action,
   .mode-quiz-icon,
   .st-rise,
-  .lobby-foot,
-  .ticker-unfurl { animation: none !important; }
+  .lobby-foot { animation: none !important; }
   .hero-title:hover > span { transform: none; }
   .game-mode-action:hover .game-mode-go,
   .game-mode-action:focus-visible .game-mode-go { opacity: 0; }
   .lobby-shell :is(a, button):active:not(:disabled) { animation: none; }
-  .lobby-ticker { display: none; }
   .lobby-shape > i { animation: none !important; }
 }

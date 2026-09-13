@@ -215,11 +215,9 @@ export function MultiplayerClient({
 
         <section className="waiting-room" aria-labelledby="waiting-title">
           <span className="waiting-dice" aria-hidden="true">•••</span>
-          <p className="eyebrow">PARTIE PRIVÉE</p>
-          <h1 id="waiting-title">Invite ton ami</h1>
-          <p>Envoie-lui ce code. La partie commencera automatiquement dès qu’il l’aura saisi.</p>
+          <h1 id="waiting-title">En attente</h1>
           <div className="room-code-block">
-            <span>Code de la partie</span>
+            <span className="sr-only">Code de partie</span>
             <strong>{roomId}</strong>
           </div>
           <div className="invite-actions">
@@ -227,7 +225,7 @@ export function MultiplayerClient({
             <button className="secondary-action" type="button" onClick={handleCopyLink}>Copier le lien</button>
           </div>
           <div className="invite-field">
-            <label htmlFor="invite-link">Lien privé à partager</label>
+            <label className="sr-only" htmlFor="invite-link">Lien de partie</label>
             <input id="invite-link" type="text" readOnly value={inviteLink} onFocus={(event) => event.currentTarget.select()} />
           </div>
           {copyStatus ? <p className="copy-status" role="status">{copyStatus}</p> : null}
@@ -245,7 +243,7 @@ export function MultiplayerClient({
   }
 
   if (!game || !localState || !opponentState || !localRole) {
-    return <main id="main-content" className="app-loading" aria-busy="true"><p>Chargement de la partie…</p></main>;
+    return <main id="main-content" className="app-loading" aria-busy="true"><p>Chargement…</p></main>;
   }
 
   const rematchRequested = game.rematchReady.includes(localRole);
@@ -276,9 +274,6 @@ export function MultiplayerClient({
           className="quit-link multiplayer-quit-link"
           href="/"
           aria-label="Quitter la partie"
-          onClick={(event) => {
-            if (!window.confirm("Quitter la partie en cours ?")) event.preventDefault();
-          }}
         >
           <span aria-hidden="true">×</span>
         </Link>

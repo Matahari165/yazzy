@@ -30,10 +30,7 @@ export function GameHeader({ soundEnabled, onToggleSound, onQuit, isActive = fal
         className="quit-link multiplayer-quit-link"
         href="/"
         aria-label="Quitter la partie"
-        onClick={(event) => {
-          if (!window.confirm("Quitter la partie en cours ?")) event.preventDefault();
-          else onQuit();
-        }}
+        onClick={() => onQuit()}
       >
         <span aria-hidden="true">×</span>
       </Link>

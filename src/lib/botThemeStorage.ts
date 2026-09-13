@@ -2,9 +2,9 @@ const BOT_DEMON_THEME_STORAGE_KEY = "yazzy.botDemonTheme.v1";
 
 export function readBotDemonTheme(): boolean {
   try {
-    return window.localStorage.getItem(BOT_DEMON_THEME_STORAGE_KEY) !== "false";
+    return window.localStorage.getItem(BOT_DEMON_THEME_STORAGE_KEY) === "true";
   } catch {
-    return true;
+    return false;
   }
 }
 

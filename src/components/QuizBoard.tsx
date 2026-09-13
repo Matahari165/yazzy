@@ -40,10 +40,10 @@ const QA_LETTERS = ["A", "B", "C", "D"] as const;
 
 function resultMessage(score: number, total: number): string {
   const ratio = total === 0 ? 0 : score / total;
-  if (ratio === 1) return "Sans faute. Le studio est debout.";
-  if (ratio >= 0.8) return "Très bien. Encore un round ?";
-  if (ratio >= 0.5) return "Pas mal. Le buzzer te connaît déjà.";
-  return "Échauffement terminé. On remet ça ?";
+  if (ratio === 1) return "Score parfait.";
+  if (ratio >= 0.8) return "Excellent score.";
+  if (ratio >= 0.5) return "Bonne partie.";
+  return "Partie terminée.";
 }
 
 /** Compte animé vers la valeur cible (jackpot, score final). */
@@ -212,7 +212,7 @@ export function QuizBoard() {
               <span key={i} className="qa-loading-dot" style={{ "--i": i } as React.CSSProperties} />
             ))}
           </span>
-          Le studio chauffe…
+          Chargement…
           <span className="qa-loading-rail" aria-hidden="true">
             <i />
           </span>
@@ -232,9 +232,6 @@ export function QuizBoard() {
       <div className="qa-bg" aria-hidden="true">
         <span className="qa-spot" />
         <span className="qa-grid" />
-        <span className="qa-ghost">
-          {game && !isFinished ? String(game.currentIndex + 1).padStart(2, "0") : "QZ"}
-        </span>
       </div>
 
       <header className="qa-bar">
@@ -244,7 +241,6 @@ export function QuizBoard() {
           </span>
           <span className="qa-brand-text">
             <strong>Yazzy Quiz</strong>
-            <small>culture G</small>
           </span>
         </Link>
 
@@ -259,37 +255,15 @@ export function QuizBoard() {
           className="qa-quit"
           href="/"
           aria-label="Quitter le quiz"
-          onClick={(event) => {
-            if (game && !window.confirm("Quitter le quiz en cours ?")) event.preventDefault();
-          }}
         >
           <span aria-hidden="true">×</span>
         </Link>
       </header>
 
-      <div className="qa-ticker" aria-hidden="true">
-        <div className="qa-ticker-track">
-          {[0, 1].map((copy) => (
-            <span key={copy}>
-              15 secondes par question <b>◆</b> 4 buzzers <b>◆</b> touches 1–4 ou A–D{" "}
-              <b>◆</b> survie : 3 vies <b>◆</b> 15 secondes par question <b>◆</b> 4 buzzers{" "}
-              <b>◆</b> touches 1–4 ou A–D <b>◆</b> survie : 3 vies <b>◆</b>{" "}
-            </span>
-          ))}
-        </div>
-      </div>
-
       {!game ? (
         <section className="qa-hero" aria-labelledby="quiz-theme-title">
           <div className="qa-hero-top">
-            <p className="qa-kicker">
-              <span className="qa-kicker-pulse" aria-hidden="true" />
-              Culture G · 15 s par question
-            </p>
-            <h1 id="quiz-theme-title">
-              Choisis ton <em>match.</em>
-            </h1>
-            <p className="qa-sub">Quatre buzzers. Un chrono. Zéro pitié.</p>
+            <h1 id="quiz-theme-title">Quiz</h1>
           </div>
 
           <div className="qa-formats" role="group" aria-label="Format de partie">
@@ -357,9 +331,6 @@ export function QuizBoard() {
                 <span className="qa-theme-text">
                   <strong>{mode === "aleatoire" ? "Aléatoire" : QUIZ_CATEGORY_LABELS[mode as QuizCategory]}</strong>
                   <small>{QA_MODE_BLURB[mode]}</small>
-                </span>
-                <span className="qa-theme-go" aria-hidden="true">
-                  Jouer
                 </span>
               </button>
             ))}
@@ -562,11 +533,11 @@ export function QuizBoard() {
                   <span className="qa-verdict-text">
                     {game.selected === current.correctShuffledIndex
                       ? streak >= 2
-                        ? `Série ×${streak}. Le public exulte.`
-                        : "Net et sans bavure."
+                        ? `Série ×${streak}`
+                        : ""
                       : game.selected === QUIZ_TIMEOUT_CHOICE
-                        ? `Trop tard : ${current.shuffledChoices[current.correctShuffledIndex]}.`
-                        : `C’était : ${current.shuffledChoices[current.correctShuffledIndex]}.`}
+                        ? `Réponse : ${current.shuffledChoices[current.correctShuffledIndex]}`
+                        : `Réponse : ${current.shuffledChoices[current.correctShuffledIndex]}`}
                   </span>
                 </p>
                 {current.question.explanation ? (
