@@ -30,6 +30,7 @@ export const FAST_FOLLOWUP_POLL_INTERVAL_MS = 120;
 const REQUEST_TIMEOUT_MS = 8_000;
 const MAX_SILENT_FAILURES = 3;
 const REPLAY_ROLL_DELAY_MS = 360;
+const REPLAY_SCORE_DELAY_MS = 300;
 const REPLAY_STEP_DELAY_MS = 90;
 
 type RoomResponseSource = "connect" | "sync" | "action" | "reaction";
@@ -40,8 +41,7 @@ export function gameWithPendingHolds(
   role: MultiplayerRole,
   pendingHolds: readonly Pick<PendingHold, "index">[],
 ): MultiplayerGameState | null {
-  if (!game || pendingHolds.length === 0) return game;
-  return pendingHolds.reduce<MultiplayerGameState | null>(
+  return pendingHolds.reduce(
     (current, hold) => current ? holdActiveDie(current, role, hold.index) : null,
     game,
   );
@@ -104,8 +104,9 @@ export function shouldDisplayResponseImmediately(
 
 function replayDelay(event: RoomActionEvent): number {
   if (prefersReducedMotion()) return 80;
-  if (event.action.type !== "ROLL") return REPLAY_STEP_DELAY_MS;
-  return REPLAY_ROLL_DELAY_MS;
+  if (event.action.type === "ROLL") return REPLAY_ROLL_DELAY_MS;
+  if (event.action.type === "SCORE") return REPLAY_SCORE_DELAY_MS;
+  return REPLAY_STEP_DELAY_MS;
 }
 
 let cachedReducedMotion: boolean | null = null;
@@ -212,6 +213,7 @@ export function useMultiplayerGame(
   const actionGenerationRef = useRef(0);
   const pendingHoldsRef = useRef<PendingHold[]>([]);
   const actionQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const triggerPollRef = useRef<((delay?: number) => void) | null>(null);
   const [pendingHoldCount, setPendingHoldCount] = useState(0);
   const [pendingAction, setPendingAction] = useState<Exclude<ClientAction["type"], "HOLD"> | null>(null);
 
@@ -465,6 +467,13 @@ export function useMultiplayerGame(
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
+    triggerPollRef.current = (delay?: number) => {
+      if (cancelled) return;
+      if (pollTimer !== null) window.clearTimeout(pollTimer);
+      pollTimer = null;
+      schedulePoll(delay);
+    };
+
     const startTimer = window.setTimeout(() => {
       setGame(null);
       setLocalRole(null);
@@ -477,6 +486,7 @@ export function useMultiplayerGame(
 
     return () => {
       cancelled = true;
+      triggerPollRef.current = null;
       window.clearTimeout(startTimer);
       if (pollTimer !== null) window.clearTimeout(pollTimer);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -499,7 +509,17 @@ export function useMultiplayerGame(
     const isHold = action.type === "HOLD";
     // Anti double-clic : un seul ROLL/SCORE/REMATCH en vol. Les HOLD restent
     // optimistes et mis en file même pendant un ROLL, pour garder le rythme solo.
-    if (!isHold && actionPendingRef.current) return;
+    // Si un SCORE arrive alors qu'un ROLL termine son RTT, on l'enchaîne dès que possible.
+    if (!isHold && actionPendingRef.current) {
+      if (action.type === "SCORE") {
+        actionQueueRef.current.then(() => {
+          if (roleRef.current && canonicalGameRef.current?.activePlayer === roleRef.current) {
+            dispatch(action);
+          }
+        });
+      }
+      return;
+    }
 
     const actionId = crypto.randomUUID();
     const generation = actionGenerationRef.current;
@@ -516,13 +536,9 @@ export function useMultiplayerGame(
         const previewDie = () => (Math.floor(Math.random() * 6) + 1) as DieValue;
         setGame((current) => current ? rollActivePlayer(current, role, previewDie) : current);
       } else if (action.type === "SCORE") {
-        // Score optimiste : la feuille affiche le total sans attendre le RTT.
+        // Score optimiste immédiat : la feuille s'actualise sans attendre le RTT.
         // Le serveur reste autoritaire et réconcilie à l'arrivée.
-        const canonical = canonicalGameRef.current;
-        if (canonical) {
-          const optimistic = scoreActiveCategory(canonical, role, action.category);
-          if (optimistic !== canonical) setGame(optimistic);
-        }
+        setGame((current) => current ? scoreActiveCategory(current, role, action.category) : current);
       }
     }
 
@@ -545,13 +561,13 @@ export function useMultiplayerGame(
         }
         if (response.ok) {
           applySuccess(response, "action");
+          triggerPollRef.current?.(FAST_FOLLOWUP_POLL_INTERVAL_MS);
         } else {
           if (response.code === "OPPONENT_OFFLINE") setOpponentOnline(false);
           else if (response.code === "ROOM_FULL") setRoomFull(true);
           else setConnectionError(connectionMessage(response));
-          if (action.type === "ROLL") {
-            // Le preview est invalide : on annule les HOLD pipelinés derrière lui,
-            // sinon ils partiraient sur les anciens dés (rollNumber N au lieu de N+1).
+          if (action.type === "ROLL" || action.type === "SCORE") {
+            // Le preview est invalide : on annule les projections
             pendingHoldsRef.current = [];
             setPendingHoldCount(0);
             setGame(canonicalGameRef.current);
@@ -570,7 +586,7 @@ export function useMultiplayerGame(
           );
           setPendingHoldCount(pendingHoldsRef.current.length);
           setGame(gameWithPendingHolds(canonicalGameRef.current, role, pendingHoldsRef.current));
-        } else if (action.type === "ROLL") {
+        } else if (action.type === "ROLL" || action.type === "SCORE") {
           pendingHoldsRef.current = [];
           setPendingHoldCount(0);
           setGame(canonicalGameRef.current);

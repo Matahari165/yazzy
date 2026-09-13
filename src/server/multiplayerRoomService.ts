@@ -79,10 +79,13 @@ async function success(
   now: number,
   events: RoomActionEvent[] = [],
   eventsTruncated = false,
+  knownOpponentOnline?: boolean,
 ): Promise<RoomServiceResult> {
   const [latestReaction, opponentOnline] = await Promise.all([
     store.getReaction(roomId),
-    presenceStatus(store, roomId, role, now),
+    knownOpponentOnline !== undefined
+      ? Promise.resolve(knownOpponentOnline)
+      : presenceStatus(store, roomId, role, now),
     store.setPresence(roomId, role, now),
   ]);
   return {
@@ -188,12 +191,14 @@ export async function handleRoomCommand({
     }
   }
 
+  let knownOpponentOnline: boolean | undefined;
   if (command.type === "REACTION") {
     const opponentOnline = await presenceStatus(store, roomId, command.role, now);
     if (!opponentOnline) {
       await store.setPresence(roomId, command.role, now);
       return failure(409, "OPPONENT_OFFLINE", "Ton ami doit être connecté pour réagir.");
     }
+    knownOpponentOnline = true;
 
     const latestReaction = await store.getReaction(roomId);
     if (latestReaction?.id !== command.reactionId) {
@@ -225,8 +230,8 @@ export async function handleRoomCommand({
             actionId: command.actionId,
             role: command.role,
             version: nextVersion,
-            action: structuredClone(command.action),
-            game: structuredClone(nextGame),
+            action: command.action,
+            game: nextGame,
           };
       const appendedEvents = nextEvent ? [...room.actionEvents, nextEvent] : room.actionEvents;
       const overflow = Math.max(0, appendedEvents.length - MAX_ROOM_ACTION_EVENTS);
@@ -253,5 +258,5 @@ export async function handleRoomCommand({
     : [];
   const eventsTruncated = command.type === "SYNC"
     && command.afterVersion < room.actionEventFloorVersion;
-  return success(store, roomId, room, command.role, now, missedEvents, eventsTruncated);
+  return success(store, roomId, room, command.role, now, missedEvents, eventsTruncated, knownOpponentOnline);
 }

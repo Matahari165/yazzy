@@ -137,12 +137,12 @@ export function MultiplayerClient({
   }, [canAct, isRolling, pendingAction, localState, roll]);
 
   const handleScore = useCallback((category = selectedCategory) => {
-    if (!category || !canAct || isRolling || pendingAction) return;
+    if (!category || !canAct || isRolling) return;
     setHighlightedPlayerCategory(category);
     botAudio.playEffect("score");
     score(category);
     setSelectedCategory(null);
-  }, [selectedCategory, canAct, isRolling, pendingAction, score]);
+  }, [selectedCategory, canAct, isRolling, score]);
 
   const handleToggleDie = useCallback((index: number) => {
     if (!canAct || isRolling) return;
@@ -156,7 +156,7 @@ export function MultiplayerClient({
   useGameKeyboard({
     disabled: status !== "playing" || !canAct || isRolling,
     canRoll: Boolean(localState && localState.rollNumber < 3 && !localState.held.every(Boolean)),
-    canScore: selectedCategory !== null && !isRolling && pendingAction === null,
+    canScore: selectedCategory !== null && !isRolling,
     onRoll: handleRoll,
     onScore: handleScore,
     onToggleDie: handleToggleDie,
@@ -442,7 +442,7 @@ const MultiplayerGameView = memo(function MultiplayerGameView({
             dice={localState.dice}
             opponentDice={opponentState.dice}
             selected={canAct ? selectedCategory : null}
-            canSelect={canAct && localState.rollNumber > 0 && !isRolling && pendingAction === null}
+            canSelect={canAct && localState.rollNumber > 0 && !isRolling}
             isReadOnly={!canAct}
             activeColumn={isMyTurn ? "player" : "opponent"}
             highlightedPlayerCategory={highlightedPlayerCategory}

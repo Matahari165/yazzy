@@ -65,7 +65,7 @@ function DiceTray({
       {dice.length === 5
         ? dice.map((value, index) => (
             <Dice
-              key={`${index}-${rollNumber}`}
+              key={index}
               value={value}
               index={index}
               held={rollNumber < 3 && held[index]}

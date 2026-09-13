@@ -259,8 +259,14 @@
   border-color: var(--score-opponent-ink);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--score-opponent-ink) 20%, transparent);
 }
-.score-value[data-highlighted="true"] { animation: player-score-choice var(--motion-emphasis) var(--ease-emphasized); }
-.score-value-bot[data-highlighted="true"] { animation-name: opponent-score-choice; }
+.score-value[data-highlighted="true"] {
+  animation: player-score-choice var(--motion-emphasis) var(--ease-emphasized);
+  will-change: transform, box-shadow;
+}
+.score-value-bot[data-highlighted="true"] {
+  animation-name: opponent-score-choice;
+  will-change: transform, box-shadow;
+}
 .score-value[data-state="filled"] {
   background: var(--score-filled-cell);
   border: 1.5px solid var(--score-filled-border);
@@ -437,6 +443,7 @@
   cursor: pointer;
   touch-action: manipulation;
   transition: transform 0.16s cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform;
 }
 
 .die-tray .die-button:nth-child(5n+1) { transform: rotate(-1.4deg); }
@@ -479,6 +486,8 @@
   border: 2px solid var(--die-face-border);
   border-radius: 20px;
   box-shadow: 0 4px 12px rgb(43 35 30 / 10%);
+  contain: layout paint;
+  will-change: transform;
   transition: background-color 0.16s cubic-bezier(0.2, 0, 0, 1),
               border-color 0.16s cubic-bezier(0.2, 0, 0, 1),
               box-shadow 0.16s cubic-bezier(0.2, 0, 0, 1),
@@ -696,6 +705,7 @@
   background: var(--surface); border: 1.5px solid var(--line-strong); border-radius: 999px;
   box-shadow: 0 4px 12px rgb(30 27 24 / 8%); pointer-events: none;
   animation: reaction-toast-life 2400ms var(--ease-emphasized) both;
+  will-change: transform, opacity;
 }
 .reaction-burst { position: relative; display: grid; place-items: center; min-width: 34px; min-height: 34px; }
 .reaction-burst b { font-size: 28px; font-weight: 400; line-height: 1; animation: reaction-emoji-pop 420ms var(--ease-emphasized) both; }
