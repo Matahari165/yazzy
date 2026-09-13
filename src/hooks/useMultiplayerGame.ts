@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   holdActiveDie,
   rollActivePlayer,
+  scoreActiveCategory,
   type MultiplayerGameState,
   type MultiplayerRole,
 } from "../domain/multiplayer";
@@ -39,7 +40,8 @@ export function gameWithPendingHolds(
   role: MultiplayerRole,
   pendingHolds: readonly Pick<PendingHold, "index">[],
 ): MultiplayerGameState | null {
-  return pendingHolds.reduce(
+  if (!game || pendingHolds.length === 0) return game;
+  return pendingHolds.reduce<MultiplayerGameState | null>(
     (current, hold) => current ? holdActiveDie(current, role, hold.index) : null,
     game,
   );
@@ -101,9 +103,28 @@ export function shouldDisplayResponseImmediately(
 }
 
 function replayDelay(event: RoomActionEvent): number {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return 80;
+  if (prefersReducedMotion()) return 80;
   if (event.action.type !== "ROLL") return REPLAY_STEP_DELAY_MS;
   return REPLAY_ROLL_DELAY_MS;
+}
+
+let cachedReducedMotion: boolean | null = null;
+
+function prefersReducedMotion(): boolean {
+  if (cachedReducedMotion !== null) return cachedReducedMotion;
+  try {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+    cachedReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return cachedReducedMotion;
+  } catch {
+    return false;
+  }
+}
+
+function pollJitter(delay: number): number {
+  // ±15% pour éviter que les deux clients ne se synchronisent en rafale.
+  const jitter = 0.85 + Math.random() * 0.3;
+  return Math.max(60, Math.round(delay * jitter));
 }
 
 function playerToken(roomId: string, role: MultiplayerRole, preferredToken?: string): string {
@@ -198,11 +219,15 @@ export function useMultiplayerGame(
     if (replayTimerRef.current !== null) return;
     const nextEvent = replayQueueRef.current.shift();
     if (!nextEvent) {
-      setReplayedOpponentEvent(null);
+      setReplayedOpponentEvent((current) => (current === null ? current : null));
+      // Garde le preview optimiste (ROLL/SCORE) jusqu'à la réponse ACTION.
+      if (actionPendingRef.current) return;
       const role = roleRef.current;
-      setGame(role
+      const visible = role
         ? gameWithPendingHolds(canonicalGameRef.current, role, pendingHoldsRef.current)
-        : canonicalGameRef.current);
+        : canonicalGameRef.current;
+      // Évite un setGame avec la même référence en idle (laisse React tranquille).
+      setGame((current) => (current === visible ? current : visible ?? current));
       return;
     }
 
@@ -249,28 +274,39 @@ export function useMultiplayerGame(
     if (shouldReplaceGame) {
       canonicalVersionRef.current = response.version;
     }
-    const visibleGame = gameWithPendingHolds(
-      canonicalGameRef.current,
-      response.yourRole,
-      pendingHoldsRef.current,
-    );
+    const hasPendingHolds = pendingHoldsRef.current.length > 0;
+    const visibleGame = hasPendingHolds
+      ? gameWithPendingHolds(
+          canonicalGameRef.current,
+          response.yourRole,
+          pendingHoldsRef.current,
+        )
+      : canonicalGameRef.current;
+    // Pendant un SCORE optimiste, un SYNC avec une vieille version ne doit pas
+    // écraser l'aperçu local (évite le flicker à 1 RTT).
+    const keepOptimisticPreview = source === "sync"
+      && actionPendingRef.current
+      && !shouldReplaceGame;
 
     if (source === "sync" && response.eventsTruncated) {
       replayGenerationRef.current += 1;
       if (replayTimerRef.current !== null) window.clearTimeout(replayTimerRef.current);
       replayTimerRef.current = null;
       replayQueueRef.current = [];
-      setReplayedOpponentEvent(null);
-      setReplayGapDetected(true);
-      setGame(visibleGame);
+      setReplayedOpponentEvent((current) => (current === null ? current : null));
+      setReplayGapDetected((current) => (current ? current : true));
+      if (!keepOptimisticPreview) setGame(visibleGame);
     } else if (source === "sync") {
-      setReplayGapDetected(false);
+      setReplayGapDetected((current) => (current ? false : current));
       const unseenEvents = response.events.filter((event) => event.version > eventCursorRef.current);
-      replayQueueRef.current.push(
-        ...unseenEvents.filter((event) => event.role !== response.yourRole),
-      );
+      const opponentEvents = unseenEvents.filter((event) => event.role !== response.yourRole);
+      if (opponentEvents.length > 0) replayQueueRef.current.push(...opponentEvents);
       if (replayTimerRef.current === null && replayQueueRef.current.length === 0) {
-        setGame(visibleGame);
+        // SYNC idle sans changement : ne touche à rien pour laisser React tranquille.
+        // setGame avec la même référence bail déjà, mais on évite même l'appel.
+        if (!keepOptimisticPreview && (shouldReplaceGame || hasPendingHolds)) {
+          setGame(visibleGame);
+        }
       } else {
         drainReplay();
       }
@@ -287,16 +323,16 @@ export function useMultiplayerGame(
       response.version,
       source,
     );
-    setLocalRole(response.yourRole);
-    setOpponentOnline(response.opponentOnline);
+    setLocalRole((current) => (current === response.yourRole ? current : response.yourRole));
+    setOpponentOnline((current) => (current === response.opponentOnline ? current : response.opponentOnline));
     setLatestReaction((currentReaction) => (
       currentReaction?.id === response.latestReaction?.id
         ? currentReaction
         : response.latestReaction
     ));
-    setIsConnected(true);
-    setConnectionError(null);
-    setRoomFull(false);
+    setIsConnected((current) => (current ? current : true));
+    setConnectionError((current) => (current === null ? current : null));
+    setRoomFull((current) => (current ? false : current));
   }, [drainReplay]);
 
   useEffect(() => {
@@ -305,6 +341,7 @@ export function useMultiplayerGame(
     let cancelled = false;
     let pollTimer: number | null = null;
     let consecutiveFailures = 0;
+    let emptyOpponentSyncs = 0;
     const role: MultiplayerRole = isHost ? "player1" : "player2";
     const token = playerToken(roomId, role);
     roleRef.current = role;
@@ -319,12 +356,20 @@ export function useMultiplayerGame(
           : currentGame.activePlayer === role
             ? "active"
             : "opponent";
+        let baseDelay = overrideDelay
+          ?? multiplayerPollDelay(document.visibilityState === "hidden", consecutiveFailures, turn);
+        // Tour adverse idle : backoff doux après ~2s sans évènement (8 SYNC vides
+        // à 250ms). On reste réactif grâce au fast-followup dès qu'un event arrive.
+        if (overrideDelay === undefined && turn === "opponent" && consecutiveFailures === 0) {
+          if (emptyOpponentSyncs >= 16) baseDelay = Math.max(baseDelay, 700);
+          else if (emptyOpponentSyncs >= 8) baseDelay = Math.max(baseDelay, 500);
+        }
         pollTimer = window.setTimeout(
           () => {
             pollTimer = null;
             void poll();
           },
-          overrideDelay ?? multiplayerPollDelay(document.visibilityState === "hidden", consecutiveFailures, turn),
+          pollJitter(baseDelay),
         );
       }
     };
@@ -342,11 +387,21 @@ export function useMultiplayerGame(
         if (cancelled) return;
         if (response.ok) {
           consecutiveFailures = 0;
+          const hadEvents = response.events.length > 0;
+          // Un bump de version sans events (rename) ne doit pas casser le backoff.
+          const versionAdvanced = response.version > canonicalVersionRef.current;
           applySuccess(response, "sync");
-          // Rafale adverse : un SYNC qui ramène des évènements en annonce souvent d'autres.
-          // On re-sonde vite une fois au lieu d'attendre le prochain tick.
-          if (response.events.length > 0 && document.visibilityState !== "hidden") {
-            followUpDelay = FAST_FOLLOWUP_POLL_INTERVAL_MS;
+          if (hadEvents) {
+            emptyOpponentSyncs = 0;
+            // Rafale adverse : un SYNC qui ramène des évènements en annonce souvent d'autres.
+            // On re-sonde vite une fois au lieu d'attendre le prochain tick.
+            if (document.visibilityState !== "hidden") {
+              followUpDelay = FAST_FOLLOWUP_POLL_INTERVAL_MS;
+            }
+          } else if (!versionAdvanced) {
+            emptyOpponentSyncs += 1;
+          } else {
+            emptyOpponentSyncs = 0;
           }
         } else {
           consecutiveFailures += 1;
@@ -460,6 +515,14 @@ export function useMultiplayerGame(
         // attendre le RTT. Le serveur reste autoritaire et réconcilie à l'arrivée.
         const previewDie = () => (Math.floor(Math.random() * 6) + 1) as DieValue;
         setGame((current) => current ? rollActivePlayer(current, role, previewDie) : current);
+      } else if (action.type === "SCORE") {
+        // Score optimiste : la feuille affiche le total sans attendre le RTT.
+        // Le serveur reste autoritaire et réconcilie à l'arrivée.
+        const canonical = canonicalGameRef.current;
+        if (canonical) {
+          const optimistic = scoreActiveCategory(canonical, role, action.category);
+          if (optimistic !== canonical) setGame(optimistic);
+        }
       }
     }
 

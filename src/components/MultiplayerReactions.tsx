@@ -112,7 +112,7 @@ export function MultiplayerReactions({
               aria-label={REACTION_LABELS[emoji]}
               onClick={() => {
                 const optimisticReaction: RoomReaction = {
-                  id: `local-${Date.now()}`,
+                  id: `local-${crypto.randomUUID()}`,
                   role: localRole,
                   emoji,
                   sentAt: Date.now(),

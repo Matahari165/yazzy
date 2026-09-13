@@ -37,5 +37,5 @@ export function useGameKeyboard({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  });
+  }, [disabled, canRoll, canScore, onRoll, onScore, onToggleDie]);
 }

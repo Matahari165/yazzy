@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { memo, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { type CategoryId, type DieValue } from "@/domain/yatzy";
 import type { GameState } from "@/domain/game";
 import { Dice } from "./Dice";
@@ -33,24 +33,32 @@ function DiceTray({
   tone = "player",
   onToggle,
 }: DiceTrayProps) {
-  const rollAnimationStyle = (index: number): CSSProperties => {
-    const seed = animationSeed * 31 + (index + 1) * 17;
-    const pseudoRandom = (salt: number) => {
-      const value = Math.sin(seed * 12.9898 + salt * 78.233) * 43758.5453;
-      return value - Math.floor(value);
-    };
-    const between = (min: number, max: number, salt: number) => min + (max - min) * pseudoRandom(salt);
+  const trayStyles = useMemo(() => {
+    const makeStyle = (index: number): CSSProperties => {
+      const seed = animationSeed * 31 + (index + 1) * 17;
+      const pseudoRandom = (salt: number) => {
+        const value = Math.sin(seed * 12.9898 + salt * 78.233) * 43758.5453;
+        return value - Math.floor(value);
+      };
+      const between = (min: number, max: number, salt: number) => min + (max - min) * pseudoRandom(salt);
 
-    return {
-      "--roll-delay": `${Math.round(between(0, 18, 1))}ms`,
-      "--roll-start-y": `${Math.round(between(4, 8, 2))}px`,
-      "--roll-start-angle": `${Math.round(between(-14, 14, 3))}deg`,
-      "--roll-mid-y": `${Math.round(between(-4, -1, 4))}px`,
-      "--roll-mid-angle": `${Math.round(between(-12, 12, 5))}deg`,
-      "--roll-end-y": `${Math.round(between(0, 2, 6))}px`,
-      "--roll-end-angle": `${Math.round(between(-4, 4, 7))}deg`,
-    } as CSSProperties;
-  };
+      return {
+        "--roll-delay": `${Math.round(between(0, 18, 1))}ms`,
+        "--roll-start-y": `${Math.round(between(4, 8, 2))}px`,
+        "--roll-start-angle": `${Math.round(between(-14, 14, 3))}deg`,
+        "--roll-mid-y": `${Math.round(between(-4, -1, 4))}px`,
+        "--roll-mid-angle": `${Math.round(between(-12, 12, 5))}deg`,
+        "--roll-end-y": `${Math.round(between(0, 2, 6))}px`,
+        "--roll-end-angle": `${Math.round(between(-4, 4, 7))}deg`,
+      } as CSSProperties;
+    };
+    return [makeStyle(0), makeStyle(1), makeStyle(2), makeStyle(3), makeStyle(4)];
+  }, [animationSeed]);
+
+  const toggleHandlers = useMemo(
+    () => [0, 1, 2, 3, 4].map((dieIndex) => () => onToggle?.(dieIndex)),
+    [onToggle],
+  );
 
   return (
     <div className="dice-tray" data-tone={tone} role="group" aria-label={label}>
@@ -66,8 +74,8 @@ function DiceTray({
               disabled={disabled || rollNumber >= 3}
               finalResult={finalResult ?? rollNumber >= 3}
               rolling={rolling}
-              rollAnimationStyle={rollAnimationStyle(index)}
-              onToggle={() => onToggle?.(index)}
+              rollAnimationStyle={trayStyles[index]}
+              onToggle={toggleHandlers[index]}
             />
           ))
         : Array.from({ length: 5 }, (_, index) => <span className="die-placeholder" key={index} aria-hidden="true" />)}
@@ -92,7 +100,7 @@ type GameTableProps = {
   onRoll: () => void;
 };
 
-export function GameTable({
+export const GameTable = memo(function GameTable({
   dice,
   held,
   rollNumber,
@@ -108,7 +116,7 @@ export function GameTable({
   onToggleDie,
   onRoll,
 }: GameTableProps) {
-  const heldCount = held.filter(Boolean).length;
+  const heldCount = useMemo(() => held.filter(Boolean).length, [held]);
   const [localAnimationSeed, setLocalAnimationSeed] = useState(0);
   // Combine la graine serveur (réconciliation duo) et la graine locale du clic :
   // en duo la prop serveur seule ignorait le clic, l'animation rejouait les
@@ -164,7 +172,7 @@ export function GameTable({
       </div>
     </section>
   );
-}
+});
 
 type BotTurnPanelProps = {
   game: GameState;

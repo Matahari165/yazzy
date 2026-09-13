@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { memo, type CSSProperties } from "react";
 import type { DieValue } from "@/domain/yatzy";
 
 const PIPS: Record<DieValue, number[]> = {
@@ -10,7 +10,7 @@ const PIPS: Record<DieValue, number[]> = {
   6: [0, 2, 3, 5, 6, 8],
 };
 
-export function DieGlyph({ value, className = "" }: { value: DieValue; className?: string }) {
+export const DieGlyph = memo(function DieGlyph({ value, className = "" }: { value: DieValue; className?: string }) {
   return (
     <span className={`die-glyph ${className}`.trim()} aria-hidden="true">
       {Array.from({ length: 9 }, (_, pip) => (
@@ -18,7 +18,7 @@ export function DieGlyph({ value, className = "" }: { value: DieValue; className
       ))}
     </span>
   );
-}
+});
 
 type DiceProps = {
   value: DieValue;
@@ -33,7 +33,7 @@ type DiceProps = {
   onToggle: () => void;
 };
 
-export function Dice({
+export const Dice = memo(function Dice({
   value,
   held,
   highlighted = false,
@@ -63,4 +63,4 @@ export function Dice({
       {showHeldMarker && held ? <span className="die-held-marker" aria-hidden="true">✓</span> : null}
     </button>
   );
-}
+});

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { CATEGORIES, scoreDice, type CategoryId, type Dice, type DieValue, totalScore } from "@/domain/yatzy";
 import { DieGlyph } from "./Dice";
 import { ScoreHelpPopover } from "./ScoreHelpPopover";
@@ -35,7 +35,7 @@ type ScoreCardProps = {
   onScore?: (category: CategoryId) => void;
 };
 
-export function ScoreCard({
+export const ScoreCard = memo(function ScoreCard({
   label,
   playerLabel = "Toi",
   opponentLabel = "Bot",
@@ -59,6 +59,27 @@ export function ScoreCard({
     onSelect?.(null);
   }, [onSelect]);
 
+  // Pré-calculs mémoïsés : 28 appels scoreDice + totaux évités à chaque poll idle.
+  // Les dés ne changent que sur ROLL/SCORE, pas à chaque SYNC 250ms.
+  const diceKey = dice.length === 5 ? dice.join(",") : "";
+  const opponentDiceKey = opponentDice.length === 5 ? opponentDice.join(",") : "";
+  const previewScores = useMemo(() => {
+    const previews = new Map<CategoryId, number | null>();
+    if (dice.length === 5 && activeColumn !== "opponent") {
+      for (const category of CATEGORIES) previews.set(category.id, scoreDice(category.id, dice));
+    }
+    return previews;
+  }, [diceKey, activeColumn]); // eslint-disable-line react-hooks/exhaustive-deps
+  const opponentPreviewScores = useMemo(() => {
+    const previews = new Map<CategoryId, number | null>();
+    if (opponentDice.length === 5 && activeColumn === "opponent") {
+      for (const category of CATEGORIES) previews.set(category.id, scoreDice(category.id, opponentDice));
+    }
+    return previews;
+  }, [opponentDiceKey, activeColumn]); // eslint-disable-line react-hooks/exhaustive-deps
+  const humanTotal = useMemo(() => totalScore(humanScores), [humanScores]);
+  const botTotal = useMemo(() => totalScore(botScores), [botScores]);
+
   return (
     <section className="score-card" aria-label={label}>
       <div className="score-list" role="list" aria-label={label}>
@@ -72,12 +93,10 @@ export function ScoreCard({
             ? opponentFilled ? "opponent" : "none"
             : filled ? "player" : "none";
           const isSelected = selected === category.id;
-          const scoreWithDice = dice.length === 5 && activeColumn !== "opponent"
-            ? scoreDice(category.id, dice)
-            : null;
-          const opponentScoreWithDice = opponentDice.length === 5 && activeColumn === "opponent"
-            ? scoreDice(category.id, opponentDice)
-            : null;
+          const scoreWithDice = filled ? null : (previewScores.get(category.id) ?? null);
+          const opponentScoreWithDice = botScore !== undefined
+            ? null
+            : (opponentPreviewScores.get(category.id) ?? null);
           const currentScore = filled ? score : scoreWithDice;
           const currentOpponentScore = botScore ?? opponentScoreWithDice;
           const stateLabel = filled ? "case inscrite" : isSelected ? "case sélectionnée" : "case libre";
@@ -180,10 +199,10 @@ export function ScoreCard({
       {showTotal ? (
         <div className="total-row">
           <span className="total-label">Total</span>
-          <strong className="score-value total-score-value">{totalScore(humanScores)}</strong>
-          <strong className="score-value score-value-bot">{totalScore(botScores)}</strong>
+          <strong className="score-value total-score-value">{humanTotal}</strong>
+          <strong className="score-value score-value-bot">{botTotal}</strong>
         </div>
       ) : null}
     </section>
   );
-}
+});

@@ -207,12 +207,9 @@ export async function handleRoomCommand({
   }
 
   if (command.type === "ACTION") {
-    const opponentOnline = await presenceStatus(store, roomId, command.role, now);
-    if (!opponentOnline) {
-      await store.setPresence(roomId, command.role, now);
-      return failure(409, "OPPONENT_OFFLINE", "Ton ami doit être connecté pour continuer.");
-    }
-
+    // Tour par tour : on laisse jouer même si la présence adverse a flappé
+    // (onglet caché, réseau mobile). Le gate OPPONENT_OFFLINE reste pour les
+    // réactions, qui n'ont de sens qu'en live.
     if (room.lastActionIds[command.role] !== command.actionId) {
       const nextGame = applyPlayerAction(
         room.game,

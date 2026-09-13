@@ -893,14 +893,14 @@
 @keyframes reaction-emoji-pop { 0% { transform: scale(0.72) rotate(-7deg); } 55% { transform: scale(1.13) rotate(4deg); } 100% { transform: scale(1) rotate(0); } }
 @keyframes reaction-spark { from { opacity: 0; transform: scale(0.2); } 45% { opacity: 1; transform: scale(1.2); } to { opacity: 0; transform: scale(0.6); } }
 @keyframes reaction-fade { 0%, 100% { opacity: 0; transform: translate(-50%, 0); } 8%, 88% { opacity: 1; transform: translate(-50%, 0); } }
-@keyframes player-score-choice { 45% { transform: scale(1.08) translateY(-1px); box-shadow: 0 0 0 4px color-mix(in srgb, var(--score-player-ink) 20%, transparent); } }
-@keyframes opponent-score-choice { 45% { transform: scale(1.08) translateY(-1px); box-shadow: 0 0 0 4px color-mix(in srgb, var(--score-opponent-ink) 20%, transparent); } }
+@keyframes player-score-choice { 45% { transform: scale(1.08) translateY(-1px); } }
+@keyframes opponent-score-choice { 45% { transform: scale(1.08) translateY(-1px); } }
 @keyframes score-help-enter { from { opacity: 0; transform: translateY(4px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes die-roll { 0% { opacity: 0.38; transform: translateY(var(--roll-start-y, 5px)) rotate(var(--roll-start-angle, -9deg)) scale(0.9); } 42% { opacity: 0.8; transform: translateY(var(--roll-mid-y, -2px)) rotate(var(--roll-mid-angle, 6deg)) scale(1.04); } 72% { opacity: 0.94; transform: translateY(var(--roll-end-y, 1px)) rotate(var(--roll-end-angle, -3deg)) scale(0.98); } 100% { opacity: 1; transform: rotate(0) scale(1); } }
-@keyframes die-land { 0% { transform: scale(1.06, 0.88); box-shadow: 0 2px 0 rgb(30 27 24 / 15%), 0 0 0 6px color-mix(in srgb, var(--coral) 24%, transparent); } 55% { transform: scale(0.98, 1.03); box-shadow: 0 4px 0 rgb(30 27 24 / 15%), 0 0 0 2px color-mix(in srgb, var(--coral) 10%, transparent); } 100% { transform: scale(1, 1); box-shadow: 0 3px 0 rgb(30 27 24 / 12%); } }
+@keyframes die-land { 0% { transform: scale(1.06, 0.88); } 55% { transform: scale(0.98, 1.03); } 100% { transform: scale(1, 1); } }
 @keyframes held-marker-enter { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
 @keyframes die-fade { from { opacity: 0.55; } to { opacity: 1; } }
-@keyframes opponent-die-choice { 50% { transform: scale(1.08); box-shadow: 0 3px 0 color-mix(in srgb, var(--game-green-strong) 30%, transparent), 0 0 0 4px color-mix(in srgb, var(--game-green-strong) 25%, transparent); } }
+@keyframes opponent-die-choice { 50% { transform: scale(1.08); } }
 @keyframes panel-enter { from { opacity: 0; transform: translateY(8px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes finished-card-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
 @keyframes finished-mark-pop { 0% { opacity: 0; transform: scale(0.6) rotate(-12deg); } 65% { transform: scale(1.08) rotate(3deg); } 100% { opacity: 1; transform: rotate(-3deg); } }
@@ -962,9 +962,9 @@
 .game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-value[data-highlighted="true"] { animation-name: player-score-choice-demon; }
 .game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-value-bot[data-highlighted="true"] { animation-name: opponent-score-choice-demon; }
 .game-shell[data-game-mode="bot"][data-demon-theme="on"] .die-button[data-highlighted="true"] .die-face { animation-name: opponent-die-choice-demon; }
-@keyframes player-score-choice-demon { 45% { transform: scale(1.08); box-shadow: 0 0 0 4px rgb(31 95 156 / 20%); } }
-@keyframes opponent-score-choice-demon { 45% { transform: scale(1.08); box-shadow: 0 0 0 4px rgb(163 59 61 / 20%); } }
-@keyframes opponent-die-choice-demon { 50% { transform: scale(1.08); box-shadow: 0 4px 0 rgb(35 122 88 / 28%), 0 0 0 6px rgb(35 122 88 / 20%); } }
+@keyframes player-score-choice-demon { 45% { transform: scale(1.08); } }
+@keyframes opponent-score-choice-demon { 45% { transform: scale(1.08); } }
+@keyframes opponent-die-choice-demon { 50% { transform: scale(1.08); } }
 
 html:has(.game-shell[data-game-mode="bot"][data-demon-theme="on"]),
 body:has(.game-shell[data-game-mode="bot"][data-demon-theme="on"]) { background: #21152c; }
