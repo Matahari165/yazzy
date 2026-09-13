@@ -15,6 +15,7 @@ export interface LayoutProps {
   isDemonThemeEnabled: boolean;
   onStartBot: () => void;
   onStartQuiz: () => void;
+  onPlayDuo: () => void;
   onStartMultiplayer: () => void;
   onToggleMultiplayer: () => void;
   onCloseMultiplayer?: () => void;
@@ -95,6 +96,7 @@ export function SharedMultiplayerPanel({
   className?: string;
 }) {
   const handleClose = props.onCloseMultiplayer ?? props.onToggleMultiplayer;
+  const [showCustomRoom, setShowCustomRoom] = useState(false);
 
   useEffect(() => {
     if (!props.isMultiplayerOpen) return;
@@ -190,51 +192,74 @@ export function SharedMultiplayerPanel({
         <button
           className="primary-action create-room-action"
           type="button"
-          onClick={props.onStartMultiplayer}
+          onClick={props.onPlayDuo}
         >
-          Créer
+          Jouer ensemble
         </button>
 
-        <div className="lobby-divider" aria-hidden="true">
-          <span>ou</span>
+        <div className="duo-secondary-toggle-wrap">
+          <button
+            type="button"
+            className="duo-secondary-toggle"
+            aria-expanded={showCustomRoom}
+            onClick={() => setShowCustomRoom((prev) => !prev)}
+          >
+            {showCustomRoom ? "Masquer les options" : "Autre salon…"}
+          </button>
         </div>
 
-        <form className="lobby-code-form" onSubmit={props.onJoinMultiplayer} noValidate>
-          <label className="sr-only" htmlFor="room-code">
-            Code de partie
-          </label>
-          <div className="lobby-code-controls">
-            <div className="room-code-field">
-              <input
-                id="room-code"
-                name="room-code"
-                type="text"
-                value={props.roomCode}
-                onChange={(e) => props.onRoomCodeChange(e.currentTarget.value)}
-                onPaste={props.onPasteRoomCodeFromField}
-                placeholder="ABC123"
-                autoComplete="off"
-                autoCapitalize="characters"
-                spellCheck={false}
-                inputMode="text"
-                maxLength={6}
-                aria-describedby={props.roomCodeError ? "room-code-error" : undefined}
-                aria-invalid={props.roomCodeError ? true : undefined}
-              />
-              <button className="paste-code-action" type="button" onClick={props.onPasteRoomCode}>
-                Coller
-              </button>
-              <button className="join-code-action" type="submit">
-                Rejoindre
-              </button>
+        {showCustomRoom ? (
+          <div className="duo-custom-room-section">
+            <button
+              className="secondary-action create-room-action"
+              type="button"
+              onClick={props.onStartMultiplayer}
+            >
+              Créer un salon temporaire
+            </button>
+
+            <div className="lobby-divider" aria-hidden="true">
+              <span>ou</span>
             </div>
+
+            <form className="lobby-code-form" onSubmit={props.onJoinMultiplayer} noValidate>
+              <label className="sr-only" htmlFor="room-code">
+                Code de partie
+              </label>
+              <div className="lobby-code-controls">
+                <div className="room-code-field">
+                  <input
+                    id="room-code"
+                    name="room-code"
+                    type="text"
+                    value={props.roomCode}
+                    onChange={(e) => props.onRoomCodeChange(e.currentTarget.value)}
+                    onPaste={props.onPasteRoomCodeFromField}
+                    placeholder="ABC123"
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    inputMode="text"
+                    maxLength={6}
+                    aria-describedby={props.roomCodeError ? "room-code-error" : undefined}
+                    aria-invalid={props.roomCodeError ? true : undefined}
+                  />
+                  <button className="paste-code-action" type="button" onClick={props.onPasteRoomCode}>
+                    Coller
+                  </button>
+                  <button className="join-code-action" type="submit">
+                    Rejoindre
+                  </button>
+                </div>
+              </div>
+              {props.roomCodeError ? (
+                <p id="room-code-error" className="form-error" role="alert">
+                  {props.roomCodeError}
+                </p>
+              ) : null}
+            </form>
           </div>
-          {props.roomCodeError ? (
-            <p id="room-code-error" className="form-error" role="alert">
-              {props.roomCodeError}
-            </p>
-          ) : null}
-        </form>
+        ) : null}
       </section>
     </div>
   );

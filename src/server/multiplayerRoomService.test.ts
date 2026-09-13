@@ -382,6 +382,74 @@ describe("service de salon privé", () => {
     expect(store.room?.game).toEqual(beforeGame);
     expect(store.reaction).toMatchObject({ id: REACTION_ID, emoji: "😆" });
   });
+
+  it("attribue automatiquement les rôles lorsque deux joueurs rejoignent un salon permanent", async () => {
+    const store = new MemoryRoomStore();
+
+    // Premier arrivé : crée la table et devient player1 (même sans rôle spécifié)
+    const firstConnect = await command(store, {
+      type: "CONNECT",
+      token: HOST_TOKEN,
+      playerName: "Alice",
+    }, 1_000);
+
+    expect(firstConnect.status).toBe(200);
+    expect(firstConnect.body).toMatchObject({
+      ok: true,
+      yourRole: "player1",
+      game: { status: "waiting", roomId: "AMIS12" },
+    });
+    expect(store.room?.hostToken).toBe(HOST_TOKEN);
+    expect(store.room?.guestToken).toBeNull();
+
+    // Deuxième arrivé : rejoint la table et devient player2 automatiquement
+    const secondConnect = await command(store, {
+      type: "CONNECT",
+      token: GUEST_TOKEN,
+      playerName: "Bob",
+    }, 1_005);
+
+    expect(secondConnect.status).toBe(200);
+    expect(secondConnect.body).toMatchObject({
+      ok: true,
+      yourRole: "player2",
+      game: { status: "playing", roomId: "AMIS12" },
+    });
+    expect(store.room?.guestToken).toBe(GUEST_TOKEN);
+
+    // Reconnexion de chaque joueur avec son jeton : conservation de leurs rôles
+    const hostReconnect = await command(store, {
+      type: "CONNECT",
+      token: HOST_TOKEN,
+      playerName: "Alice",
+    }, 1_010);
+    expect(hostReconnect.body).toMatchObject({ ok: true, yourRole: "player1" });
+
+    const guestReconnect = await command(store, {
+      type: "CONNECT",
+      token: GUEST_TOKEN,
+      playerName: "Bob",
+    }, 1_015);
+    expect(guestReconnect.body).toMatchObject({ ok: true, yourRole: "player2" });
+  });
+
+  it("crée le salon même si le joueur qui arrive en premier avait le rôle player2 dans l'URL", async () => {
+    const store = new MemoryRoomStore();
+
+    const connectAsGuestOnEmpty = await command(store, {
+      type: "CONNECT",
+      role: "player2",
+      token: GUEST_TOKEN,
+      playerName: "Bob",
+    }, 1_000);
+
+    expect(connectAsGuestOnEmpty.status).toBe(200);
+    expect(connectAsGuestOnEmpty.body).toMatchObject({
+      ok: true,
+      yourRole: "player1",
+      game: { status: "waiting" },
+    });
+  });
 });
 
 describe("validation des commandes de salon", () => {

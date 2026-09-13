@@ -11,10 +11,8 @@ import {
   normalizePlayerName,
   PLAYER_NAME_MAX_LENGTH,
 } from "@/domain/playerName";
-import {
-  readStoredPlayerName,
-  writeStoredPlayerName,
-} from "@/lib/playerNameStorage";
+import { readStoredPlayerName, writeStoredPlayerName } from "@/lib/playerNameStorage";
+import { readPermanentRoomCode } from "@/lib/permanentRoomStorage";
 import { createGame } from "@/domain/game";
 import { writeStoredGame } from "@/lib/gameStorage";
 import { readBotDemonTheme, writeBotDemonTheme } from "@/lib/botThemeStorage";
@@ -61,6 +59,10 @@ export function HomeScreen() {
   useEffect(() => {
     router.prefetch("/game");
     router.prefetch("/quiz");
+    try {
+      const code = readPermanentRoomCode();
+      router.prefetch(`/play/${code}`);
+    } catch {}
   }, [router]);
 
   useEffect(() => {
@@ -108,6 +110,12 @@ export function HomeScreen() {
     setPlayerName(normalizedName);
     setPlayerNameError("");
     return normalizedName;
+  };
+
+  const playDuo = () => {
+    if (!savePlayerName()) return;
+    const code = readPermanentRoomCode();
+    router.push(`/play/${code}`);
   };
 
   const startMultiplayer = () => {
@@ -189,6 +197,7 @@ export function HomeScreen() {
     isDemonThemeEnabled,
     onStartBot: startBotGame,
     onStartQuiz: startQuiz,
+    onPlayDuo: playDuo,
     onStartMultiplayer: startMultiplayer,
     onToggleMultiplayer: toggleMultiplayer,
     onCloseMultiplayer: closeMultiplayer,

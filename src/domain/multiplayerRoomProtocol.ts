@@ -28,7 +28,7 @@ export type RoomActionEvent = {
 export type RoomCommand =
   | {
       type: "CONNECT";
-      role: MultiplayerRole;
+      role?: MultiplayerRole;
       token: string;
       playerName: string;
     }
@@ -137,19 +137,22 @@ export function parseRoomCommand(value: unknown): RoomCommand | null {
   if (!value || typeof value !== "object") return null;
   const data = value as Record<string, unknown>;
   if ("pairedGuestToken" in data) return null;
-  if (!isRole(data.role) || !isPlayerToken(data.token)) return null;
+  if (!isPlayerToken(data.token)) return null;
 
   if (
     data.type === "CONNECT" &&
-    isPlayerName(data.playerName)
+    isPlayerName(data.playerName) &&
+    (data.role === undefined || isRole(data.role))
   ) {
     return {
-      type: data.type,
+      type: "CONNECT",
       role: data.role,
       token: data.token,
       playerName: data.playerName,
     };
   }
+
+  if (!isRole(data.role)) return null;
 
   if (
     data.type === "SYNC" &&

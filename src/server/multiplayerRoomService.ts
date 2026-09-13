@@ -132,7 +132,7 @@ export async function handleRoomCommand({
 }): Promise<RoomServiceResult> {
   let room = await store.getRoom(roomId);
 
-  if (command.type === "CONNECT" && command.role === "player1") {
+  if (command.type === "CONNECT") {
     if (!room) {
       room = {
         game: createHostedGame(roomId, command.playerName, pickStartingPlayer()),
@@ -144,28 +144,53 @@ export async function handleRoomCommand({
         actionEventFloorVersion: -1,
       };
       await store.setRoom(roomId, room);
-    } else if (room.hostToken !== command.token) {
-      return failure(409, "ROOM_TAKEN", "Ce code appartient déjà à une autre partie.");
-    } else {
-      const nextGame = updatePlayerName(room.game, command.role, command.playerName);
+      return success(store, roomId, room, "player1", now);
+    }
+
+    if (room.hostToken === command.token) {
+      const nextGame = updatePlayerName(room.game, "player1", command.playerName);
       if (nextGame !== room.game) {
         room = { ...room, game: nextGame, version: room.version + 1 };
         await store.setRoom(roomId, room);
       }
+      return success(store, roomId, room, "player1", now);
     }
-    return success(store, roomId, room, command.role, now);
-  }
 
-  if (!room) {
-    return failure(404, "ROOM_NOT_FOUND", "Aucune partie active ne correspond à ce code.");
-  }
+    if (room.guestToken === command.token) {
+      const nextGame = updatePlayerName(room.game, "player2", command.playerName);
+      if (nextGame !== room.game) {
+        room = { ...room, game: nextGame, version: room.version + 1 };
+        await store.setRoom(roomId, room);
+      }
+      return success(store, roomId, room, "player2", now);
+    }
 
-  if (command.type === "CONNECT" && command.role === "player2") {
-    if (room.guestToken && room.guestToken !== command.token) {
-      const lastSeen = await store.getPresence(roomId, "player2");
-      if (lastSeen !== null && now - lastSeen <= ONLINE_WINDOW_MS) {
+    if (room.guestToken !== null) {
+      const guestLastSeen = await store.getPresence(roomId, "player2");
+      if (guestLastSeen !== null && now - guestLastSeen <= ONLINE_WINDOW_MS) {
+        if (command.role === "player1") {
+          return failure(409, "ROOM_TAKEN", "Ce code appartient déjà à une autre partie.");
+        }
         return failure(409, "ROOM_FULL", "Deux amis jouent déjà dans cette partie.");
       }
+    }
+
+    if (command.role === "player1") {
+      const hostLastSeen = await store.getPresence(roomId, "player1");
+      if (hostLastSeen !== null && now - hostLastSeen <= ONLINE_WINDOW_MS) {
+        return failure(409, "ROOM_TAKEN", "Ce code appartient déjà à une autre partie.");
+      }
+      room = {
+        game: createHostedGame(roomId, command.playerName, pickStartingPlayer()),
+        hostToken: command.token,
+        guestToken: null,
+        version: room.version + 1,
+        lastActionIds: {},
+        actionEvents: [],
+        actionEventFloorVersion: -1,
+      };
+      await store.setRoom(roomId, room);
+      return success(store, roomId, room, "player1", now);
     }
 
     const nextGame = connectGuest(room.game, command.playerName);
@@ -176,7 +201,11 @@ export async function handleRoomCommand({
       version: nextGame === room.game ? room.version : room.version + 1,
     };
     await store.setRoom(roomId, room);
-    return success(store, roomId, room, command.role, now);
+    return success(store, roomId, room, "player2", now);
+  }
+
+  if (!room) {
+    return failure(404, "ROOM_NOT_FOUND", "Aucune partie active ne correspond à ce code.");
   }
 
   if (tokenFor(room, command.role) !== command.token) {

@@ -50,7 +50,7 @@ export function MultiplayerClient({
   isHost,
 }: {
   roomId: string;
-  isHost: boolean;
+  isHost?: boolean;
 }) {
   const [playerName, setPlayerName] = useState<string | null>(null);
   const {

@@ -18,7 +18,7 @@ export default async function PlayRoomPage({ params, searchParams }: PlayRoomPag
   return (
     <MultiplayerClient
       roomId={roomId}
-      isHost={query.host === "1"}
+      isHost={query.host === "1" ? true : query.host === "0" ? false : undefined}
     />
   );
 }

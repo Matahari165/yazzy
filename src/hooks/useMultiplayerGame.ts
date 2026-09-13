@@ -128,17 +128,21 @@ function pollJitter(delay: number): number {
   return Math.max(60, Math.round(delay * jitter));
 }
 
-function playerToken(roomId: string, role: MultiplayerRole, preferredToken?: string): string {
-  const key = `${PLAYER_TOKEN_PREFIX}${roomId}.${role}`;
+function playerToken(roomId: string, preferredRole?: MultiplayerRole, preferredToken?: string): string {
+  const roomKey = `${PLAYER_TOKEN_PREFIX}${roomId}`;
+  const legacyRoleKey = preferredRole ? `${PLAYER_TOKEN_PREFIX}${roomId}.${preferredRole}` : null;
   try {
     if (preferredToken) {
-      localStorage.setItem(key, preferredToken);
+      localStorage.setItem(roomKey, preferredToken);
       return preferredToken;
     }
-    const saved = localStorage.getItem(key);
-    if (saved) return saved;
+    const saved = localStorage.getItem(roomKey) || (legacyRoleKey ? localStorage.getItem(legacyRoleKey) : null);
+    if (saved) {
+      localStorage.setItem(roomKey, saved);
+      return saved;
+    }
     const token = crypto.randomUUID();
-    localStorage.setItem(key, token);
+    localStorage.setItem(roomKey, token);
     return token;
   } catch {
     return crypto.randomUUID();
@@ -187,8 +191,8 @@ export type MultiplayerStatus =
 
 export function useMultiplayerGame(
   roomId: string,
-  isHost: boolean,
-  playerName: string | null,
+  isHost?: boolean,
+  playerName: string | null = null,
 ) {
   const [game, setGame] = useState<MultiplayerGameState | null>(null);
   const [localRole, setLocalRole] = useState<MultiplayerRole | null>(null);
@@ -326,6 +330,7 @@ export function useMultiplayerGame(
       response.version,
       source,
     );
+    roleRef.current = response.yourRole;
     setLocalRole((current) => (current === response.yourRole ? current : response.yourRole));
     setOpponentOnline((current) => (current === response.opponentOnline ? current : response.opponentOnline));
     setLatestReaction((currentReaction) => (
@@ -345,18 +350,20 @@ export function useMultiplayerGame(
     let pollTimer: number | null = null;
     let consecutiveFailures = 0;
     let emptyOpponentSyncs = 0;
-    const role: MultiplayerRole = isHost ? "player1" : "player2";
-    const token = playerToken(roomId, role);
-    roleRef.current = role;
+    const initialRole: MultiplayerRole | undefined = isHost === true ? "player1" : isHost === false ? "player2" : undefined;
+    const token = playerToken(roomId, initialRole);
+    roleRef.current = initialRole ?? null;
     tokenRef.current = token;
     resetReplay();
 
     const schedulePoll = (overrideDelay?: number) => {
       if (!cancelled) {
+        const activeRole = roleRef.current;
+        if (!activeRole) return;
         const currentGame = canonicalGameRef.current;
         const turn = currentGame?.status !== "playing"
           ? "neutral"
-          : currentGame.activePlayer === role
+          : currentGame.activePlayer === activeRole
             ? "active"
             : "opponent";
         let baseDelay = overrideDelay
@@ -378,11 +385,13 @@ export function useMultiplayerGame(
     };
 
     const poll = async () => {
+      const activeRole = roleRef.current;
+      if (!activeRole) return;
       let followUpDelay: number | undefined;
       try {
         const response = await sendRoomCommand(roomId, {
           type: "SYNC",
-          role,
+          role: activeRole,
           token,
           playerName,
           afterVersion: eventCursorRef.current,
@@ -429,19 +438,20 @@ export function useMultiplayerGame(
       try {
         const response = await sendRoomCommand(roomId, {
           type: "CONNECT",
-          role,
+          ...(initialRole ? { role: initialRole } : {}),
           token,
           playerName,
         });
         if (cancelled) return;
         if (response.ok) {
+          roleRef.current = response.yourRole;
           applySuccess(response, "connect");
           schedulePoll();
           return;
         }
         if (
           response.code === "ROOM_NOT_FOUND" &&
-          role === "player2" &&
+          initialRole === "player2" &&
           attempt < 3
         ) {
           await new Promise((resolve) => window.setTimeout(resolve, 700));
