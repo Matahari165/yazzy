@@ -284,11 +284,11 @@ export function useMultiplayerGame(
           pendingHoldsRef.current,
         )
       : canonicalGameRef.current;
-    // Pendant un SCORE optimiste, un SYNC avec une vieille version ne doit pas
-    // écraser l'aperçu local (évite le flicker à 1 RTT).
-    const keepOptimisticPreview = source === "sync"
-      && actionPendingRef.current
-      && !shouldReplaceGame;
+
+    // Protection anti-flicker : pendant une action optimiste locale (ROLL ou SCORE),
+    // une réponse intermédiaire (ex: retour d'un HOLD antérieur ou SYNC en retard)
+    // ne doit pas écraser l'aperçu local avec d'anciens dés ou un ancien rollNumber.
+    const keepOptimisticPreview = actionPendingRef.current && !shouldReplaceGame;
 
     if (source === "sync" && response.eventsTruncated) {
       replayGenerationRef.current += 1;
@@ -315,6 +315,7 @@ export function useMultiplayerGame(
     } else if (
       replayTimerRef.current === null &&
       replayQueueRef.current.length === 0 &&
+      !keepOptimisticPreview &&
       shouldDisplayResponseImmediately(eventCursorRef.current, response.version, source)
     ) {
       setGame(visibleGame);
@@ -509,12 +510,15 @@ export function useMultiplayerGame(
     const isHold = action.type === "HOLD";
     // Anti double-clic : un seul ROLL/SCORE/REMATCH en vol. Les HOLD restent
     // optimistes et mis en file même pendant un ROLL, pour garder le rythme solo.
-    // Si un SCORE arrive alors qu'un ROLL termine son RTT, on l'enchaîne dès que possible.
+    // Si un SCORE ou un ROLL rapide arrive alors qu'une action termine son RTT, on l'enchaîne.
     if (!isHold && actionPendingRef.current) {
-      if (action.type === "SCORE") {
+      if (action.type === "SCORE" || action.type === "ROLL") {
         actionQueueRef.current.then(() => {
           if (roleRef.current && canonicalGameRef.current?.activePlayer === roleRef.current) {
-            dispatch(action);
+            const currentRoll = canonicalGameRef.current[roleRef.current]?.state.rollNumber ?? 0;
+            if (action.type === "SCORE" || currentRoll < 3) {
+              dispatch(action);
+            }
           }
         });
       }

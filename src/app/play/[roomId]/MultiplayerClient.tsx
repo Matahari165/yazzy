@@ -14,7 +14,7 @@ import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 import { botAudio } from "@/lib/botAudio";
 import { readStoredPlayerName, writeStoredPlayerName } from "@/lib/playerNameStorage";
 
-const HUMAN_ROLL_ANIMATION_MS = 360;
+const HUMAN_ROLL_ANIMATION_MS = 300;
 
 let cachedReducedMotion: boolean | null = null;
 
@@ -123,7 +123,7 @@ export function MultiplayerClient({
   }, [status]);
 
   const handleRoll = useCallback(() => {
-    if (!canAct || isRolling || pendingAction || !localState || localState.rollNumber >= 3) return;
+    if (!canAct || isRolling || !localState || localState.rollNumber >= 3) return;
     if (localState.rollNumber > 0 && localState.held.every(Boolean)) return;
     botAudio.playEffect("dice");
     roll();
@@ -134,7 +134,7 @@ export function MultiplayerClient({
       rollTimerRef.current = null;
       setIsRolling(false);
     }, duration);
-  }, [canAct, isRolling, pendingAction, localState, roll]);
+  }, [canAct, isRolling, localState, roll]);
 
   const handleScore = useCallback((category = selectedCategory) => {
     if (!category || !canAct || isRolling) return;
@@ -145,17 +145,16 @@ export function MultiplayerClient({
   }, [selectedCategory, canAct, isRolling, score]);
 
   const handleToggleDie = useCallback((index: number) => {
-    if (!canAct || isRolling) return;
-    if (pendingAction !== null && pendingAction !== "ROLL") return;
+    if (!canAct) return;
     if ((localState?.rollNumber ?? 0) === 0) return;
     const isHeld = localState?.held[index] ?? false;
     botAudio.playEffect(isHeld ? "release" : "hold");
     toggleHeld(index);
-  }, [canAct, isRolling, pendingAction, localState, toggleHeld]);
+  }, [canAct, localState, toggleHeld]);
 
   useGameKeyboard({
-    disabled: status !== "playing" || !canAct || isRolling,
-    canRoll: Boolean(localState && localState.rollNumber < 3 && !localState.held.every(Boolean)),
+    disabled: status !== "playing" || !canAct,
+    canRoll: Boolean(localState && localState.rollNumber < 3 && !localState.held.every(Boolean) && !isRolling),
     canScore: selectedCategory !== null && !isRolling,
     onRoll: handleRoll,
     onScore: handleScore,
@@ -459,8 +458,8 @@ const MultiplayerGameView = memo(function MultiplayerGameView({
             selectedCategory={isMyTurn ? selectedCategory : null}
             animationSeed={animationSeed}
             isRolling={isMyTurn ? isRolling : isReplayingOpponentRoll}
-            isDisabled={!canAct || (pendingAction !== null && pendingAction !== "ROLL")}
-            isRollDisabled={pendingAction !== null}
+            isDisabled={!canAct}
+            isRollDisabled={false}
             isObserver={!isMyTurn}
             highlightedDieIndex={!isMyTurn ? highlightedOpponentDie : null}
             label={isMyTurn ? `Les dés de ${localName}` : `Les dés de ${opponentName}`}
