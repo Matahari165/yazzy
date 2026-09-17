@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  countQuizQuestions,
   createQuizGame,
   isQuizQuestion,
   nextQuizQuestion,
@@ -14,6 +15,7 @@ import {
   type QuizQuestion,
 } from "./quiz";
 import { QUIZ_QUESTIONS_FR } from "../data/quizQuestions.fr";
+import { QUIZ_QUESTION_POOL } from "../data/quizBank";
 
 const pool: QuizQuestion[] = [
   { id: "a-1", category: "science", question: "Q1 ?", choices: ["A", "B", "C", "D"], answerIndex: 0 },
@@ -27,15 +29,42 @@ const deterministic = (sequence: number[]) => {
 };
 
 describe("quiz domain", () => {
-  it("valide le dataset FR embarqué", () => {
+  it("garde le pack historique valide", () => {
     expect(QUIZ_QUESTIONS_FR.length).toBeGreaterThanOrEqual(100);
     expect(QUIZ_QUESTIONS_FR.every(isQuizQuestion)).toBe(true);
-    const ids = new Set(QUIZ_QUESTIONS_FR.map((q) => q.id));
-    expect(ids.size).toBe(QUIZ_QUESTIONS_FR.length);
+  });
+
+  it("valide la méga-banque : volume, unicité, difficultés", () => {
+    expect(QUIZ_QUESTION_POOL.length).toBeGreaterThanOrEqual(1900);
+    expect(QUIZ_QUESTION_POOL.every(isQuizQuestion)).toBe(true);
+    const ids = new Set(QUIZ_QUESTION_POOL.map((q) => q.id));
+    expect(ids.size).toBe(QUIZ_QUESTION_POOL.length);
+    // Aucun libellé rejoué deux fois dans le même thème.
+    const labels = new Set(QUIZ_QUESTION_POOL.map((q) => `${q.category}::${q.question.trim().toLowerCase()}`));
+    expect(labels.size).toBe(QUIZ_QUESTION_POOL.length);
     for (const category of ["science", "histoire", "art", "pays"] as const) {
-      expect(QUIZ_QUESTIONS_FR.filter((q) => q.category === category).length).toBeGreaterThanOrEqual(20);
+      for (const difficulty of ["facile", "moyen", "difficile"] as const) {
+        const count = QUIZ_QUESTION_POOL.filter(
+          (q) => q.category === category && q.difficulty === difficulty,
+        ).length;
+        expect(count).toBeGreaterThanOrEqual(150);
+      }
     }
-    expect(QUIZ_QUESTIONS_FR.filter((q) => q.category === "science").length).toBeGreaterThanOrEqual(35);
+    // Chaque réponse pointe vers le bon choix et les choix sont distincts.
+    for (const q of QUIZ_QUESTION_POOL) {
+      expect(new Set(q.choices).size).toBe(4);
+      expect(q.choices[q.answerIndex]).toBeTruthy();
+    }
+  });
+
+  it("filtre par difficulté et compte sans remise", () => {
+    expect(countQuizQuestions(QUIZ_QUESTION_POOL, "aleatoire", "facile")).toBeGreaterThanOrEqual(600);
+    const picked = pickQuizQuestions(QUIZ_QUESTION_POOL, "science", 10, deterministic([0.3]), [], "difficile");
+    expect(picked).toHaveLength(10);
+    expect(picked.every((q) => q.difficulty === undefined || q.difficulty === "difficile")).toBe(true);
+    const game = createQuizGame(QUIZ_QUESTION_POOL, "pays", deterministic([0.7]), [], 5, "classique", "facile");
+    expect(game?.difficulty).toBe("facile");
+    expect(game?.questions).toHaveLength(5);
   });
 
   it("filtre par thème et mélange sans remise", () => {

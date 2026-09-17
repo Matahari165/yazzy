@@ -4,16 +4,21 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuizGame } from "@/hooks/useQuizGame";
 import {
+  countQuizQuestions,
   QUIZ_CATEGORY_LABELS,
   QUIZ_CATEGORIES,
+  QUIZ_DIFFICULTY_FILTERS,
+  QUIZ_DIFFICULTY_LABELS,
   QUIZ_FORMAT_LABELS,
   QUIZ_SURVIVAL_LIVES,
   QUIZ_TIMEOUT_CHOICE,
   scoreQuizGame,
   type QuizCategory,
+  type QuizDifficultyFilter,
   type QuizFormat,
   type QuizMode,
 } from "@/domain/quiz";
+import { QUIZ_QUESTION_POOL } from "@/data/quizBank";
 
 const QA_MODE_CODE: Record<QuizMode, string> = {
   aleatoire: "MIX",
@@ -34,6 +39,13 @@ const QA_MODE_BLURB: Record<QuizMode, string> = {
 const QA_FORMAT_BLURB: Record<QuizFormat, string> = {
   classique: "10 questions",
   survie: "Sans fin · 3 vies",
+};
+
+const QA_DIFFICULTY_CODE: Record<QuizDifficultyFilter, string> = {
+  melange: "★",
+  facile: "F",
+  moyen: "M",
+  difficile: "D",
 };
 
 const QA_LETTERS = ["A", "B", "C", "D"] as const;
@@ -86,15 +98,17 @@ export function QuizBoard() {
     total,
   } = useQuizGame();
   const [format, setFormat] = useState<QuizFormat>("classique");
-  const [failCtx, setFailCtx] = useState<{ mode: QuizMode; format: QuizFormat } | null>(null);
+  const [difficulty, setDifficulty] = useState<QuizDifficultyFilter>("melange");
+  const [failCtx, setFailCtx] = useState<{ mode: QuizMode; format: QuizFormat; difficulty: QuizDifficultyFilter } | null>(null);
   const handleStart = (mode: QuizMode) => {
-    const ok = start(mode, format);
-    setFailCtx(ok ? null : { mode, format });
+    const ok = start(mode, format, difficulty);
+    setFailCtx(ok ? null : { mode, format, difficulty });
   };
   const retryLast = () => {
-    const ctx = failCtx ?? { mode: "aleatoire" as QuizMode, format };
+    const ctx = failCtx ?? { mode: "aleatoire" as QuizMode, format, difficulty };
     if (ctx.format !== format) setFormat(ctx.format);
-    const ok = start(ctx.mode, ctx.format);
+    if (ctx.difficulty !== difficulty) setDifficulty(ctx.difficulty);
+    const ok = start(ctx.mode, ctx.format, ctx.difficulty);
     setFailCtx(ok ? null : ctx);
   };
   const goToThemes = () => {
@@ -297,6 +311,34 @@ export function QuizBoard() {
             </div>
           ) : null}
 
+          <p className="qa-group-label" id="quiz-difficulty-label">
+            Difficulté · {QUIZ_QUESTION_POOL.length} questions
+          </p>
+          <div className="qa-formats" role="group" aria-labelledby="quiz-difficulty-label">
+            {QUIZ_DIFFICULTY_FILTERS.map((option, i) => (
+              <button
+                key={option}
+                type="button"
+                className="qa-format qa-rise"
+                style={{ "--i": i } as React.CSSProperties}
+                data-active={difficulty === option}
+                aria-pressed={difficulty === option}
+                onClick={() => setDifficulty(option)}
+              >
+                <span className="qa-format-code" aria-hidden="true">
+                  {QA_DIFFICULTY_CODE[option]}
+                </span>
+                <span className="qa-format-text">
+                  <strong>{QUIZ_DIFFICULTY_LABELS[option]}</strong>
+                  <small>{countQuizQuestions(QUIZ_QUESTION_POOL, "aleatoire", option)} questions</small>
+                </span>
+                <span className="qa-format-check" aria-hidden="true">
+                  →
+                </span>
+              </button>
+            ))}
+          </div>
+
           <div className="qa-themes" id="quiz-themes">
             {(["aleatoire", ...QUIZ_CATEGORIES] as QuizMode[]).map((mode, i) => (
               <button
@@ -324,6 +366,9 @@ export function QuizBoard() {
           <p className="qa-kicker">
             {game.format === "survie" ? "Survie" : "Partie"} ·{" "}
             {game.mode === "aleatoire" ? "Aléatoire" : QUIZ_CATEGORY_LABELS[game.mode]}
+            {game.difficulty && game.difficulty !== "melange"
+              ? ` · ${QUIZ_DIFFICULTY_LABELS[game.difficulty]}`
+              : null}
           </p>
           {score === game.questions.length && game.questions.length > 0 ? (
             <p className="qa-stamp" aria-hidden="true">
@@ -376,7 +421,7 @@ export function QuizBoard() {
           </ol>
 
           <div className="qa-actions">
-            <button type="button" className="qa-primary" onClick={() => start(game.mode, game.format)}>
+            <button type="button" className="qa-primary" onClick={() => start(game.mode, game.format, game.difficulty ?? "melange")}>
               Rejouer <span aria-hidden="true">↻</span>
             </button>
             <button type="button" className="qa-ghost-btn" onClick={quitToThemes}>

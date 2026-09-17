@@ -10,11 +10,12 @@ import {
   scoreQuizGame,
   selectQuizAnswer,
   timeoutQuizAnswer,
+  type QuizDifficultyFilter,
   type QuizFormat,
   type QuizMode,
   type QuizState,
 } from "../domain/quiz";
-import { QUIZ_QUESTIONS_FR } from "../data/quizQuestions.fr";
+import { QUIZ_QUESTION_POOL } from "../data/quizBank";
 import { readStoredQuiz, writeStoredQuiz } from "../lib/quizStorage";
 
 export function useQuizGame() {
@@ -63,14 +64,15 @@ export function useQuizGame() {
   }, [game, timeout]);
 
   const start = useCallback(
-    (mode: QuizMode, format: QuizFormat = "classique") => {
+    (mode: QuizMode, format: QuizFormat = "classique", difficulty: QuizDifficultyFilter = "melange") => {
       const next = createQuizGame(
-        QUIZ_QUESTIONS_FR,
+        QUIZ_QUESTION_POOL,
         mode,
         Math.random,
         recentIds,
         QUIZ_QUESTIONS_PER_GAME,
         format,
+        difficulty,
       );
       if (next) {
         setStartFailed(false);

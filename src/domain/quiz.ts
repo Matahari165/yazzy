@@ -1,7 +1,7 @@
-export const QUIZ_VERSION = 2;
+export const QUIZ_VERSION = 3;
 export const QUIZ_STORAGE_KEY = "yazzy.quiz.v1";
 export const QUIZ_QUESTIONS_PER_GAME = 10;
-export const QUIZ_RECENT_IDS_MAX = 100;
+export const QUIZ_RECENT_IDS_MAX = 1000;
 export const QUIZ_TIME_PER_QUESTION_S = 15;
 export const QUIZ_SURVIVAL_LIVES = 3;
 /** Choix enregistré quand le chrono de 15 s expire sans réponse. */
@@ -14,6 +14,22 @@ export type QuizMode = QuizCategory | "aleatoire";
 export type QuizFormat = "classique" | "survie";
 
 export const QUIZ_MODES: QuizMode[] = ["aleatoire", ...QUIZ_CATEGORIES];
+
+export const QUIZ_DIFFICULTIES = ["facile", "moyen", "difficile"] as const;
+export type QuizDifficulty = (typeof QUIZ_DIFFICULTIES)[number];
+export type QuizDifficultyFilter = QuizDifficulty | "melange";
+
+export const QUIZ_DIFFICULTY_FILTERS: QuizDifficultyFilter[] = [
+  "melange",
+  ...QUIZ_DIFFICULTIES,
+];
+
+export const QUIZ_DIFFICULTY_LABELS: Record<QuizDifficultyFilter, string> = {
+  melange: "Mélange",
+  facile: "Facile",
+  moyen: "Moyen",
+  difficile: "Difficile",
+};
 
 export const QUIZ_CATEGORY_LABELS: Record<QuizCategory, string> = {
   science: "Sciences",
@@ -35,6 +51,8 @@ export const QUIZ_FORMAT_LABELS: Record<QuizFormat, string> = {
 export type QuizQuestion = {
   id: string;
   category: QuizCategory;
+  /** Difficulté. Optionnelle pour rester compatible avec le pack historique (sans difficulté, jouable dans tous les filtres). */
+  difficulty?: QuizDifficulty;
   question: string;
   choices: [string, string, string, string];
   answerIndex: number;
@@ -51,6 +69,7 @@ export type QuizState = {
   version: typeof QUIZ_VERSION;
   mode: QuizMode;
   format: QuizFormat;
+  difficulty: QuizDifficultyFilter;
   questions: QuizRoundQuestion[];
   currentIndex: number;
   selected: number | null;
@@ -72,6 +91,14 @@ export function isQuizFormat(value: unknown): value is QuizFormat {
   return value === "classique" || value === "survie";
 }
 
+export function isQuizDifficulty(value: unknown): value is QuizDifficulty {
+  return value === "facile" || value === "moyen" || value === "difficile";
+}
+
+export function isQuizDifficultyFilter(value: unknown): value is QuizDifficultyFilter {
+  return value === "melange" || isQuizDifficulty(value);
+}
+
 export function isQuizQuestion(value: unknown): value is QuizQuestion {
   if (!value || typeof value !== "object") return false;
   const q = value as Partial<QuizQuestion>;
@@ -87,7 +114,8 @@ export function isQuizQuestion(value: unknown): value is QuizQuestion {
     Number.isInteger(q.answerIndex) &&
     (q.answerIndex as number) >= 0 &&
     (q.answerIndex as number) <= 3 &&
-    (q.explanation === undefined || typeof q.explanation === "string")
+    (q.explanation === undefined || typeof q.explanation === "string") &&
+    (q.difficulty === undefined || isQuizDifficulty(q.difficulty))
   );
 }
 
@@ -124,15 +152,32 @@ export function pickQuizQuestions(
   count: number = QUIZ_QUESTIONS_PER_GAME,
   rand: () => number = Math.random,
   recentIds: readonly string[] = [],
+  difficulty: QuizDifficultyFilter = "melange",
 ): QuizQuestion[] {
-  const filtered =
+  const byMode =
     mode === "aleatoire" ? [...pool] : pool.filter((q) => q.category === mode);
+  // Les questions historiques sans difficulté restent jouables dans tous les filtres.
+  const filtered =
+    difficulty === "melange"
+      ? byMode
+      : byMode.filter((q) => q.difficulty === undefined || q.difficulty === difficulty);
   if (filtered.length === 0) return [];
   const recent = new Set(recentIds);
   const fresh = filtered.filter((q) => !recent.has(q.id));
   // Préfère les questions non vues récemment, complète avec les autres si besoin.
   const ordered = [...shuffleArray(fresh, rand), ...shuffleArray(filtered.filter((q) => recent.has(q.id)), rand)];
   return ordered.slice(0, Math.min(count, filtered.length));
+}
+
+export function countQuizQuestions(
+  pool: readonly QuizQuestion[],
+  mode: QuizMode,
+  difficulty: QuizDifficultyFilter = "melange",
+): number {
+  const byMode =
+    mode === "aleatoire" ? pool : pool.filter((q) => q.category === mode);
+  if (difficulty === "melange") return byMode.length;
+  return byMode.filter((q) => q.difficulty === undefined || q.difficulty === difficulty).length;
 }
 
 export function createQuizGame(
@@ -142,15 +187,17 @@ export function createQuizGame(
   recentIds: readonly string[] = [],
   count: number = QUIZ_QUESTIONS_PER_GAME,
   format: QuizFormat = "classique",
+  difficulty: QuizDifficultyFilter = "melange",
 ): QuizState | null {
   // En survie on enchaîne tout le thème jusqu'à épuisement des vies.
   const effectiveCount = format === "survie" ? Number.MAX_SAFE_INTEGER : count;
-  const picked = pickQuizQuestions(pool, mode, effectiveCount, rand, recentIds);
+  const picked = pickQuizQuestions(pool, mode, effectiveCount, rand, recentIds, difficulty);
   if (picked.length === 0) return null;
   return {
     version: QUIZ_VERSION,
     mode,
     format,
+    difficulty,
     questions: picked.map((q) => toRoundQuestion(q, rand)),
     currentIndex: 0,
     selected: null,
@@ -204,6 +251,12 @@ export function isStoredQuizGame(value: unknown): value is QuizState {
   if (!value || typeof value !== "object") return false;
   const game = value as Partial<QuizState>;
   if (game.version !== QUIZ_VERSION || !isQuizMode(game.mode) || !isQuizFormat(game.format))
+    return false;
+  if (
+    game.difficulty !== undefined &&
+    game.difficulty !== null &&
+    !isQuizDifficultyFilter(game.difficulty)
+  )
     return false;
   if (!Array.isArray(game.questions) || game.questions.length === 0) return false;
   if (

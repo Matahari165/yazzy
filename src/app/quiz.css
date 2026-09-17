@@ -211,6 +211,7 @@
   animation: qa-blink 1.4s ease-in-out infinite;
 }
 .qa-sub { margin: 0; color: var(--qa-soft); font-size: 16px; font-weight: 600; }
+.qa-group-label { margin: 18px 0 8px; color: var(--qa-soft); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
 
 .qa-formats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .qa-format {
