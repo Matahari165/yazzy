@@ -165,23 +165,17 @@ export function HomeScreen() {
     joinRoom(roomCode);
   };
 
-  const joinPastedRoomCode = (pastedValue: string) => {
+  const setPastedRoomCode = (pastedValue: string) => {
     const normalizedCode = normalizeRoomCode(pastedValue);
     setRoomCode(normalizedCode);
-    joinRoom(normalizedCode, "Code invalide.");
-  };
-
-  const pasteRoomCodeFromField = (event: React.ClipboardEvent<HTMLInputElement>) => {
-    event.preventDefault();
     setRoomCodeError("");
-    joinPastedRoomCode(event.clipboardData.getData("text"));
   };
 
   const pasteRoomCode = async () => {
     setRoomCodeError("");
     try {
       if (!navigator.clipboard?.readText) throw new Error("Clipboard unavailable");
-      joinPastedRoomCode(await navigator.clipboard.readText());
+      setPastedRoomCode(await navigator.clipboard.readText());
     } catch {
       setRoomCodeError("Colle le code dans le champ.");
     }
@@ -205,7 +199,6 @@ export function HomeScreen() {
     onPlayerNameChange: (name) => {
       setPlayerName(name);
       setPlayerNameError("");
-      writeStoredPlayerName(name);
     },
     onPlayerNameBlur: () => {
       const normalizedName = normalizePlayerName(playerName);
@@ -217,7 +210,6 @@ export function HomeScreen() {
       setRoomCodeError("");
     },
     onPasteRoomCode: pasteRoomCode,
-    onPasteRoomCodeFromField: pasteRoomCodeFromField,
     onToggleDemonTheme: (enabled) => {
       setIsDemonThemeEnabled(enabled);
       writeBotDemonTheme(enabled);

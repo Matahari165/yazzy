@@ -18,10 +18,12 @@ export type CategoryEvaluation = {
 
 type Outcome = { counts: DiceCounts; probability: number };
 type SolvedState = Omit<CategoryEvaluation, "category" | "currentScore" | "precision">;
+type HoldOption = { counts: DiceCounts; rerolledDice: number };
 
 const factorial = [1, 1, 2, 6, 24, 120];
 const comparisonTolerance = 1e-12;
 const outcomeCache = new Map<number, Outcome[]>();
+const holdCache = new Map<string, HoldOption[]>();
 const solveCache = new Map<string, SolvedState>();
 
 function clampProbability(value: number): number {
@@ -58,13 +60,18 @@ export function rollOutcomes(numberOfDice: number): Outcome[] {
   return outcomes;
 }
 
-function uniqueHolds(counts: DiceCounts): DiceCounts[] {
-  const holds: DiceCounts[] = [];
+function uniqueHolds(counts: DiceCounts): HoldOption[] {
+  const key = counts.join(",");
+  const cached = holdCache.get(key);
+  if (cached) return cached;
+
+  const holds: HoldOption[] = [];
   const current = [0, 0, 0, 0, 0, 0];
 
   function visit(face: number) {
     if (face === 6) {
-      holds.push([...current] as unknown as DiceCounts);
+      const held = [...current] as unknown as DiceCounts;
+      holds.push({ counts: held, rerolledDice: 5 - countHeld(held) });
       return;
     }
     for (let count = 0; count <= counts[face]; count += 1) {
@@ -74,6 +81,7 @@ function uniqueHolds(counts: DiceCounts): DiceCounts[] {
   }
 
   visit(0);
+  holdCache.set(key, holds);
   return holds;
 }
 
@@ -97,6 +105,7 @@ function solve(category: CategoryId, counts: DiceCounts, remainingRolls: number)
   if (solveCache.size > 50000) {
     solveCache.clear();
     outcomeCache.clear();
+    holdCache.clear();
   }
 
   const dice = countsToDice(counts);
@@ -116,12 +125,12 @@ function solve(category: CategoryId, counts: DiceCounts, remainingRolls: number)
   let bestExpectedHold = counts;
 
   for (const hold of uniqueHolds(counts)) {
-    const rerolledDice = 5 - countHeld(hold);
+    const { counts: held, rerolledDice } = hold;
     let success = 0;
     let expected = 0;
 
     for (const outcome of rollOutcomes(rerolledDice)) {
-      const child = solve(category, combineCounts(hold, outcome.counts), remainingRolls - 1);
+      const child = solve(category, combineCounts(held, outcome.counts), remainingRolls - 1);
       success += outcome.probability * child.successProbability;
       expected += outcome.probability * child.expectedScore;
     }
@@ -130,9 +139,9 @@ function solve(category: CategoryId, counts: DiceCounts, remainingRolls: number)
       bestSuccess = success;
     }
     if (expected > bestExpected + comparisonTolerance ||
-        (Math.abs(expected - bestExpected) <= comparisonTolerance && countHeld(hold) > countHeld(bestExpectedHold))) {
+        (Math.abs(expected - bestExpected) <= comparisonTolerance && countHeld(held) > countHeld(bestExpectedHold))) {
       bestExpected = expected;
-      bestExpectedHold = hold;
+      bestExpectedHold = held;
     }
   }
 

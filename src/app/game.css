@@ -446,18 +446,18 @@
   will-change: transform;
 }
 
-.die-tray .die-button:nth-child(5n+1) { transform: rotate(-1.4deg); }
-.die-tray .die-button:nth-child(5n+2) { transform: rotate(1deg); }
-.die-tray .die-button:nth-child(5n+3) { transform: rotate(-0.6deg); }
-.die-tray .die-button:nth-child(5n+4) { transform: rotate(1.2deg); }
-.die-tray .die-button:nth-child(5n) { transform: rotate(-1deg); }
+.dice-tray .die-button:nth-child(5n+1) { transform: rotate(-1.4deg); }
+.dice-tray .die-button:nth-child(5n+2) { transform: rotate(1deg); }
+.dice-tray .die-button:nth-child(5n+3) { transform: rotate(-0.6deg); }
+.dice-tray .die-button:nth-child(5n+4) { transform: rotate(1.2deg); }
+.dice-tray .die-button:nth-child(5n) { transform: rotate(-1deg); }
 
-.die-tray .die-button:not(:disabled):hover,
-.die-tray .die-button:not(:disabled):focus-visible {
+.dice-tray .die-button:not(:disabled):hover,
+.dice-tray .die-button:not(:disabled):focus-visible {
   transform: rotate(0deg) translateY(-2px);
 }
-.die-tray .die-button[data-held="true"]:not(:disabled):hover,
-.die-tray .die-button[data-held="true"]:not(:disabled):focus-visible {
+.dice-tray .die-button[data-held="true"]:not(:disabled):hover,
+.dice-tray .die-button[data-held="true"]:not(:disabled):focus-visible {
   transform: translateY(-5px);
 }
 
@@ -763,7 +763,11 @@
   color: var(--ink);
   line-height: 1;
 }
-.finished-result:focus { outline: none; }
+.finished-result:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 6px;
+  border-radius: var(--radius-sm);
+}
 .finished-hero[data-outcome="win"] .finished-result {
   color: var(--green);
 }
@@ -921,115 +925,16 @@
 @keyframes finished-particle-drift { 0% { opacity: 0; transform: translateY(-5px) rotate(0); } 35% { opacity: 0.65; } 100% { opacity: 0; transform: translateY(12px) rotate(70deg); } }
 @keyframes bot-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 
-/* 12. Bloc démon gelé (copié intégralement) */
-/* === MODE DÉMON : COULEURS GELÉES === */
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] {
-  --surface: #5a3d70;
-  --surface-muted: #68487e;
-  --ink: #fff7ff;
-  --ink-soft: #e2cfef;
-  --line: #8e6ca0;
-  --line-strong: #b18bc0;
-  --coral: #9b376d;
-  --coral-deep: #7c2858;
-  --coral-ink: #fff7ff;
-  --focus: #d6b4ff;
-  --board-border: #9b76aa;
-  --player: #83bdf0;
-  --player-soft: #b9d9ff;
-  --opponent: #ff9add;
-  --opponent-soft: #ffcfeb;
-  --score-row-surface: #5a3d70;
-  --score-player-cell: #b9d9ff;
-  --score-opponent-cell: #ffcfeb;
-  --score-opponent-preview: #ffdbef;
-  --score-opponent-preview-border: #c9679f;
-  --score-player-ink: #173655;
-  --score-opponent-ink: #6a1f4b;
-  --score-filled-surface: #35293f;
-  --score-filled-cell: #d8c6e4;
-  --score-filled-border: #9c7eab;
-  --score-filled-ink: #e2cfef;
-  --score-selected-surface: #58406b;
-  --dice-zone-surface: #29284d;
-  --die-face-surface: #3b315c;
-  --die-face-border: #a86cff;
-  --die-pip: #fff7ff;
-  --page: #f7f1e8;
-  --coral-soft: #fbe1d8;
-  --green: #237a58;
-  --green-ink: #176346;
-  --green-soft: #dcefe5;
-  --yellow-soft: #fff0c7;
-  --danger: #a33b3d;
-  --game-green-strong: #176346;
-  --shadow-soft: 0 8px 24px rgb(37 41 43 / 8%);
-  --shadow-button: 0 4px 0 rgb(37 41 43 / 16%);
-  color: var(--ink);
-  background: #21152c;
+/* 12. Mode Boss : accent d'ambiance, surfaces claires partagées. */
+.game-shell[data-game-mode="bot"][data-demon-theme="on"] .game-logo-tile {
+  background: var(--opponent);
 }
-
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-value[data-highlighted="true"] { animation-name: player-score-choice-demon; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-value-bot[data-highlighted="true"] { animation-name: opponent-score-choice-demon; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .die-button[data-highlighted="true"] .die-face { animation-name: opponent-die-choice-demon; }
-@keyframes player-score-choice-demon { 45% { transform: scale(1.08); } }
-@keyframes opponent-score-choice-demon { 45% { transform: scale(1.08); } }
-@keyframes opponent-die-choice-demon { 50% { transform: scale(1.08); } }
-
-html:has(.game-shell[data-game-mode="bot"][data-demon-theme="on"]),
-body:has(.game-shell[data-game-mode="bot"][data-demon-theme="on"]) { background: #21152c; }
-
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .game-header { --ink: #fff7ff; --ink-soft: #d9c7e4; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .game-logo-tile { color: #3d0a0a; background: var(--opponent); border-color: var(--line-strong); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-card,
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .game-table,
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .bot-turn-panel { box-shadow: inset 0 0 0 1px rgb(255 207 235 / 16%), inset 0 0 0 6px rgb(18 10 27 / 10%), 0 7px 0 rgb(78 54 91 / 18%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-card { position: relative; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-row-details:hover { background: rgb(214 180 255 / 8%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-row-details:active { background: rgb(255 154 221 / 12%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-row[data-actionable="true"] .score-category { color: #d9eaff; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-row[data-selected="true"] { box-shadow: inset 0 0 0 2px var(--player), inset 4px 0 0 var(--opponent); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-row[data-player-filled="true"] { background: #251b2d; box-shadow: none; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .finished-hero[data-outcome="loss"] .finished-result-mark { color: #6a1f4b; background: #ff9add; border-color: #6a1f4b; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .finished-hero[data-outcome="tie"] .finished-result-mark { color: #3b2850; background: #f5d66f; border-color: #3b2850; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .finished-player-score[data-score-column="player"] { color: #173655; background: #b9d9ff; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .finished-player-score[data-score-column="opponent"] { color: #6a1f4b; background: #ffcfeb; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .finished-player-score .finished-score-number,
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .finished-player-score .finished-score-caption { color: currentColor; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-value[data-state="empty"] { background: rgb(185 217 255 / 12%); border-color: #83bdf0; border-style: dashed; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-value-bot[data-state="empty"] { background: rgb(255 207 235 / 12%); border-color: #d986b8; border-style: dashed; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-value[data-state="preview"] { box-shadow: 0 0 0 2px rgb(168 108 255 / 20%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-value-bot[data-state="preview"] { box-shadow: none; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-value[data-state="filled"] { box-shadow: inset 0 0 0 1px rgb(255 247 255 / 16%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-value:not(.score-value-bot) { border-radius: 9px; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-value-bot { border-width: 2px; border-radius: 9px; box-shadow: inset -3px 0 0 rgb(201 103 159 / 18%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-value-direct > span { border-radius: 9px; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-card .score-row > .score-value:not(.score-value-bot)[data-state="filled"] { color: #f4f8ff; background: #3f4855; border-color: var(--score-player-ink); box-shadow: none; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-card .score-row > .score-value-bot[data-state="filled"] { color: #6a1f4b; background: #ffcfeb; border-color: #c9679f; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 34%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .total-score-value { color: #17111d; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .total-label::before { width: 22px; display: inline-block; margin-right: 10px; color: #ff9add; content: "◆"; font-size: 12px; text-shadow: 9px 0 0 #a86cff; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .dice-tray { position: relative; border-color: rgb(168 108 255 / 55%); background: #343368; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .die-placeholder::before { background: rgb(255 247 255 / 4%); border-color: #77508b; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .die-button:not(:disabled):hover { background: rgb(214 180 255 / 9%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .die-face { box-shadow: 0 4px 0 #171329, inset 0 0 0 2px rgb(255 207 235 / 9%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .die-button[data-held="true"] .die-face { box-shadow: 0 4px 0 rgb(19 79 57 / 58%), 0 0 0 3px rgb(35 122 88 / 24%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .die-button[data-held="true"] .pip { background: #154b38; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .die-button[data-highlighted="true"] .die-face { border-color: var(--opponent); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .roll-indicator { color: var(--ink-soft); background: #3b315c; border-color: var(--line-strong); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .bot-status { color: var(--opponent); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .primary-action:hover:not(:disabled) { background: #b2477d; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .reaction-toast { background: #3a234c; border-color: #ff9add; box-shadow: inset 0 0 0 1px rgb(214 180 255 / 16%), 0 12px 32px rgb(10 4 16 / 42%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .reaction-burst i:first-child { background: #ff9add; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .reaction-burst i:last-child { background: #a86cff; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .primary-action { color: #fff7ff; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .primary-action:active:not(:disabled) { box-shadow: 0 2px 0 rgb(37 41 43 / 16%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .finished-card.finished-celebration { box-shadow: 0 14px 36px rgb(37 41 43 / 11%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .finished-result-mark { box-shadow: 0 4px 0 rgb(37 41 43 / 14%); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .finished-player-score[data-winner="true"] { box-shadow: 0 6px 0 color-mix(in srgb, currentColor 16%, transparent); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .finished-winner-crown { filter: drop-shadow(0 2px 0 rgb(37 41 43 / 14%)); }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .finished-particles i:nth-child(3) { background: #fff0c7; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-value-direct:hover > span { box-shadow: none; }
-.game-shell[data-game-mode="bot"][data-demon-theme="on"] .score-help-popover { box-shadow: 0 18px 44px rgb(37 41 43 / 18%); }
+.game-shell[data-game-mode="bot"][data-demon-theme="on"] .bot-status {
+  color: var(--opponent);
+}
+.game-shell[data-game-mode="bot"][data-demon-theme="on"] .reaction-toast {
+  border-color: var(--opponent);
+}
 
 /* 13. Responsive */
 @media (max-width: 760px) {
@@ -1187,7 +1092,7 @@ body:has(.game-shell[data-game-mode="bot"][data-demon-theme="on"]) { background:
     grid-template-columns: repeat(5, minmax(48px, 1fr));
     gap: 6px;
     padding: 10px 6px;
-    margin-bottom: 12px;
+    margin-bottom: 36px;
     border-radius: 24px;
   }
   .die-placeholder, .die-button { min-width: 44px; min-height: 52px; height: 52px; }

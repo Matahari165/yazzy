@@ -1,6 +1,13 @@
 import type { BotLevel } from "./bots";
 import { flipFairCoin, rollFairDie } from "../lib/random";
-import { CATEGORY_BY_ID, CATEGORY_IDS, scoreDice, type CategoryId, type DieValue } from "./yatzy";
+import {
+  CATEGORY_BY_ID,
+  CATEGORY_IDS,
+  isValidCategoryScore,
+  scoreDice,
+  type CategoryId,
+  type DieValue,
+} from "./yatzy";
 
 export const GAME_VERSION = 3;
 export const GAME_STORAGE_KEY = "yazzy.game.v3";
@@ -83,7 +90,7 @@ function isStoredPlayer(value: unknown): value is PlayerState {
     typeof player.scores === "object" &&
     !Array.isArray(player.scores) &&
     scores.length <= CATEGORY_IDS.length &&
-    scores.every(([category, score]) => isCategory(category) && Number.isInteger(score) && Number(score) >= 0 && Number(score) <= 50) &&
+    scores.every(([category, score]) => isCategory(category) && isValidCategoryScore(category, score)) &&
     (rollNumber === 0 ? player.dice.length === 0 : player.dice.length === 5)
   );
 }

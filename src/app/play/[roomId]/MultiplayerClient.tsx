@@ -185,7 +185,7 @@ export function MultiplayerClient({
   };
 
   if (playerName === null) {
-    return <main id="main-content" className="app-loading" aria-busy="true"><p>Préparation de la partie…</p></main>;
+    return <main id="main-content" className="app-loading" aria-busy="true" role="status"><p>Préparation de la partie…</p></main>;
   }
 
   if (!playerName) {

@@ -37,6 +37,7 @@ export function ArenaLayout(props: LayoutProps) {
             className="arena-dock-btn arena-dock-duo"
             type="button"
             aria-expanded={props.isMultiplayerOpen}
+            aria-controls="multiplayer-options"
             onClick={props.onToggleMultiplayer}
           >
             <strong>Duo</strong>

@@ -1,7 +1,7 @@
 # Système de Design Yazzy — Identité « Céramique »
 
-> **Source de vérité unique et absolue** pour toute l'interface utilisateur de Yazzy (Web, Mobile iPhone `390 × 844`, Mac `1440 × 900`).  
-> Voir également le fichier racine [`design.md`](file:///Users/jeremydelloume/Downloads/Yazzy/design.md).
+> **Source de vérité unique et absolue** pour l'identité Céramique, référence par défaut de l'interface Yazzy (Web, Mobile iPhone `390 × 844`, Mac `1440 × 900`).
+> Les identités Atelier, Riviera, Botanique et Nuage sont des presets clairs optionnels ; elles conservent les mêmes règles d'interaction, de lisibilité et d'accessibilité.
 > Toute nouvelle page, composant, modale ou widget créé dans l'application doit respecter **strictement et intégralement** les spécifications de ce document.
 
 ---
@@ -53,6 +53,8 @@ Deux familles de polices Google Fonts définissent l'harmonie Céramique :
 | :--- | :--- | :--- | :--- |
 | **Titres & Identité** | **Bricolage Grotesque** | `--font-bricolage` | Rondeur organique, modelée à la main, expressive sans agressivité |
 | **Corps, Boutons & Chiffres** | **Plus Jakarta Sans** | `--font-jakarta` | Lisibilité géométrique douce, moderne, chiffres tabulaires parfaits |
+
+Les quatre presets visuels optionnels peuvent employer une paire de caractères différente pour leur personnalité propre ; leurs variables et leurs usages sont centralisés dans `src/app/themes.css`.
 
 ### Échelle Typographique & Usages
 

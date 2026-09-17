@@ -192,6 +192,11 @@ export function scoreDice(category: CategoryId, dice: Dice): number {
   }
 }
 
+export function isValidCategoryScore(category: CategoryId, score: unknown): score is number {
+  const definition = CATEGORY_BY_ID[category];
+  return Number.isInteger(score) && Number(score) >= 0 && Number(score) <= definition.maximumScore;
+}
+
 export function totalScore(scores: Partial<Record<CategoryId, number>>): number {
   return Object.values(scores).reduce<number>((sum, score) => sum + (score ?? 0), 0);
 }

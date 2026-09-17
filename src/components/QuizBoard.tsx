@@ -105,7 +105,6 @@ export function QuizBoard() {
   };
   const resultTitleRef = useRef<HTMLHeadingElement>(null);
   const questionTitleRef = useRef<HTMLHeadingElement>(null);
-  const stageRef = useRef<HTMLElement>(null);
 
   const isFinished = game?.isFinished ?? false;
   const current = game && !isFinished ? game.questions[game.currentIndex] : null;
@@ -152,15 +151,6 @@ export function QuizBoard() {
       };
     });
   }, [current, game?.selected]);
-
-  // Le projecteur suit le pointeur (variables CSS, sans re-rendu).
-  const followSpot = (event: React.PointerEvent) => {
-    const el = stageRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    el.style.setProperty("--mx", `${event.clientX - rect.left}px`);
-    el.style.setProperty("--my", `${event.clientY - rect.top}px`);
-  };
 
   useEffect(() => {
     if (!game || !isFinished) return;
@@ -224,16 +214,9 @@ export function QuizBoard() {
   return (
     <main
       id="main-content"
-      ref={stageRef}
       className="qa"
       data-urgent={urgent}
-      onPointerMove={followSpot}
     >
-      <div className="qa-bg" aria-hidden="true">
-        <span className="qa-spot" />
-        <span className="qa-grid" />
-      </div>
-
       <header className="qa-bar">
         <Link className="qa-brand" href="/" aria-label="Yazzy, revenir à l’accueil">
           <span className="qa-brand-tile" aria-hidden="true">
@@ -247,7 +230,7 @@ export function QuizBoard() {
         {game && !isFinished ? (
           <span className="qa-live">
             <i aria-hidden="true" />
-            Direct
+            En cours
           </span>
         ) : null}
 
@@ -447,7 +430,7 @@ export function QuizBoard() {
                   </span>
                 ) : null}
                 <span className="qa-jackpot" aria-label={`${score} points`}>
-                  <small>Jackpot</small>
+                  <small>Score</small>
                   <strong key={score}>{String(displayScore).padStart(2, "0")}</strong>
                 </span>
               </div>

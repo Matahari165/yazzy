@@ -1,23 +1,39 @@
 # Yazzy
 
-Yazzy est une application web de Yatzy nordique qui explique les probabilités et compare les décisions du joueur.
+Yazzy est une application web de Yatzy nordique qui transforme chaque choix de score en décision compréhensible. Le projet combine un jeu complet, un bot Expert explicable, un mode Duo temporaire et un quiz de probabilités.
 
-## État actuel
+## Ce que le projet démontre
 
-- accueil explicite puis lancement direct d'une partie contre le bot Expert ;
-- même générateur de dés équitables pour le joueur et le bot ;
-- scores des 14 cases nordiques, sans bonus supérieur ;
-- probabilités exactes affichées uniquement dans le panneau de décision de la case sélectionnée ;
-- sauvegarde locale versionnée `yazzy.game.v3`, sans suppression automatique de l’ancienne sauvegarde ;
-- feuille de score lisible, sans grille noire ni colonne de probabilités répétée ;
-- dés sélectionnés par un changement visuel, sans libellé sous chaque dé ;
-- animation courte des faces finales, dés gardés immobiles et mouvement réduit respecté ;
-- partie privée à deux par code court ou par lien, sans compte ni serveur à configurer ;
-- salon temporaire synchronisé par Vercel, afin de fonctionner même sur les réseaux qui bloquent WebRTC ;
-- pause et reprise automatiques si un joueur se déconnecte ;
-- revanche lancée uniquement après l’accord des deux joueurs.
+- Une implémentation métier stricte : 14 catégories, trois lancers maximum, scores et probabilités calculés par le même domaine TypeScript.
+- Un bot Expert heuristique : il compare le score attendu et la probabilité de réussite avant de choisir une conservation.
+- Un mode Duo privé par code ou lien, synchronisé par un cache Vercel temporaire, sans compte ni serveur à configurer.
+- Une interface responsive et accessible : mode clair Céramique par défaut, quatre identités visuelles optionnelles, clavier, focus visible, mouvement réduit et PWA.
+- Une séparation lisible entre interface, hooks, domaine métier, serveur et données de quiz.
 
-Le mode entre amis conserve exactement les 14 cases et les trois lancers maximum du mode solo. Le bot Expert reste une heuristique documentée et ne doit pas être présenté comme optimal.
+Le bot Expert est volontairement présenté comme une heuristique, pas comme un joueur optimal.
+
+## Choix techniques
+
+- Next.js 16 avec App Router et React 19
+- TypeScript en mode strict
+- Vitest pour les règles métier, le protocole de salon, les bots et les composants critiques
+- CSS organisé par surface (`base`, `lobby`, `game`, `quiz`, `themes`)
+- Cache Vercel temporaire pour les salons Duo
+- Web Audio API pour les effets et la musique procédurale
+
+### Organisation du code
+
+```text
+src/
+├── app/          routes Next.js, API, styles et manifeste PWA
+├── components/   écrans, plateaux, formulaires et layouts visuels
+├── domain/       règles Yatzy, score, probabilités, bots et protocole
+├── hooks/        orchestration des parties côté interface
+├── server/       service et stockage temporaire des salons
+├── data/         questions et données de quiz
+├── lib/          audio, stockage local et utilitaires
+└── workers/      calculs isolés côté navigateur
+```
 
 ## Lancer le projet
 
@@ -30,22 +46,31 @@ pnpm dev
 
 Ouvrir ensuite [http://localhost:3000](http://localhost:3000).
 
-## Jouer avec un ami
-
-1. Cliquer sur « Jouer avec un ami ».
-2. Envoyer le code ou le lien affiché.
-3. Garder l’onglet de l’hôte ouvert pendant la partie.
-
-Les actions des deux joueurs sont validées par le moteur de jeu côté serveur. Le salon est conservé temporairement dans le cache régional Vercel jusqu’à six heures après sa dernière évolution. Les navigateurs interrogent le salon à intervalle court : aucun compte, aucune clé et aucune connexion directe entre les appareils ne sont nécessaires.
-
 ## Vérifier le projet
 
 ```bash
-pnpm run check
+pnpm lint       # qualité et règles React
+pnpm typecheck  # contrat TypeScript strict
+pnpm test       # suite Vitest
+pnpm build      # build de production Next.js
+pnpm run check  # les quatre contrôles ci-dessus
 ```
 
-Cette commande contrôle le code, les types, les tests et le build de production.
+Le solveur de probabilités explore exactement les conservations possibles ; la suite prévoit donc un délai plus généreux pour ses tests exhaustifs.
 
-## Documents
+## Documentation
 
-- [Système visuel](./design-system/yazzy/MASTER.md)
+- [Système visuel Yazzy](./design-system/yazzy/MASTER.md)
+- [Audit qualité actuel](./design-system/yazzy/QUALITY-AUDIT.md)
+
+## Limites connues et transparence
+
+- Les salons Duo sont temporaires et sans compte utilisateur ; ils dépendent du cache régional Vercel.
+- Le protocole protège les commandes et les scores, mais la cohérence distribuée complète et la limitation de débit restent des évolutions d’architecture.
+- Le jeton de salon est conservé côté navigateur pour permettre la reconnexion ; il ne s’agit pas d’un secret serveur.
+- Les fichiers audio du mode Boss sont conservés comme assets historiques ; leur provenance et leurs droits doivent être confirmés ou remplacés avant une distribution publique ou commerciale.
+- La couverture automatisée est principalement unitaire et domaine ; un parcours E2E sur navigateur réel complète les contrôles locaux.
+
+## Licence
+
+Aucune licence de réutilisation n’est accordée dans ce dépôt. Les droits des assets audio doivent être clarifiés avant toute publication au-delà d’un portfolio privé.

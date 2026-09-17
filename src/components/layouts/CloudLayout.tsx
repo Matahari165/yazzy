@@ -36,6 +36,7 @@ export function CloudLayout(props: LayoutProps) {
             className="cloud-btn cloud-btn-duo"
             type="button"
             aria-expanded={props.isMultiplayerOpen}
+            aria-controls="multiplayer-options"
             onClick={props.onToggleMultiplayer}
           >
             <strong>Duo</strong>

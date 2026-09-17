@@ -37,6 +37,7 @@ export function EditorialLayout(props: LayoutProps) {
           className="editorial-pill editorial-pill-duo"
           type="button"
           aria-expanded={props.isMultiplayerOpen}
+          aria-controls="multiplayer-options"
           onClick={props.onToggleMultiplayer}
         >
           <span className="editorial-num">02</span>

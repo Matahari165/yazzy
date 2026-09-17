@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { CATEGORIES, CATEGORY_IDS, scoreDice, totalScore, type DieValue } from "./yatzy";
+import {
+  CATEGORIES,
+  CATEGORY_IDS,
+  isValidCategoryScore,
+  scoreDice,
+  totalScore,
+  type DieValue,
+} from "./yatzy";
 
 describe("Yatzy nordique — scores", () => {
   it("joue avec 14 cases, sans Chance", () => {
@@ -59,6 +66,13 @@ describe("Yatzy nordique — scores", () => {
     expect(totalScore({ ...scores, ones: 2 })).toBe(62);
     expect(totalScore(scores)).toBe(63);
     expect(totalScore({ ...scores, pair: 1 })).toBe(64);
+  });
+
+  it("valide les scores selon la catégorie", () => {
+    expect(isValidCategoryScore("pair", 12)).toBe(true);
+    expect(isValidCategoryScore("pair", 13)).toBe(false);
+    expect(isValidCategoryScore("yatzy", 50)).toBe(true);
+    expect(isValidCategoryScore("yatzy", "50")).toBe(false);
   });
 
   it("fournit des explications et un score maximal exacts pour chaque case", () => {

@@ -55,7 +55,7 @@
   align-items: center;
   justify-content: center;
   padding: 7px 9px;
-  min-height: 38px;
+  min-height: 44px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -76,7 +76,7 @@
   .theme-switcher-btn {
     padding: 6px 7px;
     font-size: 11px;
-    min-height: 36px;
+    min-height: 44px;
   }
 }
 
@@ -1692,8 +1692,10 @@ html[data-theme="pastel"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
   border-radius: 50%;
   background: #f4efe9;
   border: none;
@@ -1924,4 +1926,3 @@ html[data-theme="pastel"] {
     transform: translateY(0);
   }
 }
-

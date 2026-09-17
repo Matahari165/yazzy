@@ -13,8 +13,8 @@ describe("web app manifest", () => {
 
   it("uses the Yazzy palette and installable PNG icons", () => {
     expect(manifest()).toMatchObject({
-      background_color: "#0b241c",
-      theme_color: "#0b241c",
+      background_color: "#f3efea",
+      theme_color: "#f3efea",
       icons: [
         {
           src: "/icons/yazzy-192.png",

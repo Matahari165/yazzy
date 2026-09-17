@@ -106,5 +106,6 @@ describe("partie contre un bot", () => {
     expect(isStoredGame({ ...game, mode: "solo" })).toBe(false);
     expect(isStoredGame({ ...game, mode: "multiplayer", botLevel: null })).toBe(false);
     expect(isStoredGame({ ...game, botLevel: "strategist" })).toBe(false);
+    expect(isStoredGame({ ...game, human: { ...game.human, scores: { pair: 50 } } })).toBe(false);
   });
 });

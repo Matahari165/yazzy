@@ -1,4 +1,10 @@
-import { type CategoryId, type DieValue, scoreDice, CATEGORY_IDS } from "./yatzy";
+import {
+  type CategoryId,
+  type DieValue,
+  isValidCategoryScore,
+  scoreDice,
+  CATEGORY_IDS,
+} from "./yatzy";
 import { isPlayerName } from "./playerName";
 import { flipFairCoin } from "../lib/random";
 
@@ -137,10 +143,12 @@ function isPlayerState(value: unknown): value is MultiplayerPlayerState {
       state.rollNumber! <= 3 &&
       scores &&
       typeof scores === "object" &&
+      !Array.isArray(scores) &&
       Object.entries(scores).every(
         ([category, score]) =>
-          isCategoryId(category) && typeof score === "number" && Number.isFinite(score),
-      ),
+          isCategoryId(category) && isValidCategoryScore(category, score),
+      ) &&
+      (state.rollNumber === 0 ? state.dice.length === 0 : state.dice.length === 5),
   );
 }
 

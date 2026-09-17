@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 const responseHeaders = {
   "Cache-Control": "no-store, max-age=0",
 };
+const MAX_REQUEST_BODY_BYTES = 16 * 1024;
 
 export async function POST(
   request: Request,
@@ -24,9 +25,24 @@ export async function POST(
     );
   }
 
+  const contentLength = request.headers.get("content-length");
+  if (contentLength && (!/^\d+$/.test(contentLength) || Number(contentLength) > MAX_REQUEST_BODY_BYTES)) {
+    return Response.json(
+      { ok: false, code: "INVALID_REQUEST", message: "Requête de partie trop volumineuse." },
+      { status: 413, headers: responseHeaders },
+    );
+  }
+
   let command;
   try {
-    command = parseRoomCommand(await request.json());
+    const body = await request.text();
+    if (new TextEncoder().encode(body).byteLength > MAX_REQUEST_BODY_BYTES) {
+      return Response.json(
+        { ok: false, code: "INVALID_REQUEST", message: "Requête de partie trop volumineuse." },
+        { status: 413, headers: responseHeaders },
+      );
+    }
+    command = parseRoomCommand(JSON.parse(body));
   } catch {
     command = null;
   }

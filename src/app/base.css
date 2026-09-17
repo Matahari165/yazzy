@@ -415,3 +415,7 @@ h3 { font-size: 18px; line-height: 1.2; }
 @keyframes waiting-pulse {
   50% { opacity: 0.35; transform: scale(0.75); }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .waiting-status i { animation: none; }
+}

@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { DieValue } from "@/domain/yatzy";
 import { DieGlyph } from "../Dice";
 import { PLAYER_NAME_MAX_LENGTH } from "@/domain/playerName";
@@ -24,7 +24,6 @@ export interface LayoutProps {
   onPlayerNameBlur: () => void;
   onRoomCodeChange: (code: string) => void;
   onPasteRoomCode: () => void;
-  onPasteRoomCodeFromField: (e: React.ClipboardEvent<HTMLInputElement>) => void;
   onToggleDemonTheme: (enabled: boolean) => void;
 }
 
@@ -96,7 +95,13 @@ export function SharedMultiplayerPanel({
   className?: string;
 }) {
   const handleClose = props.onCloseMultiplayer ?? props.onToggleMultiplayer;
+  const handleCloseRef = useRef(handleClose);
+  const modalRef = useRef<HTMLElement>(null);
   const [showCustomRoom, setShowCustomRoom] = useState(false);
+
+  useEffect(() => {
+    handleCloseRef.current = handleClose;
+  }, [handleClose]);
 
   useEffect(() => {
     if (!props.isMultiplayerOpen) return;
@@ -104,19 +109,46 @@ export function SharedMultiplayerPanel({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        handleClose();
+        handleCloseRef.current();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        modalRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), [href], select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
 
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handleKeyDown);
+    const focusFrame = window.requestAnimationFrame(() => {
+      modalRef.current?.querySelector<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), [href], select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )?.focus({ preventScroll: true });
+    });
 
     return () => {
+      window.cancelAnimationFrame(focusFrame);
       document.body.style.overflow = originalOverflow;
       window.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus({ preventScroll: true });
     };
-  }, [props.isMultiplayerOpen, handleClose]);
+  }, [props.isMultiplayerOpen]);
 
   if (!props.isMultiplayerOpen) return null;
 
@@ -134,6 +166,7 @@ export function SharedMultiplayerPanel({
     >
       <section
         id="multiplayer-options"
+        ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="duo-modal-title"
@@ -234,7 +267,6 @@ export function SharedMultiplayerPanel({
                     type="text"
                     value={props.roomCode}
                     onChange={(e) => props.onRoomCodeChange(e.currentTarget.value)}
-                    onPaste={props.onPasteRoomCodeFromField}
                     placeholder="ABC123"
                     autoComplete="off"
                     autoCapitalize="characters"

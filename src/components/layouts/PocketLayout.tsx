@@ -35,6 +35,7 @@ export function PocketLayout(props: LayoutProps) {
               className="pocket-btn-sub pocket-btn-duo"
               type="button"
               aria-expanded={props.isMultiplayerOpen}
+              aria-controls="multiplayer-options"
               onClick={props.onToggleMultiplayer}
             >
               <strong>Duo</strong>

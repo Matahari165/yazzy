@@ -35,6 +35,7 @@ export function PebbleLayout(props: LayoutProps) {
           className="pebble-shape pebble-duo"
           type="button"
           aria-expanded={props.isMultiplayerOpen}
+          aria-controls="multiplayer-options"
           onClick={props.onToggleMultiplayer}
         >
           <strong>Duo</strong>
