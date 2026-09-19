@@ -7,7 +7,6 @@ type DiceTrayProps = {
   dice: DieValue[];
   held: boolean[];
   highlightedDieIndex?: number | null;
-  showHeldMarkers?: boolean;
   rollNumber: number;
   animationSeed: number;
   rolling: boolean;
@@ -23,7 +22,6 @@ function DiceTray({
   dice,
   held,
   highlightedDieIndex = null,
-  showHeldMarkers = false,
   rollNumber,
   animationSeed,
   rolling,
@@ -70,7 +68,6 @@ function DiceTray({
               index={index}
               held={rollNumber < 3 && held[index]}
               highlighted={highlightedDieIndex === index}
-              showHeldMarker={showHeldMarkers}
               disabled={disabled || rollNumber >= 3}
               finalResult={finalResult ?? rollNumber >= 3}
               rolling={rolling}
@@ -138,7 +135,6 @@ export const GameTable = memo(function GameTable({
         dice={dice}
         held={held}
         highlightedDieIndex={highlightedDieIndex}
-        showHeldMarkers={isObserver}
         rollNumber={rollNumber}
         animationSeed={animationSeed}
         rolling={isRolling}

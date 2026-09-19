@@ -514,19 +514,6 @@
   animation: opponent-die-choice var(--motion-emphasis) var(--ease-out);
 }
 
-.die-held-marker {
-  position: absolute;
-  top: -2px;
-  right: calc(50% - 32px);
-  width: 14px;
-  height: 14px;
-  background: var(--green);
-  border: 2px solid var(--surface);
-  border-radius: 50%;
-  box-shadow: 0 2px 6px rgb(74 128 114 / 30%);
-  animation: held-marker-enter var(--motion-state) var(--ease-emphasized) both;
-}
-
 .die-face .pip {
   width: 8px;
   height: 8px;
@@ -670,12 +657,16 @@
 /* 7. Reactions */
 .reaction-control { position: relative; z-index: 20; flex: none; }
 .reaction-trigger {
-  width: 44px; height: 44px; display: grid; place-items: center; padding: 0;
-  color: var(--ink); background: var(--surface); border: 1.5px solid var(--line-strong); border-radius: 50%;
-  font-family: var(--font-display); font-size: 25px; font-weight: 800; line-height: 1;
+  width: 52px; height: 52px; display: grid; place-items: center; padding: 0;
+  background: transparent; border: 0; border-radius: 50%;
+  font-size: 32px; line-height: 1;
+  filter: drop-shadow(0 3px 6px rgb(30 27 24 / 20%));
+  transition: transform 0.16s cubic-bezier(0.2, 0, 0, 1), filter 0.16s ease;
 }
-.reaction-trigger:hover:not(:disabled) { background: var(--yellow-soft); }
-.reaction-trigger:disabled { opacity: 0.38; }
+.reaction-trigger > span { display: block; transform: translateY(-1px); }
+.reaction-trigger:hover:not(:disabled) { transform: scale(1.14) rotate(-6deg); }
+.reaction-trigger:active:not(:disabled) { transform: scale(0.88); }
+.reaction-trigger:disabled { opacity: 0.45; filter: grayscale(1); }
 .reaction-picker {
   position: absolute; z-index: 30; bottom: calc(100% + 8px); right: 0; width: min(205px, calc(100vw - 32px)); max-height: min(60dvh, 320px);
   display: grid; grid-template-columns: repeat(4, 44px); gap: 5px; padding: 7px;
@@ -701,18 +692,31 @@
 .reaction-picker button:hover { background: var(--surface-muted); }
 .reaction-toast {
   position: fixed; z-index: 70; top: max(58px, calc(env(safe-area-inset-top) + 48px)); left: 50%;
-  display: flex; align-items: center; gap: 7px; padding: 8px 12px;
-  background: var(--surface); border: 1.5px solid var(--line-strong); border-radius: 999px;
-  box-shadow: 0 4px 12px rgb(30 27 24 / 8%); pointer-events: none;
+  display: flex; align-items: center; gap: 12px; padding: 12px 20px 12px 12px;
+  background: var(--rt-bg, var(--surface)); border: 2px solid var(--rt-edge, var(--line-strong)); border-radius: 26px;
+  box-shadow: 0 14px 34px var(--rt-glow, rgb(30 27 24 / 12%)); pointer-events: none;
   animation: reaction-toast-life 2400ms var(--ease-emphasized) both;
   will-change: transform, opacity;
 }
-.reaction-burst { position: relative; display: grid; place-items: center; min-width: 34px; min-height: 34px; }
-.reaction-burst b { font-size: 28px; font-weight: 400; line-height: 1; animation: reaction-emoji-pop 420ms var(--ease-emphasized) both; }
-.reaction-burst i { position: absolute; width: 5px; height: 5px; background: var(--coral); border-radius: 50%; animation: reaction-spark 520ms var(--ease-out) both; }
-.reaction-burst i:first-child { top: 1px; left: 2px; }
-.reaction-burst i:last-child { right: 0; bottom: 3px; background: var(--green); animation-delay: 45ms; }
-.reaction-toast small { max-width: 140px; overflow: hidden; color: var(--ink); font-size: 13px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.reaction-toast[data-mood="joy"] { --rt-bg: #fff3d9; --rt-edge: #d99420; --rt-glow: rgb(217 148 32 / 32%); --rt-face-anim: reaction-face-pop; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-mood="shy"] { --rt-bg: #fdedf1; --rt-edge: #d6536e; --rt-glow: rgb(214 83 110 / 30%); --rt-face-anim: reaction-face-sway; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-mood="cash"] { --rt-bg: #e9f6e9; --rt-edge: #3e7a45; --rt-glow: rgb(62 122 69 / 32%); --rt-face-anim: reaction-face-cash; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-mood="smug"] { --rt-bg: #efebfb; --rt-edge: #6a55c2; --rt-glow: rgb(106 85 194 / 32%); --rt-face-anim: reaction-face-smug; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-mood="royal"] { --rt-bg: #fff6dc; --rt-edge: #a87b1f; --rt-glow: rgb(168 123 31 / 34%); --rt-face-anim: reaction-face-pop; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-mood="blaze"] { --rt-bg: #fde7e1; --rt-edge: #c64a2e; --rt-glow: rgb(198 74 46 / 34%); --rt-face-anim: reaction-face-blaze; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-mood="shock"] { --rt-bg: #ecebf9; --rt-edge: #5a54b0; --rt-glow: rgb(90 84 176 / 32%); --rt-face-anim: reaction-face-gasp; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-mood="sad"] { --rt-bg: #e9f1fb; --rt-edge: #3570b8; --rt-glow: rgb(53 112 184 / 32%); --rt-face-anim: reaction-face-droop; --rt-bit-anim: reaction-bit-fall; }
+.reaction-toast[data-mood="rage"] { --rt-bg: #fbe7e7; --rt-edge: #b3372b; --rt-glow: rgb(179 55 43 / 34%); --rt-face-anim: reaction-face-blaze; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-mood="dead"] { --rt-bg: #e9e9f0; --rt-edge: #5a5a72; --rt-glow: rgb(90 90 114 / 32%); --rt-face-anim: reaction-face-float; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-mood="salute"] { --rt-bg: #e8f0f7; --rt-edge: #33587e; --rt-glow: rgb(51 88 126 / 32%); --rt-face-anim: reaction-face-pop; --rt-bit-anim: reaction-bit-burst; }
+.reaction-face { position: relative; display: grid; place-items: center; width: 64px; height: 64px; flex: none; }
+.reaction-face b { font-size: 52px; font-weight: 400; line-height: 1; animation: var(--rt-face-anim, reaction-face-pop) 620ms var(--ease-emphasized) both; }
+.reaction-face i { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px; background: var(--rt-edge, var(--coral)); border-radius: 50%; opacity: 0; animation: var(--rt-bit-anim, reaction-bit-burst) 720ms 90ms var(--ease-out) both; }
+.reaction-face i:nth-child(2) { --bx: -30px; --by: -20px; }
+.reaction-face i:nth-child(3) { --bx: 28px; --by: -24px; }
+.reaction-face i:nth-child(4) { --bx: 4px; --by: 30px; }
+.reaction-who { display: grid; min-width: 0; }
+.reaction-who small { max-width: 150px; overflow: hidden; color: var(--ink); font-size: 16px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
 
 /* 8. Multi-joueur */
 .multiplayer-game-header { position: relative; min-height: 40px; gap: 7px; margin-bottom: 7px; }
@@ -890,6 +894,61 @@
   transform: scale(0.96);
 }
 
+/* 9b. Fête de fin de partie (confettis, titre et clin d'œil, tirés au sort). */
+.finished-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.finished-confetti i {
+  position: absolute;
+  top: -16px;
+  opacity: 0;
+  animation-name: finished-confetti-fall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  will-change: transform, opacity;
+}
+.finished-confetti[data-variant="sway"] i {
+  animation-name: finished-confetti-sway;
+}
+.finished-confetti[data-variant="pop"] i {
+  top: auto;
+  bottom: -16px;
+  animation-name: finished-confetti-pop;
+}
+.finished-party-emoji {
+  font-size: clamp(44px, 10vw, 64px);
+  line-height: 1;
+  margin-bottom: 10px;
+  animation: finished-emoji-bounce 900ms var(--ease-emphasized) both;
+}
+.finished-hero[data-outcome="loss"] .finished-party-emoji {
+  animation-name: finished-emoji-droop;
+  animation-duration: 600ms;
+}
+.finished-hero[data-outcome="tie"] .finished-party-emoji {
+  animation-name: finished-emoji-wobble;
+}
+.finished-tagline {
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+  font-size: 15px;
+  font-weight: 700;
+  text-wrap: balance;
+  animation: finished-tagline-in 500ms 350ms var(--ease-out) both;
+}
+.finished-hero[data-outcome="win"] .finished-result {
+  animation: finished-title-cheer 800ms 100ms var(--ease-emphasized) both;
+}
+.finished-hero[data-outcome="loss"] .finished-result {
+  animation: finished-title-sag 700ms 100ms var(--ease-out) both;
+}
+.finished-hero[data-outcome="tie"] .finished-result {
+  animation: finished-title-wobble 700ms 100ms var(--ease-out) both;
+}
+
 /* 10. Dialogue de confirmation */
 .confirm-dialog { position: fixed; z-index: 50; inset: 0; width: 100%; height: 100%; display: grid; place-items: center; padding: 20px; background: color-mix(in srgb, var(--ink) 60%, transparent); border: 0; }
 .confirm-dialog:not([open]) { display: none; }
@@ -903,16 +962,23 @@
 @keyframes game-tile-bump { 0% { transform: rotate(-6deg) scale(1); } 35% { transform: rotate(-2deg) scale(1.12); } 100% { transform: rotate(-6deg) scale(1); } }
 @keyframes game-score-bump { 0% { transform: scale(1); } 35% { transform: scale(1.12); } 100% { transform: scale(1); } }
 @keyframes reaction-picker-enter { from { opacity: 0; transform: translateY(4px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-@keyframes reaction-toast-life { 0% { opacity: 0; transform: translate(-50%, 8px); } 10%, 82% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -5px); } }
-@keyframes reaction-emoji-pop { 0% { transform: scale(0.72) rotate(-7deg); } 55% { transform: scale(1.13) rotate(4deg); } 100% { transform: scale(1) rotate(0); } }
-@keyframes reaction-spark { from { opacity: 0; transform: scale(0.2); } 45% { opacity: 1; transform: scale(1.2); } to { opacity: 0; transform: scale(0.6); } }
+@keyframes reaction-toast-life { 0% { opacity: 0; transform: translate(-50%, 14px) scale(0.85); } 8%, 82% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -8px) scale(0.96); } }
+@keyframes reaction-face-pop { 0% { transform: scale(0.3) rotate(-16deg); } 55% { transform: scale(1.25) rotate(8deg); } 75% { transform: scale(0.93) rotate(-2deg); } 100% { transform: scale(1) rotate(0deg); } }
+@keyframes reaction-face-sway { 0% { transform: rotate(-14deg) scale(0.85); } 50% { transform: rotate(10deg) scale(1.06); } 100% { transform: rotate(0deg) scale(1); } }
+@keyframes reaction-face-cash { 0% { transform: rotate(-180deg) scale(0.4); } 60% { transform: rotate(18deg) scale(1.16); } 100% { transform: rotate(0deg) scale(1); } }
+@keyframes reaction-face-smug { 0% { opacity: 0; transform: translateX(28px) rotate(10deg) scale(0.7); } 60% { opacity: 1; transform: translateX(-4px) rotate(-6deg) scale(1.05); } 100% { opacity: 1; transform: none; } }
+@keyframes reaction-face-blaze { 0% { transform: scale(0.5); } 30% { transform: scale(1.2) rotate(-8deg); } 50% { transform: scale(1.1) rotate(8deg); } 70% { transform: scale(1.16) rotate(-5deg); } 100% { transform: scale(1) rotate(0deg); } }
+@keyframes reaction-face-gasp { 0% { transform: scale(0.4); } 40% { transform: scale(1.3); } 65% { transform: scale(1.05) translateX(-2px); } 80% { transform: scale(1.08) translateX(2px); } 100% { transform: scale(1); } }
+@keyframes reaction-face-droop { 0% { transform: translateY(-8px) scale(0.9); } 100% { transform: translateY(3px) scale(1); } }
+@keyframes reaction-face-float { 0% { opacity: 0; transform: translateY(10px) scale(0.85); } 100% { opacity: 1; transform: translateY(-4px) scale(1); } }
+@keyframes reaction-bit-burst { 0% { opacity: 0; transform: translate(0, 0) scale(0.3); } 40% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--bx, 0), var(--by, -22px)) scale(1); } }
+@keyframes reaction-bit-fall { 0% { opacity: 0; transform: translateY(-8px) scale(0.6); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateY(48px) scale(1); } }
 @keyframes reaction-fade { 0%, 100% { opacity: 0; transform: translate(-50%, 0); } 8%, 88% { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes player-score-choice { 45% { transform: scale(1.08) translateY(-1px); } }
 @keyframes opponent-score-choice { 45% { transform: scale(1.08) translateY(-1px); } }
 @keyframes score-help-enter { from { opacity: 0; transform: translateY(4px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes die-roll { 0% { opacity: 0.38; transform: translateY(var(--roll-start-y, 5px)) rotate(var(--roll-start-angle, -9deg)) scale(0.9); } 42% { opacity: 0.8; transform: translateY(var(--roll-mid-y, -2px)) rotate(var(--roll-mid-angle, 6deg)) scale(1.04); } 72% { opacity: 0.94; transform: translateY(var(--roll-end-y, 1px)) rotate(var(--roll-end-angle, -3deg)) scale(0.98); } 100% { opacity: 1; transform: rotate(0) scale(1); } }
 @keyframes die-land { 0% { transform: scale(1.06, 0.88); } 55% { transform: scale(0.98, 1.03); } 100% { transform: scale(1, 1); } }
-@keyframes held-marker-enter { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
 @keyframes die-fade { from { opacity: 0.55; } to { opacity: 1; } }
 @keyframes opponent-die-choice { 50% { transform: scale(1.08); } }
 @keyframes panel-enter { from { opacity: 0; transform: translateY(8px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
@@ -923,6 +989,16 @@
 @keyframes finished-number-pop { 0% { opacity: 0; transform: scale(0.72); } 70% { transform: scale(1.06); } 100% { opacity: 1; transform: none; } }
 @keyframes finished-particle-pop { 0% { opacity: 0; transform: translateY(0) scale(0.4) rotate(0); } 45% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-18px) scale(1) rotate(90deg); } }
 @keyframes finished-particle-drift { 0% { opacity: 0; transform: translateY(-5px) rotate(0); } 35% { opacity: 0.65; } 100% { opacity: 0; transform: translateY(12px) rotate(70deg); } }
+@keyframes finished-confetti-fall { 0% { opacity: 0; transform: translateY(0) rotate(0deg); } 8% { opacity: 1; } 100% { opacity: 0; transform: translateY(700px) rotate(680deg); } }
+@keyframes finished-confetti-sway { 0% { opacity: 0; transform: translate(0, 0) rotate(0deg); } 10% { opacity: 1; } 25% { transform: translate(16px, 170px) rotate(180deg); } 50% { transform: translate(-14px, 340px) rotate(360deg); } 75% { transform: translate(10px, 510px) rotate(540deg); } 100% { opacity: 0; transform: translate(-6px, 680px) rotate(700deg); } }
+@keyframes finished-confetti-pop { 0% { opacity: 0; transform: translate(0, 0) scale(0.5) rotate(0deg); } 12% { opacity: 1; transform: translate(calc(var(--drift, 0px) * 0.4), -120px) scale(1) rotate(200deg); } 100% { opacity: 0; transform: translate(var(--drift, 0px), 420px) scale(1) rotate(720deg); } }
+@keyframes finished-emoji-bounce { 0% { opacity: 0; transform: scale(0.3) rotate(-14deg); } 55% { opacity: 1; transform: scale(1.25) rotate(8deg); } 75% { transform: scale(0.92) rotate(-3deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
+@keyframes finished-emoji-droop { 0% { opacity: 0; transform: translateY(-10px) scale(0.8); } 100% { opacity: 1; transform: translateY(4px) scale(1); } }
+@keyframes finished-emoji-wobble { 0% { opacity: 0; transform: rotate(-10deg) scale(0.8); } 50% { opacity: 1; transform: rotate(8deg) scale(1.1); } 100% { opacity: 1; transform: rotate(0deg) scale(1); } }
+@keyframes finished-tagline-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes finished-title-cheer { 0% { transform: scale(0.7) rotate(-4deg); } 55% { transform: scale(1.12) rotate(2deg); } 75% { transform: scale(0.97) rotate(-1deg); } 100% { transform: scale(1) rotate(0deg); } }
+@keyframes finished-title-sag { 0% { transform: translateY(-8px); } 60% { transform: translateY(3px) skewX(-4deg); } 100% { transform: translateY(2px) skewX(0deg); } }
+@keyframes finished-title-wobble { 0% { transform: rotate(-3deg); } 50% { transform: rotate(3deg) scale(1.04); } 100% { transform: rotate(0deg) scale(1); } }
 @keyframes bot-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 
 /* 12. Mode Boss : accent d'ambiance, surfaces claires partagées. */
@@ -1190,9 +1266,10 @@
   .game-logo-tile { transition: none; }
   .die-button { transition: none; }
   .score-value-direct:hover { transform: none; }
-  .bot-status::before, .reaction-picker, .reaction-picker button, .reaction-toast, .reaction-burst b, .reaction-burst i, .score-help-popover, .score-value[data-highlighted="true"], .die-held-marker, .die-button[data-held="true"]::after, .game-logo-tile[data-bump="true"], .total-score-value[data-bump="true"], .finished-card, .confirm-dialog-card, .game-table, .bot-turn-panel, .die-button[data-highlighted="true"] .die-face { animation: none; }
+  .bot-status::before, .reaction-picker, .reaction-picker button, .reaction-toast, .reaction-face b, .reaction-face i, .score-help-popover, .score-value[data-highlighted="true"], .die-button[data-held="true"]::after, .game-logo-tile[data-bump="true"], .total-score-value[data-bump="true"], .finished-card, .confirm-dialog-card, .game-table, .bot-turn-panel, .die-button[data-highlighted="true"] .die-face { animation: none; }
   .die-button[data-rolling="true"] .die-face { animation: die-fade 80ms ease both; }
   .reaction-toast { animation: reaction-fade 2400ms linear both; }
   .finished-card.finished-celebration, .finished-result-mark, .finished-player-score, .finished-score-number, .finished-particles i { animation: none; }
+  .finished-confetti, .finished-confetti i, .finished-party-emoji, .finished-tagline, .finished-hero .finished-result { animation: none !important; }
   .finished-player-score[data-winner="true"] { transform: none; }
 }

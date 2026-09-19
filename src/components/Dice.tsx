@@ -24,7 +24,6 @@ type DiceProps = {
   value: DieValue;
   held: boolean;
   highlighted?: boolean;
-  showHeldMarker?: boolean;
   disabled: boolean;
   finalResult?: boolean;
   rolling: boolean;
@@ -37,7 +36,6 @@ export const Dice = memo(function Dice({
   value,
   held,
   highlighted = false,
-  showHeldMarker = false,
   disabled,
   finalResult = false,
   rolling,
@@ -60,7 +58,6 @@ export const Dice = memo(function Dice({
       onClick={onToggle}
     >
       <DieGlyph value={value} className="die-face" />
-      {showHeldMarker && held ? <span className="die-held-marker" aria-hidden="true">✓</span> : null}
     </button>
   );
 });

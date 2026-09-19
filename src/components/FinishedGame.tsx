@@ -1,3 +1,4 @@
+import { useState, type CSSProperties } from "react";
 import Link from "next/link";
 import type { GameState } from "@/domain/game";
 import type { MultiplayerGameState } from "@/domain/multiplayer";
@@ -15,6 +16,112 @@ type FinishedGameProps = {
 };
 
 type GameOutcome = "win" | "loss" | "tie";
+
+type PartyVariant = "rain" | "sway" | "pop";
+
+type ConfettiPiece = {
+  left: number;
+  delay: number;
+  duration: number;
+  size: number;
+  color: string;
+  round: boolean;
+  drift: number;
+};
+
+type Party = {
+  variant: PartyVariant;
+  emoji: string;
+  tagline: string;
+  pieces: ConfettiPiece[];
+};
+
+const PARTY_VARIANTS: PartyVariant[] = ["rain", "sway", "pop"];
+
+const WIN_PALETTES = [
+  ["#c85a32", "#4a8072", "#3d5a80", "#e9b44c"],
+  ["#ee6378", "#7c62d6", "#3a80d2", "#e9b44c"],
+  ["#4a8072", "#e9b44c", "#c85a32", "#3d5a80"],
+];
+const WIN_EMOJIS = ["🏆", "🎉", "👑", "🍾", "🥳", "⭐"];
+const WIN_TAGLINES_DUO = [
+  "{o} réclame déjà sa revanche !",
+  "Victoire ! {o} peut aller se rhabiller.",
+  "{o} a vu passer des étoiles.",
+  "Écraseur de dés en chef !",
+  "{o} dit que les dés étaient truqués.",
+];
+const WIN_TAGLINES_BOT = [
+  "Le bot a grillé un circuit.",
+  "Le bot demande sa revanche. En binaire.",
+  "Victoire ! Le bot boude dans son coin.",
+  "Tu as battu un robot. La classe.",
+];
+
+const TIE_COLORS = ["#e9b44c", "#f6d47c", "#c85a32", "#4a8072"];
+const TIE_EMOJIS = ["🤝", "⚖️", "✨"];
+const TIE_TAGLINES = [
+  "Match nul ! On refait ?",
+  "Égalité parfaite. Suspect…",
+  "Personne ne gagne, tout le monde rigole.",
+];
+
+const LOSS_COLORS = ["#cfc8bd", "#b9b0a6", "#a8a29e", "#d8d0c4"];
+const LOSS_EMOJIS = ["🥲", "🌧️", "🍀", "🧻"];
+const LOSS_TAGLINES_DUO = [
+  "{o} te doit un café.",
+  "{o} fait la danse de la victoire.",
+  "La revanche sonne déjà…",
+  "Les dés t'ont trahi. Eux aussi veulent une revanche.",
+];
+const LOSS_TAGLINES_BOT = [
+  "Le bot fait la danse de la victoire.",
+  "Il a eu chaud quand même. Enfin, presque.",
+  "Le bot te prête un mouchoir.",
+  "Secoue plus fort la prochaine fois !",
+];
+
+function randomOf<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function buildPieces(count: number, colors: readonly string[], slow: boolean): ConfettiPiece[] {
+  return Array.from({ length: count }, () => ({
+    left: Math.random() * 100,
+    delay: Math.random() * (slow ? 2.2 : 1.1),
+    duration: slow ? 4.5 + Math.random() * 3 : 2.4 + Math.random() * 1.8,
+    size: 6 + Math.random() * 7,
+    color: randomOf(colors),
+    round: Math.random() < 0.35,
+    drift: (Math.random() - 0.5) * 260,
+  }));
+}
+
+function pickParty(outcome: GameOutcome, isMultiplayer: boolean, opponentLabel: string): Party {
+  const fill = (template: string) => template.replaceAll("{o}", opponentLabel);
+  if (outcome === "win") {
+    return {
+      variant: randomOf(PARTY_VARIANTS),
+      emoji: randomOf(WIN_EMOJIS),
+      tagline: fill(randomOf(isMultiplayer ? WIN_TAGLINES_DUO : WIN_TAGLINES_BOT)),
+      pieces: buildPieces(56, randomOf(WIN_PALETTES), false),
+    };
+  }
+  if (outcome === "loss") {
+    return {
+      variant: "rain",
+      emoji: randomOf(LOSS_EMOJIS),
+      tagline: fill(randomOf(isMultiplayer ? LOSS_TAGLINES_DUO : LOSS_TAGLINES_BOT)),
+      pieces: buildPieces(22, LOSS_COLORS, true),
+    };
+  }
+  return {
+    variant: "sway",
+    emoji: randomOf(TIE_EMOJIS),
+    tagline: randomOf(TIE_TAGLINES),
+    pieces: buildPieces(30, TIE_COLORS, false),
+  };
+}
 
 export function FinishedGame({
   game,
@@ -54,6 +161,10 @@ export function FinishedGame({
   const playerIsWinner = isWinner;
   const opponentIsWinner = !isWinner && !isTie;
 
+  // Tiré au sort une fois à l'ouverture : cet écran ne se monte que côté
+  // client une fois la partie chargée, donc pas de divergence serveur/client.
+  const [party] = useState<Party>(() => pickParty(outcome, isMultiplayer, opponentLabel));
+
   return (
     <section
       className="finished-card finished-celebration"
@@ -63,10 +174,37 @@ export function FinishedGame({
       data-game-mode={mode}
       data-outcome={outcome}
     >
+      <div
+        className="finished-confetti"
+        data-variant={party.variant}
+        data-outcome={outcome}
+        aria-hidden="true"
+      >
+        {party.pieces.map((piece, index) => (
+          <i
+            key={index}
+            style={
+              {
+                left: `${piece.left}%`,
+                width: piece.size,
+                height: piece.round ? piece.size : Math.round(piece.size * 0.62),
+                background: piece.color,
+                borderRadius: piece.round ? "50%" : "2px",
+                animationDelay: `${piece.delay.toFixed(2)}s`,
+                animationDuration: `${piece.duration.toFixed(2)}s`,
+                "--drift": `${Math.round(piece.drift)}px`,
+              } as CSSProperties
+            }
+          />
+        ))}
+      </div>
+
       <header className="finished-hero" data-outcome={outcome}>
+        <div className="finished-party-emoji" aria-hidden="true">{party.emoji}</div>
         <h1 id="finished-title" className="finished-result" tabIndex={-1}>
           {resultTitle}
         </h1>
+        <p className="finished-tagline">{party.tagline}</p>
       </header>
 
       <div className="finished-scoreboard" role="list" aria-label="Scores finaux">

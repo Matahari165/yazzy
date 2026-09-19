@@ -21,6 +21,16 @@ const REACTION_LABELS: Record<ReactionEmoji, string> = {
   "😭": "Quelle tristesse",
   "🤬": "Quelle rage",
   "💀": "Je suis mort",
+  "😈": "Malicieux",
+  "👑": "Royal",
+  "🔥": "En feu",
+  "🥳": "Fête",
+  "😎": "Trop cool",
+  "👏": "Bravo",
+  "😮": "Oh !",
+  "🫡": "Bien reçu",
+  "😱": "Quelle peur",
+  "😅": "Ouf",
 };
 
 type MultiplayerReactionsProps = {
@@ -101,7 +111,7 @@ export function MultiplayerReactions({
         disabled={disabled}
         onClick={() => setIsOpen((open) => !open)}
       >
-        <span aria-hidden="true">☺</span>
+        <span aria-hidden="true">😂</span>
       </button>
       {isOpen ? (
         <div id="reaction-picker" className="reaction-picker" role="group" aria-label="Réactions rapides">
