@@ -12,6 +12,7 @@ import {
 import type { BotReactionEmoji } from "@/domain/reactions";
 import { FinishedGame } from "./FinishedGame";
 import { applySavedTheme } from "./ThemeSwitcher";
+import { YatzyBurst } from "./YatzyBurst";
 import { BotTurnPanel, GameTable } from "./GameTable";
 import { GameHeader } from "./GameHeader";
 import { ReactionToast } from "./ReactionToast";
@@ -23,6 +24,7 @@ import { totalScore } from "@/domain/yatzy";
 const HUMAN_ROLL_ANIMATION_MS = 360;
 const BOT_REACTION_DURATION_MS = 2_400;
 const HUMAN_REACTION_LEAD_MS = 700;
+const YATZY_BURST_DURATION_MS = 2_300;
 
 type VisibleBotReaction = {
   id: string;
@@ -35,11 +37,14 @@ export function GameBoard() {
   const [highlightedPlayerCategory, setHighlightedPlayerCategory] = useState<CategoryId | null>(null);
   const [highlightedOpponentCategory, setHighlightedOpponentCategory] = useState<CategoryId | null>(null);
   const [visibleBotReaction, setVisibleBotReaction] = useState<VisibleBotReaction | null>(null);
+  const [yatzyBurst, setYatzyBurst] = useState<{ id: string; author: string } | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [isDemonThemeEnabled, setIsDemonThemeEnabled] = useState<boolean | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const rollTimerRef = useRef<number | null>(null);
   const reactionTimerRef = useRef<number | null>(null);
+  const burstTimerRef = useRef<number | null>(null);
+  const burstSequenceRef = useRef(0);
   const reactionSequenceRef = useRef(0);
   const reactionHistoryRef = useRef(INITIAL_BOT_REACTION_HISTORY);
   const reactionTrackingReadyRef = useRef(false);
@@ -48,6 +53,16 @@ export function GameBoard() {
   const previousBotHeldRef = useRef(game.bot.held.join(""));
   const botAudioTrackingReadyRef = useRef(false);
   const resultSoundPlayedRef = useRef(false);
+
+  const showYatzyBurst = useCallback((author: string) => {
+    burstSequenceRef.current += 1;
+    setYatzyBurst({ id: `yatzy-burst-${burstSequenceRef.current}`, author });
+    if (burstTimerRef.current !== null) window.clearTimeout(burstTimerRef.current);
+    burstTimerRef.current = window.setTimeout(() => {
+      burstTimerRef.current = null;
+      setYatzyBurst(null);
+    }, YATZY_BURST_DURATION_MS);
+  }, []);
 
   const showBotReaction = useCallback((emoji: BotReactionEmoji, scoredCount: number) => {
     reactionHistoryRef.current = recordBotReaction(reactionHistoryRef.current, scoredCount, emoji);
@@ -63,6 +78,7 @@ export function GameBoard() {
   useEffect(() => () => {
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
     if (reactionTimerRef.current !== null) window.clearTimeout(reactionTimerRef.current);
+    if (burstTimerRef.current !== null) window.clearTimeout(burstTimerRef.current);
   }, []);
 
   useEffect(() => {
@@ -109,6 +125,7 @@ export function GameBoard() {
     const category = newlyFilledBotCategory;
     if (!category) return;
     const points = game.bot.scores[category] ?? 0;
+    if (category === "yatzy" && points === 50) showYatzyBurst("Bot");
     const scoredCount = Object.keys(game.human.scores).length + Object.keys(game.bot.scores).length;
     const emoji = chooseBotReaction(
       { actor: "bot", category, points, scoredCount, isEndgame: scoredCount >= 24 },
@@ -116,7 +133,7 @@ export function GameBoard() {
     );
     if (!emoji) return;
     showBotReaction(emoji, scoredCount);
-  }, [game.bot.scores, game.human.scores, hasLoaded, isFinished, showBotReaction]);
+  }, [game.bot.scores, game.human.scores, hasLoaded, isFinished, showBotReaction, showYatzyBurst]);
 
   useEffect(() => {
     if (!hasLoaded) return;
@@ -181,6 +198,7 @@ export function GameBoard() {
       reactionHistoryRef.current,
     );
     if (emoji) showBotReaction(emoji, scoredCount);
+    if (category === "yatzy" && scoreDice("yatzy", game.human.dice) === 50) showYatzyBurst("Toi");
     score(category, emoji ? HUMAN_REACTION_LEAD_MS : 0);
     setSelectedCategory(null);
   };
@@ -276,6 +294,9 @@ export function GameBoard() {
       )}
       {visibleBotReaction ? (
         <ReactionToast key={visibleBotReaction.id} author="Bot" emoji={visibleBotReaction.emoji} />
+      ) : null}
+      {yatzyBurst ? (
+        <YatzyBurst key={yatzyBurst.id} author={yatzyBurst.author} />
       ) : null}
     </main>
   );
