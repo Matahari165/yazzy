@@ -18,6 +18,7 @@ import { readStoredPlayerName, writeStoredPlayerName } from "@/lib/playerNameSto
 
 const HUMAN_ROLL_ANIMATION_MS = 300;
 const YATZY_BURST_DURATION_MS = 2_300;
+const MAX_BURST_DURATION_MS = 3_500;
 
 let cachedReducedMotion: boolean | null = null;
 
@@ -89,12 +90,19 @@ export function MultiplayerClient({
   const burstTimerRef = useRef<number | null>(null);
   const burstSequenceRef = useRef(0);
   const maxBurstKeyRef = useRef(0);
+  const maxBurstTimerRef = useRef<number | null>(null);
   const yatzyCelebratedRef = useRef<string | null>(null);
   const maxCelebratedRef = useRef<string | null>(null);
 
   const triggerMaxBurst = useCallback((category: CategoryId, side: "player" | "opponent") => {
     maxBurstKeyRef.current += 1;
     setMaxBurst({ category, side, burstKey: maxBurstKeyRef.current });
+    // La célébration locale s'efface après ~3,5 s : étincelles + doré.
+    if (maxBurstTimerRef.current !== null) window.clearTimeout(maxBurstTimerRef.current);
+    maxBurstTimerRef.current = window.setTimeout(() => {
+      maxBurstTimerRef.current = null;
+      setMaxBurst(null);
+    }, MAX_BURST_DURATION_MS);
   }, []);
 
   const showYatzyBurst = useCallback((author: string) => {
@@ -142,6 +150,7 @@ export function MultiplayerClient({
   useEffect(() => () => {
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
     if (burstTimerRef.current !== null) window.clearTimeout(burstTimerRef.current);
+    if (maxBurstTimerRef.current !== null) window.clearTimeout(maxBurstTimerRef.current);
   }, []);
 
   useEffect(() => {

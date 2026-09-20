@@ -871,8 +871,8 @@
   max-width: none;
   margin: 0 -20px -32px;
   padding: clamp(28px, 6vw, 44px) clamp(16px, 4vw, 32px) calc(clamp(28px, 6vw, 44px) + 32px);
-  min-height: calc(100svh - 140px);
-  min-height: calc(100dvh - 140px);
+  min-height: calc(100svh - 84px);
+  min-height: calc(100dvh - 84px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -886,6 +886,23 @@
 }
 .finished-celebration > :not(.finished-ambient):not(.finished-confetti) {
   width: min(100%, 560px);
+}
+/* Le décor déborde sur tout le shell : aucune bande grise résiduelle,
+   même autour du header ou en cas d'arrondi d'un pixel. */
+.game-shell:has(.finished-celebration[data-outcome="win"]) {
+  background:
+    radial-gradient(120% 55% at 50% 0%, rgb(233 180 76 / 26%), transparent 65%),
+    linear-gradient(180deg, color-mix(in srgb, #e9b44c 24%, var(--page)), var(--page));
+}
+.game-shell:has(.finished-celebration[data-outcome="loss"]) {
+  background:
+    radial-gradient(90% 40% at 12% 0%, rgb(141 152 169 / 32%), transparent 70%),
+    radial-gradient(80% 38% at 88% 12%, rgb(141 152 169 / 26%), transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, #8b98a9 22%, var(--page)), var(--page));
+}
+.game-shell:has(.finished-celebration[data-outcome="tie"]) {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #e9b44c 12%, var(--page)), var(--page));
 }
 .finished-hero {
   display: flex;
