@@ -87,9 +87,10 @@ const REACTION_FX: Record<BotReactionEmoji, ReactionFx> = {
 type ReactionToastProps = {
   author: string;
   emoji: BotReactionEmoji;
+  text?: string | null;
 };
 
-export function ReactionToast({ author, emoji }: ReactionToastProps) {
+export function ReactionToast({ author, emoji, text }: ReactionToastProps) {
   return (
     <div
       className="reaction-toast"
@@ -97,7 +98,7 @@ export function ReactionToast({ author, emoji }: ReactionToastProps) {
       data-fx={REACTION_FX[emoji] ?? "laugh"}
       role="status"
       aria-live="polite"
-      aria-label={`${author} ${emoji}`}
+      aria-label={text ? `${author} ${emoji}, ${text}` : `${author} ${emoji}`}
     >
       <span className="reaction-face" aria-hidden="true">
         <b>{emoji}</b>
@@ -106,6 +107,7 @@ export function ReactionToast({ author, emoji }: ReactionToastProps) {
         <i />
       </span>
       <span className="reaction-who" aria-hidden="true">
+        {text ? <strong>{text}</strong> : null}
         <small>{author}</small>
       </span>
     </div>

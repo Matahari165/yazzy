@@ -235,6 +235,7 @@ export async function handleRoomCommand({
         id: command.reactionId,
         role: command.role,
         emoji: command.emoji,
+        text: command.text ?? null,
         sentAt: now,
       });
     }

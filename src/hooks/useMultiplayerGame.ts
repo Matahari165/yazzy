@@ -629,7 +629,7 @@ export function useMultiplayerGame(
     void dispatch({ type: "SCORE", category });
   }, [dispatch]);
   const rematch = useCallback(() => void dispatch({ type: "REMATCH" }), [dispatch]);
-  const sendReaction = useCallback(async (emoji: ReactionEmoji) => {
+  const sendReaction = useCallback(async (emoji: ReactionEmoji, text?: string) => {
     const role = roleRef.current;
     const token = tokenRef.current;
     if (!role || !token) return;
@@ -641,6 +641,7 @@ export function useMultiplayerGame(
         token,
         reactionId: crypto.randomUUID(),
         emoji,
+        ...(text === undefined ? {} : { text }),
       });
       if (response.ok) {
         applySuccess(response, "reaction");

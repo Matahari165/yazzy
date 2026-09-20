@@ -30,6 +30,7 @@ type ScoreCardProps = {
   activeColumn?: "player" | "opponent";
   highlightedPlayerCategory?: CategoryId | null;
   highlightedOpponentCategory?: CategoryId | null;
+  maxBurst?: { category: CategoryId; side: "player" | "opponent"; burstKey: number } | null;
   showTotal?: boolean;
   onSelect?: (category: CategoryId | null) => void;
   onScore?: (category: CategoryId) => void;
@@ -49,6 +50,7 @@ export const ScoreCard = memo(function ScoreCard({
   activeColumn,
   highlightedPlayerCategory = null,
   highlightedOpponentCategory = null,
+  maxBurst = null,
   showTotal = true,
   onSelect,
   onScore,
@@ -102,6 +104,7 @@ export const ScoreCard = memo(function ScoreCard({
           const stateLabel = filled ? "case inscrite" : isSelected ? "case sélectionnée" : "case libre";
           const isExplained = explainedCategory === category.id;
           const showsScorePreview = !filled && !isReadOnly && currentScore !== null && Boolean(onScore);
+          const burstHere = maxBurst?.category === category.id;
 
           const handleDetailsClick = () => {
             if (!filled && !isReadOnly && canSelect) onSelect?.(category.id);
@@ -168,6 +171,7 @@ export const ScoreCard = memo(function ScoreCard({
                     className="score-value"
                     data-highlighted={highlightedPlayerCategory === category.id}
                     data-state={filled ? "filled" : "empty"}
+                    data-max={burstHere && maxBurst?.side === "player"}
                     aria-hidden="true"
                   >
                     {currentScore === null ? "" : currentScore}
@@ -177,10 +181,21 @@ export const ScoreCard = memo(function ScoreCard({
                   className="score-value score-value-bot"
                   data-highlighted={highlightedOpponentCategory === category.id}
                   data-state={botScore !== undefined ? "filled" : opponentScoreWithDice !== null ? "preview" : "empty"}
+                  data-max={burstHere && maxBurst?.side === "opponent"}
                   aria-hidden="true"
                 >
                   {currentOpponentScore === null || currentOpponentScore === undefined ? "" : currentOpponentScore}
                 </strong>
+                {burstHere && maxBurst ? (
+                  <span key={maxBurst.burstKey} className="score-max-burst" aria-hidden="true">
+                    <i>✦</i>
+                    <i>✦</i>
+                    <i>✦</i>
+                    <i>✦</i>
+                    <i>✦</i>
+                    <i>✦</i>
+                  </span>
+                ) : null}
               </div>
               {isExplained ? (
                 <ScoreHelpPopover

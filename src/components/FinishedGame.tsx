@@ -183,6 +183,8 @@ export function FinishedGame({
       <div className="finished-ambient" data-outcome={outcome} aria-hidden="true">
         <span className="finished-rays" />
         <span className="finished-rain" />
+        <span className="finished-cloud" />
+        <span className="finished-cloud" />
       </div>
       <div
         className="finished-confetti"
@@ -216,6 +218,9 @@ export function FinishedGame({
         </h1>
         <p className="finished-tagline">{party.tagline}</p>
       </header>
+      {outcome === "loss" ? (
+        <p className="finished-taunt" aria-hidden="true">STRIP ! STRIP ! STRIP !</p>
+      ) : null}
 
       <div className="finished-scoreboard" role="list" aria-label="Scores finaux">
         <article
