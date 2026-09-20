@@ -292,6 +292,42 @@
   background: var(--score-player-cell);
   border-color: var(--score-player-ink);
 }
+/* Célébration locale : combo inscrit à son maximum, la case s'embrase. */
+.score-value[data-max="true"] {
+  color: #7a4a12 !important;
+  background: #fdf3d7 !important;
+  border-color: #e9b44c !important;
+  box-shadow: 0 0 0 2px rgb(233 180 76 / 55%), 0 0 18px rgb(233 180 76 / 65%) !important;
+  animation: score-max-pop 900ms var(--ease-emphasized) both;
+}
+[data-theme="dark"] .score-value[data-max="true"] {
+  color: #f6d47c !important;
+  background: #3a2f18 !important;
+  border-color: #e9b44c !important;
+}
+.score-max-burst {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.score-max-burst i {
+  position: absolute;
+  top: 50%;
+  color: #e9b44c;
+  font-style: normal;
+  font-size: 15px;
+  line-height: 1;
+  opacity: 0;
+  text-shadow: 0 0 8px rgb(233 180 76 / 90%);
+  animation: score-max-spark 1300ms 80ms var(--ease-out) both;
+}
+.score-max-burst i:nth-child(1) { left: 6%; --sx: -14px; --sy: -22px; }
+.score-max-burst i:nth-child(2) { left: 30%; --sx: -8px; --sy: -28px; animation-delay: 140ms; }
+.score-max-burst i:nth-child(3) { right: 30%; --sx: 8px; --sy: -28px; animation-delay: 200ms; }
+.score-max-burst i:nth-child(4) { right: 6%; --sx: 14px; --sy: -22px; animation-delay: 120ms; }
+.score-max-burst i:nth-child(5) { left: 18%; --sx: -18px; --sy: 16px; animation-delay: 240ms; }
+.score-max-burst i:nth-child(6) { right: 18%; --sx: 18px; --sy: 16px; animation-delay: 180ms; }
 
 .score-value-direct {
   width: 42px;
@@ -710,6 +746,32 @@
 .reaction-picker button:nth-child(10) { --i: 9; }
 .reaction-picker button:nth-child(n+11) { --i: 10; }
 .reaction-picker button:hover { background: var(--surface-muted); }
+.reaction-phrase {
+  grid-column: 1 / -1;
+  width: auto !important;
+  height: auto !important;
+  min-height: 48px;
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  font-weight: 800;
+  text-align: left;
+  line-height: 1.25;
+  animation: none !important;
+}
+.reaction-phrase > span:first-child { font-size: 22px; font-weight: 400; }
+.reaction-who { display: grid; gap: 2px; min-width: 0; }
+.reaction-who strong {
+  max-width: min(56vw, 210px);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-wrap: balance;
+}
 .reaction-toast {
   position: fixed; z-index: 70; top: max(58px, calc(env(safe-area-inset-top) + 48px)); left: 50%;
   display: flex; align-items: center; gap: 12px; padding: 12px 20px 12px 12px;
@@ -805,11 +867,25 @@
 .finished-card.finished-celebration {
   position: relative;
   overflow: hidden;
-  width: min(100%, 580px);
-  margin: clamp(20px, 5vw, 40px) auto 0;
-  padding: clamp(28px, 6vw, 44px);
+  width: auto;
+  max-width: none;
+  margin: 0 -20px -32px;
+  padding: clamp(28px, 6vw, 44px) clamp(16px, 4vw, 32px) calc(clamp(28px, 6vw, 44px) + 32px);
+  min-height: calc(100svh - 140px);
+  min-height: calc(100dvh - 140px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: none;
   animation: finished-card-in 520ms cubic-bezier(0.2, 0, 0, 1) both;
   text-align: center;
+}
+.finished-celebration > :not(.finished-ambient):not(.finished-confetti) {
+  width: min(100%, 560px);
 }
 .finished-hero {
   display: flex;
@@ -1088,7 +1164,9 @@
 }
 .finished-card.finished-celebration[data-outcome="loss"] {
   background:
-    linear-gradient(180deg, color-mix(in srgb, #7d8ea3 32%, transparent), transparent 60%),
+    radial-gradient(90% 42% at 12% 6%, rgb(141 152 169 / 30%), transparent 70%),
+    radial-gradient(80% 40% at 88% 18%, rgb(141 152 169 / 24%), transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, #8b98a9 20%, transparent), transparent 55%),
     var(--surface);
   border-color: var(--line-strong);
 }
@@ -1127,16 +1205,61 @@
 .finished-rain {
   position: absolute;
   inset: -22% -12%;
-  background: repeating-linear-gradient(105deg, transparent 0 13px, rgb(125 142 163 / 36%) 13px 15px, transparent 15px 30px);
-  animation: finished-rain-fall 1.05s linear infinite;
+  background: repeating-linear-gradient(100deg, transparent 0 22px, rgb(125 142 163 / 20%) 22px 23px, transparent 23px 46px);
+  animation: finished-rain-fall 1.6s linear infinite;
   display: none;
 }
 .finished-rain::after {
   position: absolute;
   inset: 0;
   content: "";
-  background: repeating-linear-gradient(105deg, transparent 0 22px, rgb(125 142 163 / 18%) 22px 23px, transparent 23px 47px);
-  animation: finished-rain-fall 1.7s linear infinite;
+  background: repeating-linear-gradient(100deg, transparent 0 34px, rgb(125 142 163 / 13%) 34px 35px, transparent 35px 70px);
+  animation: finished-rain-fall 2.4s linear infinite;
+}
+.finished-cloud {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(28px);
+  background: rgb(141 152 169 / 35%);
+  display: none;
+}
+.finished-ambient[data-outcome="loss"] .finished-cloud {
+  display: block;
+}
+.finished-ambient[data-outcome="loss"] .finished-cloud:nth-child(3) {
+  width: 46%;
+  aspect-ratio: 2 / 1;
+  left: -8%;
+  top: 4%;
+  animation: finished-cloud-drift 11s ease-in-out infinite alternate;
+}
+.finished-ambient[data-outcome="loss"] .finished-cloud:nth-child(4) {
+  width: 38%;
+  aspect-ratio: 2 / 1;
+  right: -6%;
+  top: 22%;
+  animation: finished-cloud-drift 14s ease-in-out infinite alternate-reverse;
+}
+.finished-taunt {
+  margin: 4px 0 18px;
+  padding: 8px 22px;
+  color: rgb(179 55 43 / 75%);
+  border: 3px solid rgb(179 55 43 / 60%);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 35%);
+  font-family: var(--font-display);
+  font-size: clamp(19px, 5.6vw, 34px);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: rotate(-4deg);
+  animation: finished-taunt-slam 500ms 650ms var(--ease-emphasized) both;
+}
+[data-theme="dark"] .finished-taunt {
+  color: #e07856;
+  border-color: rgb(224 120 86 / 65%);
+  background: rgb(0 0 0 / 25%);
 }
 .finished-ambient[data-outcome="loss"] .finished-rain {
   display: block;
@@ -1209,6 +1332,8 @@
 @keyframes reaction-face-haunt { 0% { opacity: 0; transform: translateY(12px) scale(0.85) rotate(-6deg); } 60% { opacity: 1; } 100% { opacity: 1; transform: translateY(-6px) scale(1) rotate(4deg); } }
 @keyframes reaction-fade { 0%, 100% { opacity: 0; transform: translate(-50%, 0); } 8%, 88% { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes player-score-choice { 45% { transform: scale(1.08) translateY(-1px); } }
+@keyframes score-max-pop { 0% { transform: scale(0.6); } 45% { transform: scale(1.18); } 70% { transform: scale(0.97); } 100% { transform: scale(1); } }
+@keyframes score-max-spark { 0% { opacity: 0; transform: translate(0, 0) scale(0.4) rotate(0deg); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--sx, 0px), var(--sy, -24px)) scale(1.15) rotate(50deg); } }
 @keyframes opponent-score-choice { 45% { transform: scale(1.08) translateY(-1px); } }
 @keyframes score-help-enter { from { opacity: 0; transform: translateY(4px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes die-roll { 0% { opacity: 0.38; transform: translateY(var(--roll-start-y, 5px)) rotate(var(--roll-start-angle, -9deg)) scale(0.9); } 42% { opacity: 0.8; transform: translateY(var(--roll-mid-y, -2px)) rotate(var(--roll-mid-angle, 6deg)) scale(1.04); } 72% { opacity: 0.94; transform: translateY(var(--roll-end-y, 1px)) rotate(var(--roll-end-angle, -3deg)) scale(0.98); } 100% { opacity: 1; transform: rotate(0) scale(1); } }
@@ -1235,6 +1360,8 @@
 @keyframes finished-title-wobble { 0% { transform: rotate(-3deg); } 50% { transform: rotate(3deg) scale(1.04); } 100% { transform: rotate(0deg) scale(1); } }
 @keyframes finished-rays-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes finished-rain-fall { from { transform: translateY(-4%); } to { transform: translateY(4%); } }
+@keyframes finished-cloud-drift { from { transform: translateX(-34px); } to { transform: translateX(34px); } }
+@keyframes finished-taunt-slam { 0% { opacity: 0; transform: rotate(-4deg) scale(2.2); } 60% { opacity: 1; transform: rotate(-4deg) scale(0.94); } 100% { opacity: 1; transform: rotate(-4deg) scale(1); } }
 @keyframes finished-winner-num-glow { 0%, 100% { text-shadow: 0 0 0 rgb(233 180 76 / 0); transform: scale(1); } 50% { text-shadow: 0 0 24px rgb(233 180 76 / 85%); transform: scale(1.05); } }
 @keyframes finished-winner-grow { 0% { opacity: 0; transform: scale(0); } 55% { opacity: 1; transform: scale(1.09); } 75% { transform: scale(1.01); } 100% { opacity: 1; transform: scale(1.045); } }
 @keyframes finished-loser-shrink { 0% { opacity: 0; transform: scale(1); } 40% { opacity: 1; transform: scale(1); } 100% { opacity: 1; transform: scale(0.94); } }
@@ -1425,7 +1552,13 @@
   .roll-controls { gap: 8px; min-height: 44px; height: 44px; }
   .roll-controls .primary-action, .roll-controls .secondary-action { min-height: 44px; padding: 10px 16px; }
   .roll-indicator { min-height: 44px; padding: 6px 8px; }
-  .finished-card { margin: auto 0; }
+  .finished-card.finished-celebration {
+    flex: 1;
+    min-height: 0;
+    margin: 0 -10px calc(-1 * max(10px, env(safe-area-inset-bottom)));
+    padding: 24px 14px max(20px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+  }
 }
 
 @media (max-width: 430px) {
@@ -1433,7 +1566,7 @@
   .score-category-label-short { display: block; }
   .mode-label { display: none; }
   .game-header { gap: 5px; }
-  .finished-card.finished-celebration { margin-top: 16px; padding: 20px 14px; }
+  .finished-card.finished-celebration { padding: 20px 14px max(16px, env(safe-area-inset-bottom)); }
   .finished-scoreboard { gap: 7px; }
   .finished-scoreboard::before { width: 25px; height: 25px; font-size: 9px; }
   .finished-player-score { padding: 12px 10px; }
@@ -1511,13 +1644,15 @@
   .game-logo-tile { transition: none; }
   .die-button { transition: none; }
   .score-value-direct:hover { transform: none; }
-  .bot-status::before, .reaction-picker, .reaction-picker button, .reaction-toast, .reaction-face b, .reaction-face i, .reaction-face::before, .reaction-face::after, .score-help-popover, .score-value[data-highlighted="true"], .die-button[data-held="true"]::after, .game-logo-tile[data-bump="true"], .total-score-value[data-bump="true"], .finished-card, .confirm-dialog-card, .game-table, .bot-turn-panel, .die-button[data-highlighted="true"] .die-face { animation: none; }
+  .bot-status::before, .reaction-picker, .reaction-picker button, .reaction-toast, .reaction-face b, .reaction-face i, .reaction-face::before, .reaction-face::after, .score-help-popover, .score-value[data-highlighted="true"], .score-value[data-max="true"], .score-max-burst i, .die-button[data-held="true"]::after, .game-logo-tile[data-bump="true"], .total-score-value[data-bump="true"], .finished-card, .confirm-dialog-card, .game-table, .bot-turn-panel, .die-button[data-highlighted="true"] .die-face { animation: none; }
   .die-button[data-rolling="true"] .die-face { animation: die-fade 80ms ease both; }
   .reaction-toast { animation: reaction-fade 2400ms linear both; }
   .finished-card.finished-celebration, .finished-result-mark, .finished-player-score, .finished-score-number, .finished-particles i { animation: none; }
   .finished-confetti, .finished-confetti i, .finished-party-emoji, .finished-tagline, .finished-hero .finished-result { animation: none !important; }
   .finished-ambient { display: none !important; }
   .finished-player-score[data-winner="true"] .finished-score-number { animation: none !important; }
+  .finished-taunt { animation: none !important; }
+  .finished-ambient .finished-cloud { animation: none !important; }
   .finished-celebration .finished-player-score[data-winner="true"],
   .finished-celebration .finished-player-score[data-winner="false"] { animation: none !important; }
   .yatzy-burst, .yatzy-burst-splash, .yatzy-burst-dice, .yatzy-burst-splash strong { animation: none !important; }

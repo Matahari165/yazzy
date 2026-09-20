@@ -4,9 +4,10 @@ import { useState } from "react";
 import { notFound } from "next/navigation";
 import { FinishedGame } from "@/components/FinishedGame";
 import { ReactionToast } from "@/components/ReactionToast";
+import { ScoreCard } from "@/components/ScoreCard";
 import { YatzyBurst } from "@/components/YatzyBurst";
 import { createGame } from "@/domain/game";
-import { REACTION_EMOJIS } from "@/domain/reactions";
+import { REACTION_EMOJIS, STRIP_EMOJI, STRIP_PHRASE } from "@/domain/reactions";
 import { createMultiplayerGame, freshPlayerState } from "@/domain/multiplayer";
 
 const WIN = { yatzy: 50, pair: 20, chance: 18 };
@@ -116,7 +117,22 @@ export default function PreviewPage() {
           {REACTION_EMOJIS.map((emoji) => (
             <ReactionToast key={emoji} author="JoA" emoji={emoji} />
           ))}
+          <ReactionToast author="JoA" emoji={STRIP_EMOJI} text={STRIP_PHRASE} />
         </div>
+      </section>
+      <section style={{ width: "min(100%, 720px)", display: "grid", gap: 12 }}>
+        <h2 style={{ textAlign: "center", margin: 0 }}>Combo au max (étincelles locales)</h2>
+        <ScoreCard
+          label="Aperçu : Yatzy à 50 célébré"
+          humanScores={{ yatzy: 50 }}
+          botScores={{}}
+          dice={[6, 6, 6, 6, 6]}
+          selected={null}
+          canSelect={false}
+          isReadOnly
+          activeColumn="player"
+          maxBurst={{ category: "yatzy", side: "player", burstKey: 1 }}
+        />
       </section>
       {SECTIONS.map((section) => (
         <section key={section.title} style={{ width: "min(100%, 580px)", display: "grid", gap: 12 }}>

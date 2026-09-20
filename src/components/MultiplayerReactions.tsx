@@ -6,6 +6,7 @@ import {
   type ReactionEmoji,
   type RoomReaction,
 } from "@/domain/multiplayerRoomProtocol";
+import { STRIP_EMOJI, STRIP_PHRASE } from "@/domain/reactions";
 import type { MultiplayerRole } from "@/domain/multiplayer";
 import { ReactionToast } from "./ReactionToast";
 
@@ -39,7 +40,7 @@ type MultiplayerReactionsProps = {
   localRole: MultiplayerRole;
   localName: string;
   opponentName: string;
-  onSend: (emoji: ReactionEmoji) => void;
+  onSend: (emoji: ReactionEmoji, text?: string) => void;
 };
 
 export function MultiplayerReactions({
@@ -56,6 +57,7 @@ export function MultiplayerReactions({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const lastReactionIdRef = useRef<string | null>(null);
   const optimisticEmojiRef = useRef<ReactionEmoji | null>(null);
+  const optimisticTextRef = useRef<string | null>(null);
   const hideTimerRef = useRef<number | null>(null);
 
   const showReaction = useCallback((reaction: RoomReaction) => {
@@ -64,11 +66,33 @@ export function MultiplayerReactions({
     hideTimerRef.current = window.setTimeout(() => setVisibleReaction(null), 2_400);
   }, []);
 
+  const sendPreset = useCallback((emoji: ReactionEmoji, text?: string) => {
+    const optimisticReaction: RoomReaction = {
+      id: `local-${crypto.randomUUID()}`,
+      role: localRole,
+      emoji,
+      text: text ?? null,
+      sentAt: Date.now(),
+    };
+    lastReactionIdRef.current = optimisticReaction.id;
+    optimisticEmojiRef.current = emoji;
+    optimisticTextRef.current = text ?? null;
+    showReaction(optimisticReaction);
+    onSend(emoji, text);
+    setIsOpen(false);
+    triggerRef.current?.focus();
+  }, [localRole, onSend, showReaction]);
+
   useEffect(() => {
     if (!latestReaction || latestReaction.id === lastReactionIdRef.current) return;
     lastReactionIdRef.current = latestReaction.id;
-    if (latestReaction.role === localRole && latestReaction.emoji === optimisticEmojiRef.current) {
+    if (
+      latestReaction.role === localRole &&
+      latestReaction.emoji === optimisticEmojiRef.current &&
+      (latestReaction.text ?? null) === optimisticTextRef.current
+    ) {
       optimisticEmojiRef.current = null;
+      optimisticTextRef.current = null;
       return;
     }
     showReaction(latestReaction);
@@ -115,25 +139,22 @@ export function MultiplayerReactions({
       </button>
       {isOpen ? (
         <div id="reaction-picker" className="reaction-picker" role="group" aria-label="Réactions rapides">
+          <button
+            key="strip-phrase"
+            type="button"
+            className="reaction-phrase"
+            aria-label={`Envoyer : ${STRIP_PHRASE}`}
+            onClick={() => sendPreset(STRIP_EMOJI, STRIP_PHRASE)}
+          >
+            <span aria-hidden="true">{STRIP_EMOJI}</span>
+            <span aria-hidden="true">{STRIP_PHRASE}</span>
+          </button>
           {REACTION_EMOJIS.map((emoji) => (
             <button
               key={emoji}
               type="button"
               aria-label={REACTION_LABELS[emoji]}
-              onClick={() => {
-                const optimisticReaction: RoomReaction = {
-                  id: `local-${crypto.randomUUID()}`,
-                  role: localRole,
-                  emoji,
-                  sentAt: Date.now(),
-                };
-                lastReactionIdRef.current = optimisticReaction.id;
-                optimisticEmojiRef.current = emoji;
-                showReaction(optimisticReaction);
-                onSend(emoji);
-                setIsOpen(false);
-                triggerRef.current?.focus();
-              }}
+              onClick={() => sendPreset(emoji)}
             >
               <span aria-hidden="true">{emoji}</span>
             </button>
@@ -141,7 +162,12 @@ export function MultiplayerReactions({
         </div>
       ) : null}
       {visibleReaction ? (
-        <ReactionToast key={visibleReaction.id} author={reactionAuthor} emoji={visibleReaction.emoji} />
+        <ReactionToast
+          key={visibleReaction.id}
+          author={reactionAuthor}
+          emoji={visibleReaction.emoji}
+          text={visibleReaction.text}
+        />
       ) : null}
     </div>
   );

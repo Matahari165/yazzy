@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CATEGORIES, scoreDice, type CategoryId } from "@/domain/yatzy";
+import { CATEGORIES, isMaxComboScore, scoreDice, type CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useYazzyGame } from "@/hooks/useYazzyGame";
 import {
@@ -38,6 +38,7 @@ export function GameBoard() {
   const [highlightedOpponentCategory, setHighlightedOpponentCategory] = useState<CategoryId | null>(null);
   const [visibleBotReaction, setVisibleBotReaction] = useState<VisibleBotReaction | null>(null);
   const [yatzyBurst, setYatzyBurst] = useState<{ id: string; author: string } | null>(null);
+  const [maxBurst, setMaxBurst] = useState<{ category: CategoryId; side: "player" | "opponent"; burstKey: number } | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [isDemonThemeEnabled, setIsDemonThemeEnabled] = useState<boolean | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -45,6 +46,7 @@ export function GameBoard() {
   const reactionTimerRef = useRef<number | null>(null);
   const burstTimerRef = useRef<number | null>(null);
   const burstSequenceRef = useRef(0);
+  const maxBurstKeyRef = useRef(0);
   const reactionSequenceRef = useRef(0);
   const reactionHistoryRef = useRef(INITIAL_BOT_REACTION_HISTORY);
   const reactionTrackingReadyRef = useRef(false);
@@ -53,6 +55,11 @@ export function GameBoard() {
   const previousBotHeldRef = useRef(game.bot.held.join(""));
   const botAudioTrackingReadyRef = useRef(false);
   const resultSoundPlayedRef = useRef(false);
+
+  const triggerMaxBurst = useCallback((category: CategoryId, side: "player" | "opponent") => {
+    maxBurstKeyRef.current += 1;
+    setMaxBurst({ category, side, burstKey: maxBurstKeyRef.current });
+  }, []);
 
   const showYatzyBurst = useCallback((author: string) => {
     burstSequenceRef.current += 1;
@@ -126,6 +133,7 @@ export function GameBoard() {
     if (!category) return;
     const points = game.bot.scores[category] ?? 0;
     if (category === "yatzy" && points === 50) showYatzyBurst("Bot");
+    if (isMaxComboScore(category, points)) triggerMaxBurst(category, "opponent");
     const scoredCount = Object.keys(game.human.scores).length + Object.keys(game.bot.scores).length;
     const emoji = chooseBotReaction(
       { actor: "bot", category, points, scoredCount, isEndgame: scoredCount >= 24 },
@@ -133,7 +141,7 @@ export function GameBoard() {
     );
     if (!emoji) return;
     showBotReaction(emoji, scoredCount);
-  }, [game.bot.scores, game.human.scores, hasLoaded, isFinished, showBotReaction, showYatzyBurst]);
+  }, [game.bot.scores, game.human.scores, hasLoaded, isFinished, showBotReaction, showYatzyBurst, triggerMaxBurst]);
 
   useEffect(() => {
     if (!hasLoaded) return;
@@ -198,7 +206,9 @@ export function GameBoard() {
       reactionHistoryRef.current,
     );
     if (emoji) showBotReaction(emoji, scoredCount);
-    if (category === "yatzy" && scoreDice("yatzy", game.human.dice) === 50) showYatzyBurst("Toi");
+    const humanPoints = scoreDice(category, game.human.dice);
+    if (category === "yatzy" && humanPoints === 50) showYatzyBurst("Toi");
+    if (isMaxComboScore(category, humanPoints)) triggerMaxBurst(category, "player");
     score(category, emoji ? HUMAN_REACTION_LEAD_MS : 0);
     setSelectedCategory(null);
   };
@@ -264,6 +274,7 @@ export function GameBoard() {
             activeColumn={game.activePlayer === "human" ? "player" : "opponent"}
             highlightedPlayerCategory={highlightedPlayerCategory}
             highlightedOpponentCategory={highlightedOpponentCategory}
+            maxBurst={maxBurst}
             onSelect={(category) => {
               botAudio.playEffect("button");
               setSelectedCategory(category);

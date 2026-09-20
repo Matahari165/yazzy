@@ -197,6 +197,12 @@ export function isValidCategoryScore(category: CategoryId, score: unknown): scor
   return Number.isInteger(score) && Number(score) >= 0 && Number(score) <= definition.maximumScore;
 }
 
+/** Vrai quand une case de combinaison (pas un chiffre) est remplie à son maximum. */
+export function isMaxComboScore(category: CategoryId, points: number): boolean {
+  const definition = CATEGORY_BY_ID[category];
+  return definition.section === "lower" && points === definition.maximumScore;
+}
+
 export function totalScore(scores: Partial<Record<CategoryId, number>>): number {
   return Object.values(scores).reduce<number>((sum, score) => sum + (score ?? 0), 0);
 }

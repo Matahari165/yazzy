@@ -5,7 +5,7 @@ import {
 } from "./multiplayer";
 import { parseClientActionValue, type ClientAction } from "./protocol";
 import { isPlayerName } from "./playerName";
-import { REACTION_EMOJIS, type ReactionEmoji } from "./reactions";
+import { isReactionText, REACTION_EMOJIS, type ReactionEmoji } from "./reactions";
 
 export { REACTION_EMOJIS };
 export type { ReactionEmoji };
@@ -14,6 +14,7 @@ export type RoomReaction = {
   id: string;
   role: MultiplayerRole;
   emoji: ReactionEmoji;
+  text: string | null;
   sentAt: number;
 };
 
@@ -52,6 +53,7 @@ export type RoomCommand =
       token: string;
       reactionId: string;
       emoji: ReactionEmoji;
+      text?: string;
     };
 
 export type RoomErrorCode =
@@ -111,6 +113,7 @@ export function isRoomReaction(value: unknown): value is RoomReaction {
     isPlayerToken(reaction.id) &&
       isRole(reaction.role) &&
       isReactionEmoji(reaction.emoji) &&
+      (reaction.text === null || reaction.text === undefined || isReactionText(reaction.text)) &&
       typeof reaction.sentAt === "number" &&
       Number.isFinite(reaction.sentAt),
   );
@@ -182,13 +185,19 @@ export function parseRoomCommand(value: unknown): RoomCommand | null {
     }
   }
 
-  if (data.type === "REACTION" && isPlayerToken(data.reactionId) && isReactionEmoji(data.emoji)) {
+  if (
+    data.type === "REACTION" &&
+    isPlayerToken(data.reactionId) &&
+    isReactionEmoji(data.emoji) &&
+    (data.text === undefined || isReactionText(data.text))
+  ) {
     return {
       type: "REACTION",
       role: data.role,
       token: data.token,
       reactionId: data.reactionId,
       emoji: data.emoji,
+      text: typeof data.text === "string" ? data.text : undefined,
     };
   }
 
