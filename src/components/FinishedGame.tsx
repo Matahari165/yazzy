@@ -67,7 +67,7 @@ const TIE_TAGLINES = [
 ];
 
 const LOSS_COLORS = ["#cfc8bd", "#b9b0a6", "#a8a29e", "#d8d0c4"];
-const LOSS_EMOJIS = ["🥲", "🌧️", "🍀", "🧻"];
+const LOSS_EMOJIS = ["🥲", "🌧️", "🍀", "💩"];
 const LOSS_TAGLINES_DUO = [
   "{o} te doit un café.",
   "{o} fait la danse de la victoire.",
@@ -100,11 +100,17 @@ function buildPieces(count: number, colors: readonly string[], slow: boolean): C
 function pickParty(outcome: GameOutcome, isMultiplayer: boolean, opponentLabel: string): Party {
   const fill = (template: string) => template.replaceAll("{o}", opponentLabel);
   if (outcome === "win") {
+    // Deuxième vague : un tiers des confettis retombe plus tard.
+    const pieces = buildPieces(56, randomOf(WIN_PALETTES), false).map((piece, index) =>
+      index % 3 === 0
+        ? { ...piece, delay: 1.6 + Math.random() * 1.2, duration: piece.duration + 1 }
+        : piece,
+    );
     return {
       variant: randomOf(PARTY_VARIANTS),
       emoji: randomOf(WIN_EMOJIS),
       tagline: fill(randomOf(isMultiplayer ? WIN_TAGLINES_DUO : WIN_TAGLINES_BOT)),
-      pieces: buildPieces(56, randomOf(WIN_PALETTES), false),
+      pieces,
     };
   }
   if (outcome === "loss") {
@@ -174,6 +180,10 @@ export function FinishedGame({
       data-game-mode={mode}
       data-outcome={outcome}
     >
+      <div className="finished-ambient" data-outcome={outcome} aria-hidden="true">
+        <span className="finished-rays" />
+        <span className="finished-rain" />
+      </div>
       <div
         className="finished-confetti"
         data-variant={party.variant}

@@ -4,18 +4,20 @@ import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FinishedGame } from "@/components/FinishedGame";
 import { applySavedTheme } from "@/components/ThemeSwitcher";
+import { YatzyBurst } from "@/components/YatzyBurst";
 import { GameTable } from "@/components/GameTable";
 import { MultiplayerNameGate } from "@/components/MultiplayerNameGate";
 import { MultiplayerReactions } from "@/components/MultiplayerReactions";
 import { ScoreCard } from "@/components/ScoreCard";
 import type { RoomActionEvent } from "@/domain/multiplayerRoomProtocol";
-import { CATEGORY_BY_ID, totalScore, type CategoryId } from "@/domain/yatzy";
+import { CATEGORY_BY_ID, scoreDice, totalScore, type CategoryId } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 import { botAudio } from "@/lib/botAudio";
 import { readStoredPlayerName, writeStoredPlayerName } from "@/lib/playerNameStorage";
 
 const HUMAN_ROLL_ANIMATION_MS = 300;
+const YATZY_BURST_DURATION_MS = 2_300;
 
 let cachedReducedMotion: boolean | null = null;
 
@@ -79,9 +81,23 @@ export function MultiplayerClient({
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [highlightedPlayerCategory, setHighlightedPlayerCategory] = useState<CategoryId | null>(null);
   const [isRolling, setIsRolling] = useState(false);
+  const [yatzyBurst, setYatzyBurst] = useState<{ id: string; author: string } | null>(null);
   const [inviteLink, setInviteLink] = useState("");
   const [copyStatus, setCopyStatus] = useState("");
   const rollTimerRef = useRef<number | null>(null);
+  const burstTimerRef = useRef<number | null>(null);
+  const burstSequenceRef = useRef(0);
+  const yatzyCelebratedRef = useRef<string | null>(null);
+
+  const showYatzyBurst = useCallback((author: string) => {
+    burstSequenceRef.current += 1;
+    setYatzyBurst({ id: `yatzy-burst-${burstSequenceRef.current}`, author });
+    if (burstTimerRef.current !== null) window.clearTimeout(burstTimerRef.current);
+    burstTimerRef.current = window.setTimeout(() => {
+      burstTimerRef.current = null;
+      setYatzyBurst(null);
+    }, YATZY_BURST_DURATION_MS);
+  }, []);
 
   useEffect(() => {
     applySavedTheme();
@@ -117,6 +133,7 @@ export function MultiplayerClient({
 
   useEffect(() => () => {
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
+    if (burstTimerRef.current !== null) window.clearTimeout(burstTimerRef.current);
   }, []);
 
   useEffect(() => {
@@ -126,6 +143,16 @@ export function MultiplayerClient({
     });
     return () => window.cancelAnimationFrame(frame);
   }, [status]);
+
+  useEffect(() => {
+    const event = replayedOpponentEvent;
+    if (!event || event.action.type !== "SCORE" || event.action.category !== "yatzy") return;
+    if (event.actionId === yatzyCelebratedRef.current) return;
+    const scored = event.game[event.role]?.state.scores?.yatzy;
+    if (scored !== 50) return;
+    yatzyCelebratedRef.current = event.actionId;
+    showYatzyBurst(opponentPlayer?.name ?? "Ami");
+  }, [replayedOpponentEvent, opponentPlayer, showYatzyBurst]);
 
   const handleRoll = useCallback(() => {
     if (!canAct || isRolling || !localState || localState.rollNumber >= 3) return;
@@ -145,9 +172,12 @@ export function MultiplayerClient({
     if (!category || !canAct || isRolling) return;
     setHighlightedPlayerCategory(category);
     botAudio.playEffect("score");
+    if (category === "yatzy" && localState && scoreDice("yatzy", localState.dice) === 50) {
+      showYatzyBurst(localPlayer?.name ?? "Toi");
+    }
     score(category);
     setSelectedCategory(null);
-  }, [selectedCategory, canAct, isRolling, score]);
+  }, [selectedCategory, canAct, isRolling, score, localState, localPlayer, showYatzyBurst]);
 
   const handleToggleDie = useCallback((index: number) => {
     if (!canAct) return;
@@ -273,33 +303,38 @@ export function MultiplayerClient({
   }
 
   return (
-    <MultiplayerGameView
-      game={game}
-      localRole={localRole}
-      localPlayer={localPlayer}
-      opponentPlayer={opponentPlayer}
-      localState={localState}
-      opponentState={opponentState}
-      isMyTurn={isMyTurn}
-      canAct={canAct}
-      isConnected={isConnected}
-      opponentOnline={opponentOnline}
-      status={status}
-      selectedCategory={selectedCategory}
-      highlightedPlayerCategory={highlightedPlayerCategory}
-      isRolling={isRolling}
-      pendingAction={pendingAction}
-      replayedOpponentEvent={replayedOpponentEvent}
-      isReplayingOpponentRoll={isReplayingOpponentRoll}
-      replayGapDetected={replayGapDetected}
-      latestReaction={latestReaction}
-      onSelectCategory={setSelectedCategory}
-      onRoll={handleRoll}
-      onScore={handleScore}
-      onToggleDie={handleToggleDie}
-      onRematch={rematch}
-      onSendReaction={sendReaction}
-    />
+    <>
+      <MultiplayerGameView
+        game={game}
+        localRole={localRole}
+        localPlayer={localPlayer}
+        opponentPlayer={opponentPlayer}
+        localState={localState}
+        opponentState={opponentState}
+        isMyTurn={isMyTurn}
+        canAct={canAct}
+        isConnected={isConnected}
+        opponentOnline={opponentOnline}
+        status={status}
+        selectedCategory={selectedCategory}
+        highlightedPlayerCategory={highlightedPlayerCategory}
+        isRolling={isRolling}
+        pendingAction={pendingAction}
+        replayedOpponentEvent={replayedOpponentEvent}
+        isReplayingOpponentRoll={isReplayingOpponentRoll}
+        replayGapDetected={replayGapDetected}
+        latestReaction={latestReaction}
+        onSelectCategory={setSelectedCategory}
+        onRoll={handleRoll}
+        onScore={handleScore}
+        onToggleDie={handleToggleDie}
+        onRematch={rematch}
+        onSendReaction={sendReaction}
+      />
+      {yatzyBurst ? (
+        <YatzyBurst key={yatzyBurst.id} author={yatzyBurst.author} />
+      ) : null}
+    </>
   );
 }
 

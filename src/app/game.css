@@ -257,8 +257,8 @@
 
 .score-value[data-state="empty"] {
   color: transparent;
-  background: transparent;
-  border: 1.5px dashed var(--line);
+  background: color-mix(in srgb, var(--surface-muted) 45%, transparent);
+  border: 1.5px dashed var(--line-strong);
 }
 .score-value[data-state="preview"] {
   border: 1.5px solid var(--score-player-ink);
@@ -914,10 +914,81 @@
   transform: scale(0.96);
 }
 
+/* 9c. Explosion Yatzy à 50 : plein écran voilé, étoiles, aucun cadre. */
+.yatzy-burst {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  display: grid;
+  place-items: center;
+  background: rgb(30 27 24 / 30%);
+  animation: yatzy-veil-life 2.2s var(--ease-out) both;
+  pointer-events: none;
+}
+.yatzy-burst-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.yatzy-burst-confetti i {
+  position: absolute;
+  top: -4vh;
+  opacity: 0;
+  animation-name: yatzy-piece-fall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  will-change: transform, opacity;
+}
+.yatzy-burst-stars {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.yatzy-burst-stars i {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  font-style: normal;
+  line-height: 1;
+  opacity: 0;
+  animation: yatzy-star-burst 1.6s var(--ease-out) both;
+  will-change: transform, opacity;
+}
+.yatzy-burst-splash {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  text-align: center;
+  animation: yatzy-splash-in 2.2s var(--ease-emphasized) both;
+}
+.yatzy-burst-dice {
+  font-size: 64px;
+  line-height: 1;
+  filter: drop-shadow(0 6px 14px rgb(0 0 0 / 45%));
+  animation: yatzy-dice-spin 2.2s var(--ease-emphasized) both;
+}
+.yatzy-burst-splash strong {
+  color: #f6d47c;
+  font-family: var(--font-display);
+  font-size: clamp(54px, 14vw, 84px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-shadow: 0 3px 0 #7a4a12, 0 0 34px rgb(246 212 124 / 90%);
+  animation: yatzy-title-pop 2.2s var(--ease-emphasized) both;
+}
+.yatzy-burst-splash small {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+  text-shadow: 0 2px 8px rgb(0 0 0 / 60%);
+}
+
 /* 9b. Fête de fin de partie (confettis, titre et clin d'œil, tirés au sort). */
 .finished-confetti {
   position: absolute;
   inset: 0;
+  z-index: 2;
   overflow: hidden;
   pointer-events: none;
 }
@@ -967,6 +1038,88 @@
 }
 .finished-hero[data-outcome="tie"] .finished-result {
   animation: finished-title-wobble 700ms 100ms var(--ease-out) both;
+}
+
+/* 9c. Fond vivant de fin de partie : le décor change vraiment avec l'issue. */
+.finished-card.finished-celebration[data-outcome="win"] {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #e9b44c 30%, transparent), transparent 58%),
+    var(--surface);
+  border-color: #e9b44c;
+}
+.finished-card.finished-celebration[data-outcome="loss"] {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #7d8ea3 32%, transparent), transparent 60%),
+    var(--surface);
+  border-color: var(--line-strong);
+}
+.finished-card.finished-celebration[data-outcome="tie"] {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #e9b44c 10%, transparent), transparent 50%),
+    var(--surface);
+}
+.finished-ambient {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.finished-ambient[data-outcome="win"] {
+  background: radial-gradient(120% 90% at 50% 0%, rgb(233 180 76 / 30%), transparent 62%);
+}
+.finished-ambient[data-outcome="loss"] {
+  background: linear-gradient(180deg, rgb(90 110 140 / 18%), transparent 62%);
+}
+.finished-rays {
+  position: absolute;
+  left: 50%;
+  top: -72%;
+  width: 220%;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgb(233 180 76 / 17%) 0deg 11deg, transparent 11deg 23deg);
+  animation: finished-rays-spin 26s linear infinite;
+  display: none;
+}
+.finished-ambient[data-outcome="win"] .finished-rays {
+  display: block;
+}
+.finished-rain {
+  position: absolute;
+  inset: -22% -12%;
+  background: repeating-linear-gradient(105deg, transparent 0 13px, rgb(125 142 163 / 36%) 13px 15px, transparent 15px 30px);
+  animation: finished-rain-fall 1.05s linear infinite;
+  display: none;
+}
+.finished-rain::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: repeating-linear-gradient(105deg, transparent 0 22px, rgb(125 142 163 / 18%) 22px 23px, transparent 23px 47px);
+  animation: finished-rain-fall 1.7s linear infinite;
+}
+.finished-ambient[data-outcome="loss"] .finished-rain {
+  display: block;
+}
+.finished-player-score[data-winner="true"] .finished-score-number {
+  animation:
+    finished-number-pop 600ms 330ms cubic-bezier(0.2, 0, 0, 1) both,
+    finished-winner-num-glow 2.8s ease-in-out 1.4s infinite;
+}
+/* La case du gagnant grandit depuis zéro, celle du perdant se tasse. */
+.finished-celebration:not([data-outcome="tie"]) .finished-player-score[data-winner="true"] {
+  animation: finished-winner-grow 800ms 400ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+.finished-celebration:not([data-outcome="tie"]) .finished-player-score[data-winner="false"] {
+  animation: finished-loser-shrink 650ms 550ms var(--ease-out) both;
+}
+/* Le contenu reste au-dessus de l'ambiance, sous les confettis. */
+.finished-hero,
+.finished-scoreboard,
+.finished-actions {
+  position: relative;
+  z-index: 1;
 }
 
 /* 10. Dialogue de confirmation */
@@ -1020,6 +1173,17 @@
 @keyframes finished-title-cheer { 0% { transform: scale(0.7) rotate(-4deg); } 55% { transform: scale(1.12) rotate(2deg); } 75% { transform: scale(0.97) rotate(-1deg); } 100% { transform: scale(1) rotate(0deg); } }
 @keyframes finished-title-sag { 0% { transform: translateY(-8px); } 60% { transform: translateY(3px) skewX(-4deg); } 100% { transform: translateY(2px) skewX(0deg); } }
 @keyframes finished-title-wobble { 0% { transform: rotate(-3deg); } 50% { transform: rotate(3deg) scale(1.04); } 100% { transform: rotate(0deg) scale(1); } }
+@keyframes finished-rays-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes finished-rain-fall { from { transform: translateY(-4%); } to { transform: translateY(4%); } }
+@keyframes finished-winner-num-glow { 0%, 100% { text-shadow: 0 0 0 rgb(233 180 76 / 0); transform: scale(1); } 50% { text-shadow: 0 0 24px rgb(233 180 76 / 85%); transform: scale(1.05); } }
+@keyframes finished-winner-grow { 0% { opacity: 0; transform: scale(0); } 55% { opacity: 1; transform: scale(1.09); } 75% { transform: scale(1.01); } 100% { opacity: 1; transform: scale(1.045); } }
+@keyframes finished-loser-shrink { 0% { opacity: 0; transform: scale(1); } 40% { opacity: 1; transform: scale(1); } 100% { opacity: 1; transform: scale(0.94); } }
+@keyframes yatzy-piece-fall { 0% { opacity: 0; transform: translateY(0) rotate(0deg); } 10% { opacity: 1; } 100% { opacity: 0; transform: translateY(112vh) rotate(640deg); } }
+@keyframes yatzy-veil-life { 0% { opacity: 0; } 10% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes yatzy-star-burst { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -140px))) scale(1.1) rotate(40deg); } }
+@keyframes yatzy-splash-in { 0% { opacity: 0; transform: scale(0.6); } 12% { opacity: 1; transform: scale(1.05); } 18% { transform: scale(1); } 82% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.97); } }
+@keyframes yatzy-dice-spin { 0% { transform: rotate(-200deg) scale(0.4); } 30% { transform: rotate(18deg) scale(1.18); } 45% { transform: rotate(0deg) scale(1); } 80% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(24deg) scale(1); } }
+@keyframes yatzy-title-pop { 0% { opacity: 0; transform: scale(0.6); } 14% { opacity: 1; transform: scale(1.12); } 22% { transform: scale(1); } 80% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.96); } }
 @keyframes bot-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 
 /* 12. Mode Boss : accent d'ambiance, surfaces claires partagées. */
@@ -1292,6 +1456,12 @@
   .reaction-toast { animation: reaction-fade 2400ms linear both; }
   .finished-card.finished-celebration, .finished-result-mark, .finished-player-score, .finished-score-number, .finished-particles i { animation: none; }
   .finished-confetti, .finished-confetti i, .finished-party-emoji, .finished-tagline, .finished-hero .finished-result { animation: none !important; }
+  .finished-ambient { display: none !important; }
+  .finished-player-score[data-winner="true"] .finished-score-number { animation: none !important; }
+  .finished-celebration .finished-player-score[data-winner="true"],
+  .finished-celebration .finished-player-score[data-winner="false"] { animation: none !important; }
+  .yatzy-burst, .yatzy-burst-splash, .yatzy-burst-dice, .yatzy-burst-splash strong { animation: none !important; }
+  .yatzy-burst-confetti i, .yatzy-burst-stars i { display: none !important; }
   .connection-notice { animation: none; }
   .finished-player-score[data-winner="true"] { transform: none; }
 }
