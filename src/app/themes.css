@@ -309,8 +309,11 @@ html[data-theme="dark"] {
   border-color: var(--line);
   color: var(--ink);
 }
+[data-theme="dark"] .reaction-who strong {
+  color: #1a1614;
+}
 [data-theme="dark"] .reaction-who small {
-  color: #2b231e;
+  color: #4a4038;
 }
 
 /* ==========================================================================

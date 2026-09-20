@@ -763,15 +763,6 @@
   animation: none !important;
 }
 .reaction-phrase > span:first-child { font-size: 22px; font-weight: 400; }
-.reaction-who { display: grid; gap: 2px; min-width: 0; }
-.reaction-who strong {
-  max-width: min(56vw, 210px);
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 800;
-  line-height: 1.25;
-  text-wrap: balance;
-}
 .reaction-toast {
   position: fixed; z-index: 70; top: max(58px, calc(env(safe-area-inset-top) + 48px)); left: 50%;
   display: flex; align-items: center; gap: 12px; padding: 12px 20px 12px 12px;
@@ -836,8 +827,24 @@
 .reaction-face i:nth-child(2) { --bx: -30px; --by: -20px; }
 .reaction-face i:nth-child(3) { --bx: 28px; --by: -24px; }
 .reaction-face i:nth-child(4) { --bx: 4px; --by: 30px; }
-.reaction-who { display: grid; min-width: 0; }
-.reaction-who small { max-width: 150px; overflow: hidden; color: var(--ink); font-size: 16px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.reaction-who { display: grid; gap: 2px; min-width: 0; }
+.reaction-who strong {
+  max-width: min(56vw, 210px);
+  color: #2b231e;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+.reaction-who small {
+  max-width: 150px;
+  overflow: hidden;
+  color: #4a4038;
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* 8. Multi-joueur */
 .multiplayer-game-header { position: relative; min-height: 40px; gap: 7px; margin-bottom: 7px; }
