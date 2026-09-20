@@ -81,7 +81,7 @@ export const ScoreCard = memo(function ScoreCard({
   const botTotal = useMemo(() => totalScore(botScores), [botScores]);
 
   return (
-    <section className="score-card" aria-label={label}>
+    <section className="score-card" aria-label={label} data-active-column={activeColumn ?? "player"}>
       <div className="score-list" role="list" aria-label={label}>
         {CATEGORIES.map((category, index) => {
           const visualHint = VISUAL_HINTS[category.id];
@@ -119,7 +119,7 @@ export const ScoreCard = memo(function ScoreCard({
               <div
                 className="score-row"
                 data-actionable={!filled && !isReadOnly && canSelect}
-                data-filled={filled}
+                data-filled={activeColumn === "opponent" ? opponentFilled : filled}
                 data-filled-column={visuallyFilledColumn}
                 data-player-filled={filled}
                 data-opponent-filled={botScore !== undefined}

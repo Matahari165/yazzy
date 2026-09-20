@@ -1,18 +1,13 @@
-export type UITheme = "craft" | "riviera" | "ceramic" | "botanic" | "pastel";
+export type UITheme = "ceramic" | "dark";
 
 export interface ThemeOption {
   id: UITheme;
   label: string;
-  dotColor: string;
-  fontBadge: string;
 }
 
 export const THEME_OPTIONS: ThemeOption[] = [
-  { id: "ceramic", label: "Céramique", dotColor: "#C85A32", fontBadge: "Bricolage" },
-  { id: "craft", label: "Atelier", dotColor: "#D95338", fontBadge: "Fraunces" },
-  { id: "riviera", label: "Riviera", dotColor: "#F27A6D", fontBadge: "DM Serif" },
-  { id: "botanic", label: "Botanique", dotColor: "#4E8A5E", fontBadge: "Sauge" },
-  { id: "pastel", label: "Nuage", dotColor: "#7C62D6", fontBadge: "Syne" },
+  { id: "ceramic", label: "Clair" },
+  { id: "dark", label: "Sombre" },
 ];
 
 const STORAGE_KEY = "yazzy.ui_theme";
@@ -24,8 +19,8 @@ interface ThemeSwitcherProps {
 
 export function ThemeSwitcher({ currentTheme, onSelectTheme }: ThemeSwitcherProps) {
   return (
-    <aside className="theme-switcher-wrapper" aria-label="Sélecteur d'identité visuelle">
-      <div className="theme-switcher-bar" role="radiogroup" aria-label="Identités visuelles">
+    <aside className="theme-switcher-wrapper" aria-label="Mode d'affichage">
+      <div className="theme-switcher-bar" role="radiogroup" aria-label="Clair ou sombre">
         {THEME_OPTIONS.map((theme) => {
           const isActive = currentTheme === theme.id;
           return (
@@ -61,4 +56,11 @@ export function getSavedTheme(): UITheme {
     }
   } catch {}
   return "ceramic";
+}
+
+export function applySavedTheme(): void {
+  if (typeof document === "undefined") return;
+  try {
+    document.documentElement.setAttribute("data-theme", getSavedTheme());
+  } catch {}
 }

@@ -17,32 +17,8 @@ import { createGame } from "@/domain/game";
 import { writeStoredGame } from "@/lib/gameStorage";
 import { readBotDemonTheme, writeBotDemonTheme } from "@/lib/botThemeStorage";
 import { botAudio } from "@/lib/botAudio";
-import { ThemeSwitcher, type UITheme, getSavedTheme } from "./ThemeSwitcher";
-import {
-  ArenaLayout,
-  EditorialLayout,
-  PebbleLayout,
-  PocketLayout,
-  CloudLayout,
-  type LayoutProps,
-} from "./layouts";
-
-function renderLayout(theme: UITheme, props: LayoutProps) {
-  switch (theme) {
-    case "craft":
-      return <ArenaLayout {...props} />;
-    case "riviera":
-      return <EditorialLayout {...props} />;
-    case "ceramic":
-      return <PebbleLayout {...props} />;
-    case "botanic":
-      return <PocketLayout {...props} />;
-    case "pastel":
-      return <CloudLayout {...props} />;
-    default:
-      return <ArenaLayout {...props} />;
-  }
-}
+import { ThemeSwitcher, type UITheme, applySavedTheme, getSavedTheme } from "./ThemeSwitcher";
+import { PebbleLayout, type LayoutProps } from "./layouts";
 
 export function HomeScreen() {
   const router = useRouter();
@@ -70,7 +46,7 @@ export function HomeScreen() {
     const timeout = window.setTimeout(() => {
       const initialTheme = getSavedTheme();
       setTheme(initialTheme);
-      document.documentElement.setAttribute("data-theme", initialTheme);
+      applySavedTheme();
       setPlayerName(readStoredPlayerName());
       setIsDemonThemeEnabled(readBotDemonTheme());
       try {
@@ -226,7 +202,7 @@ export function HomeScreen() {
       onPointerMove={followPointer}
     >
       <ThemeSwitcher currentTheme={theme} onSelectTheme={handleSelectTheme} />
-      {renderLayout(theme, layoutProps)}
+      <PebbleLayout {...layoutProps} />
     </main>
   );
 }

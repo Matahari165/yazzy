@@ -11,6 +11,7 @@ import {
 } from "@/domain/bots/reactionPolicy";
 import type { BotReactionEmoji } from "@/domain/reactions";
 import { FinishedGame } from "./FinishedGame";
+import { applySavedTheme } from "./ThemeSwitcher";
 import { BotTurnPanel, GameTable } from "./GameTable";
 import { GameHeader } from "./GameHeader";
 import { ReactionToast } from "./ReactionToast";
@@ -62,6 +63,10 @@ export function GameBoard() {
   useEffect(() => () => {
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
     if (reactionTimerRef.current !== null) window.clearTimeout(reactionTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    applySavedTheme();
   }, []);
 
   useEffect(() => {

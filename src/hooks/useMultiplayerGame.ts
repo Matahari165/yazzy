@@ -29,9 +29,9 @@ export const MAX_POLL_INTERVAL_MS = 4_000;
 export const FAST_FOLLOWUP_POLL_INTERVAL_MS = 120;
 const REQUEST_TIMEOUT_MS = 8_000;
 const MAX_SILENT_FAILURES = 3;
-const REPLAY_ROLL_DELAY_MS = 360;
-const REPLAY_SCORE_DELAY_MS = 300;
-const REPLAY_STEP_DELAY_MS = 90;
+const REPLAY_ROLL_DELAY_MS = 150;
+const REPLAY_SCORE_DELAY_MS = 150;
+const REPLAY_STEP_DELAY_MS = 0;
 
 type RoomResponseSource = "connect" | "sync" | "action" | "reaction";
 type PendingHold = { actionId: string; index: number };

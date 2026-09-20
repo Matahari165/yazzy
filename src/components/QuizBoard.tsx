@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { applySavedTheme } from "./ThemeSwitcher";
 import { useQuizGame } from "@/hooks/useQuizGame";
 import {
   countQuizQuestions,
@@ -165,6 +166,10 @@ export function QuizBoard() {
       };
     });
   }, [current, game?.selected]);
+
+  useEffect(() => {
+    applySavedTheme();
+  }, []);
 
   useEffect(() => {
     if (!game || !isFinished) return;

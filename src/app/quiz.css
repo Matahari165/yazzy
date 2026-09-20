@@ -821,3 +821,18 @@
   .qa-burst i, .qa-loading-rail i { animation: none !important; }
   .qa-burst { display: none; }
 }
+
+/* ---- Nuit céramique : états et accents du quiz restent lisibles ---- */
+[data-theme="dark"] .qa {
+  --qa-good: #3e7a5e;
+  --qa-faint: rgb(243 237 228 / 50%);
+}
+[data-theme="dark"] .qa-verdict[data-good="true"] .qa-verdict-stamp {
+  color: #7fb5a3;
+}
+[data-theme="dark"] .qa-verdict[data-good="false"] .qa-verdict-stamp {
+  color: #e07856;
+}
+[data-theme="dark"] .qa-option[data-state="dim"] .qa-option-label {
+  text-decoration-color: rgb(243 237 228 / 40%);
+}

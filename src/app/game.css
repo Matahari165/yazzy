@@ -137,7 +137,13 @@
   align-items: start;
 }
 .connection-notice {
-  margin: 0 0 14px;
+  position: fixed;
+  z-index: 60;
+  top: max(60px, calc(env(safe-area-inset-top) + 50px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100% - 24px), 560px);
+  margin: 0;
   padding: 12px 16px;
   color: var(--ink);
   text-align: center;
@@ -146,6 +152,9 @@
   border-radius: 18px;
   font-size: 14px;
   font-weight: 700;
+  box-shadow: 0 10px 28px rgb(43 35 30 / 12%);
+  pointer-events: none;
+  animation: connection-notice-in var(--motion-state) var(--ease-out) both;
 }
 
 /* 4. Feuille de score et Panneaux */
@@ -271,6 +280,17 @@
   background: var(--score-filled-cell);
   border: 1.5px solid var(--score-filled-border);
   color: var(--score-filled-ink);
+}
+/* Le grisé suit le tour : seule la colonne du joueur actif estompe ses cases remplies. */
+.score-card[data-active-column="player"] .score-value-bot[data-state="filled"] {
+  color: var(--score-opponent-ink);
+  background: var(--score-opponent-cell);
+  border-color: var(--score-opponent-ink);
+}
+.score-card[data-active-column="opponent"] .score-value:not(.score-value-bot)[data-state="filled"] {
+  color: var(--score-player-ink);
+  background: var(--score-player-cell);
+  border-color: var(--score-player-ink);
 }
 
 .score-value-direct {
@@ -960,6 +980,7 @@
 
 /* 11. Keyframes d'animation */
 @keyframes game-tile-bump { 0% { transform: rotate(-6deg) scale(1); } 35% { transform: rotate(-2deg) scale(1.12); } 100% { transform: rotate(-6deg) scale(1); } }
+@keyframes connection-notice-in { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes game-score-bump { 0% { transform: scale(1); } 35% { transform: scale(1.12); } 100% { transform: scale(1); } }
 @keyframes reaction-picker-enter { from { opacity: 0; transform: translateY(4px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes reaction-toast-life { 0% { opacity: 0; transform: translate(-50%, 14px) scale(0.85); } 8%, 82% { opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { opacity: 0; transform: translate(-50%, -8px) scale(0.96); } }
@@ -1271,5 +1292,6 @@
   .reaction-toast { animation: reaction-fade 2400ms linear both; }
   .finished-card.finished-celebration, .finished-result-mark, .finished-player-score, .finished-score-number, .finished-particles i { animation: none; }
   .finished-confetti, .finished-confetti i, .finished-party-emoji, .finished-tagline, .finished-hero .finished-result { animation: none !important; }
+  .connection-notice { animation: none; }
   .finished-player-score[data-winner="true"] { transform: none; }
 }

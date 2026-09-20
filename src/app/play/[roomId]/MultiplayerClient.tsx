@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FinishedGame } from "@/components/FinishedGame";
+import { applySavedTheme } from "@/components/ThemeSwitcher";
 import { GameTable } from "@/components/GameTable";
 import { MultiplayerNameGate } from "@/components/MultiplayerNameGate";
 import { MultiplayerReactions } from "@/components/MultiplayerReactions";
@@ -81,6 +82,10 @@ export function MultiplayerClient({
   const [inviteLink, setInviteLink] = useState("");
   const [copyStatus, setCopyStatus] = useState("");
   const rollTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    applySavedTheme();
+  }, []);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {

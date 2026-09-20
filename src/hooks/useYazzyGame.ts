@@ -15,7 +15,7 @@ import type { BotLevel } from "../domain/bots";
 import type { CategoryId } from "../domain/yatzy";
 import { readStoredGame, writeStoredGame } from "../lib/gameStorage";
 
-const BOT_ANIMATION_MS = 260;
+const BOT_ANIMATION_MS = 110;
 
 export function useYazzyGame() {
   const [game, setGame] = useState<GameState>(() => createGame("expert"));
@@ -87,9 +87,13 @@ export function useYazzyGame() {
 
     if (game.botTurn.status === "rolling") {
       if (game.bot.rollNumber >= 3) {
-        schedule(() => setGame((current) => current.activePlayer === "bot"
-          ? { ...current, botTurn: { ...current.botTurn, status: "choosing" } }
-          : current));
+        // Dernier lancer : on inscrit directement sans phase « choisit »
+        // intermédiaire, le tour reste lisible mais ne marque plus de pause.
+        schedule(() => {
+          runBotStep("complete", game).then((nextState) => {
+            setGame((current) => (current.activePlayer === "bot" ? nextState : current));
+          });
+        });
         return () => clearBotTimer();
       }
 
