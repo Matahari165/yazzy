@@ -25,6 +25,7 @@ const HUMAN_ROLL_ANIMATION_MS = 360;
 const BOT_REACTION_DURATION_MS = 2_400;
 const HUMAN_REACTION_LEAD_MS = 700;
 const YATZY_BURST_DURATION_MS = 2_300;
+const MAX_BURST_DURATION_MS = 3_500;
 
 type VisibleBotReaction = {
   id: string;
@@ -47,6 +48,7 @@ export function GameBoard() {
   const burstTimerRef = useRef<number | null>(null);
   const burstSequenceRef = useRef(0);
   const maxBurstKeyRef = useRef(0);
+  const maxBurstTimerRef = useRef<number | null>(null);
   const reactionSequenceRef = useRef(0);
   const reactionHistoryRef = useRef(INITIAL_BOT_REACTION_HISTORY);
   const reactionTrackingReadyRef = useRef(false);
@@ -59,6 +61,12 @@ export function GameBoard() {
   const triggerMaxBurst = useCallback((category: CategoryId, side: "player" | "opponent") => {
     maxBurstKeyRef.current += 1;
     setMaxBurst({ category, side, burstKey: maxBurstKeyRef.current });
+    // La célébration locale s'efface après ~3,5 s : étincelles + doré.
+    if (maxBurstTimerRef.current !== null) window.clearTimeout(maxBurstTimerRef.current);
+    maxBurstTimerRef.current = window.setTimeout(() => {
+      maxBurstTimerRef.current = null;
+      setMaxBurst(null);
+    }, MAX_BURST_DURATION_MS);
   }, []);
 
   const showYatzyBurst = useCallback((author: string) => {
@@ -86,6 +94,7 @@ export function GameBoard() {
     if (rollTimerRef.current !== null) window.clearTimeout(rollTimerRef.current);
     if (reactionTimerRef.current !== null) window.clearTimeout(reactionTimerRef.current);
     if (burstTimerRef.current !== null) window.clearTimeout(burstTimerRef.current);
+    if (maxBurstTimerRef.current !== null) window.clearTimeout(maxBurstTimerRef.current);
   }, []);
 
   useEffect(() => {
