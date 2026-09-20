@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { notFound } from "next/navigation";
 import { FinishedGame } from "@/components/FinishedGame";
+import { ReactionToast } from "@/components/ReactionToast";
 import { YatzyBurst } from "@/components/YatzyBurst";
 import { createGame } from "@/domain/game";
+import { REACTION_EMOJIS } from "@/domain/reactions";
 import { createMultiplayerGame, freshPlayerState } from "@/domain/multiplayer";
 
 const WIN = { yatzy: 50, pair: 20, chance: 18 };
@@ -97,6 +99,25 @@ export default function PreviewPage() {
         </button>
       </header>
       <YatzyBurst key={burstKey} author="Toi" />
+      <section style={{ width: "min(100%, 720px)", display: "grid", gap: 12 }}>
+        <h2 style={{ textAlign: "center", margin: 0 }}>Réactions (21 effets)</h2>
+        <style>{`
+          .preview-toast-wall { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+          .preview-toast-wall .reaction-toast {
+            position: relative; top: auto; left: auto;
+            animation: preview-toast-hold 3s var(--ease-out) both;
+          }
+          @keyframes preview-toast-hold {
+            0% { opacity: 0; transform: scale(0.9); }
+            12%, 100% { opacity: 1; transform: none; }
+          }
+        `}</style>
+        <div className="preview-toast-wall">
+          {REACTION_EMOJIS.map((emoji) => (
+            <ReactionToast key={emoji} author="JoA" emoji={emoji} />
+          ))}
+        </div>
+      </section>
       {SECTIONS.map((section) => (
         <section key={section.title} style={{ width: "min(100%, 580px)", display: "grid", gap: 12 }}>
           <h2 style={{ textAlign: "center", margin: 0 }}>{section.title}</h2>

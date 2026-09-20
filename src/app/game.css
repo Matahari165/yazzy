@@ -729,6 +729,45 @@
 .reaction-toast[data-mood="rage"] { --rt-bg: #fbe7e7; --rt-edge: #b3372b; --rt-glow: rgb(179 55 43 / 34%); --rt-face-anim: reaction-face-blaze; --rt-bit-anim: reaction-bit-burst; }
 .reaction-toast[data-mood="dead"] { --rt-bg: #e9e9f0; --rt-edge: #5a5a72; --rt-glow: rgb(90 90 114 / 32%); --rt-face-anim: reaction-face-float; --rt-bit-anim: reaction-bit-burst; }
 .reaction-toast[data-mood="salute"] { --rt-bg: #e8f0f7; --rt-edge: #33587e; --rt-glow: rgb(51 88 126 / 32%); --rt-face-anim: reaction-face-pop; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-mood="party"] { --rt-bg: #fde9f3; --rt-edge: #c64a7d; --rt-glow: rgb(198 74 125 / 32%); --rt-face-anim: reaction-face-pop; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-mood="relief"] { --rt-bg: #e7f2fb; --rt-edge: #3a80b8; --rt-glow: rgb(58 128 184 / 30%); --rt-face-anim: reaction-face-pop; --rt-bit-anim: reaction-bit-burst; }
+/* Signatures par emoji : même taille, gestes tous différents. */
+.reaction-toast[data-fx="laugh"] { --rt-face-anim: reaction-face-laugh; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-fx="wobble"] { --rt-face-anim: reaction-face-wobble; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-fx="party"] { --rt-face-anim: reaction-face-party; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-fx="party"] .reaction-face i:nth-child(2) { background: #e9b44c; }
+.reaction-toast[data-fx="party"] .reaction-face i:nth-child(3) { background: #ee6378; }
+.reaction-toast[data-fx="party"] .reaction-face i:nth-child(4) { background: #3a80d2; }
+.reaction-toast[data-fx="clap"] { --rt-face-anim: reaction-face-clap; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-fx="relief"] { --rt-face-anim: reaction-face-relief; --rt-bit-anim: reaction-bit-fall; }
+.reaction-toast[data-fx="peek"] { --rt-face-anim: reaction-face-peek; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-fx="coins"] { --rt-face-anim: reaction-face-coin; --rt-bit-anim: reaction-bit-coin; }
+.reaction-toast[data-fx="coins"] .reaction-face i:nth-child(2) { background: #e9b44c; }
+.reaction-toast[data-fx="coins"] .reaction-face i:nth-child(3) { background: #f6d47c; }
+.reaction-toast[data-fx="coins"] .reaction-face i:nth-child(4) { background: #d99420; }
+.reaction-toast[data-fx="smug"] { --rt-face-anim: reaction-face-smug; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-fx="royal"] { --rt-face-anim: reaction-face-royal; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-fx="fire"] { --rt-face-anim: reaction-face-flicker; --rt-bit-anim: reaction-bit-rise; }
+.reaction-toast[data-fx="mindblown"] { --rt-face-anim: reaction-face-blow; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-fx="mischief"] { --rt-face-anim: reaction-face-dart; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-fx="gasp"] { --rt-face-anim: reaction-face-gasp; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-fx="shock"] { --rt-face-anim: reaction-face-tremor; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-fx="tremble"] { --rt-face-anim: reaction-face-tremble; --rt-bit-anim: reaction-bit-fall; }
+.reaction-toast[data-fx="sob"] { --rt-face-anim: reaction-face-sob; --rt-bit-anim: reaction-bit-fall; }
+.reaction-toast[data-fx="rage"] { --rt-face-anim: reaction-face-rage; --rt-bit-anim: reaction-bit-rise; }
+.reaction-toast[data-fx="haunt"] { --rt-face-anim: reaction-face-haunt; --rt-bit-anim: reaction-bit-fall; }
+.reaction-toast[data-fx="salute"] { --rt-face-anim: reaction-face-snap; --rt-bit-anim: reaction-bit-burst; }
+.reaction-toast[data-fx="royal"] .reaction-face b { animation-duration: 900ms; }
+.reaction-toast[data-fx="haunt"] .reaction-face b { animation-duration: 1000ms; }
+.reaction-toast[data-fx="haunt"] .reaction-face i { animation-duration: 1400ms; }
+.reaction-toast[data-fx="rage"] .reaction-face b { animation-duration: 550ms; }
+.reaction-toast[data-fx="tremble"] .reaction-face b { animation-duration: 700ms; }
+/* Onde de choc et balayage brillant pour certains effets. */
+.reaction-face::before, .reaction-face::after { content: ""; position: absolute; opacity: 0; pointer-events: none; }
+.reaction-face::before { left: 50%; top: 50%; width: 60px; height: 60px; margin: -30px; border: 3px solid var(--rt-edge); border-radius: 50%; }
+.reaction-face::after { left: 50%; top: 2px; width: 22px; height: 60px; margin-left: -11px; background: linear-gradient(100deg, transparent, rgb(255 255 255 / 85%), transparent); }
+.reaction-toast[data-fx="mindblown"] .reaction-face::before, .reaction-toast[data-fx="shock"] .reaction-face::before { animation: reaction-fx-ring 750ms 60ms var(--ease-out) both; }
+.reaction-toast[data-fx="royal"] .reaction-face::after, .reaction-toast[data-fx="coins"] .reaction-face::after { animation: reaction-fx-shine 800ms 120ms var(--ease-out) both; }
 .reaction-face { position: relative; display: grid; place-items: center; width: 64px; height: 64px; flex: none; }
 .reaction-face b { font-size: 52px; font-weight: 400; line-height: 1; animation: var(--rt-face-anim, reaction-face-pop) 620ms var(--ease-emphasized) both; }
 .reaction-face i { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px; background: var(--rt-edge, var(--coral)); border-radius: 50%; opacity: 0; animation: var(--rt-bit-anim, reaction-bit-burst) 720ms 90ms var(--ease-out) both; }
@@ -1147,6 +1186,27 @@
 @keyframes reaction-face-float { 0% { opacity: 0; transform: translateY(10px) scale(0.85); } 100% { opacity: 1; transform: translateY(-4px) scale(1); } }
 @keyframes reaction-bit-burst { 0% { opacity: 0; transform: translate(0, 0) scale(0.3); } 40% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--bx, 0), var(--by, -22px)) scale(1); } }
 @keyframes reaction-bit-fall { 0% { opacity: 0; transform: translateY(-8px) scale(0.6); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateY(48px) scale(1); } }
+@keyframes reaction-face-laugh { 0% { transform: scale(0.3) rotate(-10deg); } 30% { transform: scale(1.2) rotate(6deg); } 50% { transform: scale(0.95) rotate(-4deg); } 70% { transform: scale(1.12) rotate(3deg); } 100% { transform: scale(1) rotate(0deg); } }
+@keyframes reaction-face-wobble { 0% { transform: rotate(0deg) scale(0.6); } 25% { transform: rotate(-22deg) scale(1.1); } 50% { transform: rotate(18deg) scale(1); } 75% { transform: rotate(-10deg) scale(1.05); } 100% { transform: rotate(0deg) scale(1); } }
+@keyframes reaction-face-party { 0% { transform: rotate(0deg) scale(0.5); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
+@keyframes reaction-face-clap { 0%, 100% { transform: scale(1); } 20% { transform: scale(1.18); } 40% { transform: scale(0.94); } 60% { transform: scale(1.14); } 80% { transform: scale(0.97); } }
+@keyframes reaction-face-relief { 0% { transform: translateY(-10px) rotate(-8deg); } 45% { transform: translateY(4px) rotate(4deg) scale(1.05); } 100% { transform: translateY(2px) rotate(0deg) scale(1); } }
+@keyframes reaction-face-peek { 0% { opacity: 0; transform: translateX(30px) rotate(12deg); } 40% { opacity: 1; transform: translateX(6px) rotate(-6deg); } 70% { transform: translateX(-3px) rotate(2deg); } 100% { opacity: 1; transform: none; } }
+@keyframes reaction-face-coin { 0% { transform: rotate(-14deg) scale(0.85); } 25% { transform: translateY(6px) rotate(-12deg); } 60% { transform: translateY(-2px) rotate(10deg) scale(1.08); } 100% { transform: none; } }
+@keyframes reaction-bit-coin { 0% { opacity: 0; transform: translateY(-10px) rotateY(0deg); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateY(52px) rotateY(540deg); } }
+@keyframes reaction-face-royal { 0% { transform: translateY(-6px) scale(0.9); } 50% { transform: translateY(2px) scale(1.03); } 100% { transform: none; } }
+@keyframes reaction-fx-shine { 0% { opacity: 0; transform: translateX(-46px) skewX(-18deg); } 35% { opacity: 1; } 100% { opacity: 0; transform: translateX(46px) skewX(-18deg); } }
+@keyframes reaction-face-flicker { 0% { transform: scale(1); } 20% { transform: scale(1.12, 0.92) rotate(-4deg); } 40% { transform: scale(0.94, 1.1) rotate(3deg); } 60% { transform: scale(1.1, 0.94) rotate(-2deg); } 80% { transform: scale(0.97, 1.05); } 100% { transform: scale(1); } }
+@keyframes reaction-face-blow { 0% { transform: scale(0.5); } 35% { transform: scale(1.32) rotate(-6deg); } 60% { transform: scale(1.05) rotate(5deg); } 100% { transform: scale(1) rotate(0deg); } }
+@keyframes reaction-fx-ring { 0% { opacity: 0.9; transform: scale(0.35); } 100% { opacity: 0; transform: scale(1.55); } }
+@keyframes reaction-face-dart { 0% { transform: translateX(0); } 25% { transform: translateX(-14px) rotate(-8deg); } 50% { transform: translateX(14px) rotate(8deg); } 75% { transform: translateX(-6px) rotate(-3deg); } 100% { transform: none; } }
+@keyframes reaction-face-tremor { 0% { transform: scale(0.6); } 30% { transform: scale(1.15) translateX(-3px); } 50% { transform: translateX(3px) scale(1.08); } 70% { transform: translateX(-2px) scale(1.05); } 100% { transform: scale(1); } }
+@keyframes reaction-face-tremble { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-2px) rotate(-2deg); } 40% { transform: translateX(2px); } 60% { transform: translateX(-2px) rotate(2deg); } 80% { transform: translateX(2px); } }
+@keyframes reaction-face-sob { 0% { transform: translateY(0); } 25% { transform: translateY(7px) scale(1.05); } 50% { transform: translateY(0); } 75% { transform: translateY(6px) scale(1.03); } 100% { transform: translateY(2px); } }
+@keyframes reaction-face-rage { 0% { transform: scale(0.7); } 25% { transform: scale(1.15) rotate(-9deg); } 50% { transform: scale(1.1) rotate(8deg); } 75% { transform: scale(1.18) rotate(-6deg); } 100% { transform: scale(1) rotate(0deg); } }
+@keyframes reaction-bit-rise { 0% { opacity: 0; transform: translateY(6px) scale(0.5); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-46px) scale(1); } }
+@keyframes reaction-face-snap { 0% { transform: rotate(0deg) scale(0.7); } 30% { transform: rotate(-12deg) scale(1.1); } 55% { transform: rotate(-8deg) scale(1); } 100% { transform: rotate(0deg) scale(1); } }
+@keyframes reaction-face-haunt { 0% { opacity: 0; transform: translateY(12px) scale(0.85) rotate(-6deg); } 60% { opacity: 1; } 100% { opacity: 1; transform: translateY(-6px) scale(1) rotate(4deg); } }
 @keyframes reaction-fade { 0%, 100% { opacity: 0; transform: translate(-50%, 0); } 8%, 88% { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes player-score-choice { 45% { transform: scale(1.08) translateY(-1px); } }
 @keyframes opponent-score-choice { 45% { transform: scale(1.08) translateY(-1px); } }
@@ -1451,7 +1511,7 @@
   .game-logo-tile { transition: none; }
   .die-button { transition: none; }
   .score-value-direct:hover { transform: none; }
-  .bot-status::before, .reaction-picker, .reaction-picker button, .reaction-toast, .reaction-face b, .reaction-face i, .score-help-popover, .score-value[data-highlighted="true"], .die-button[data-held="true"]::after, .game-logo-tile[data-bump="true"], .total-score-value[data-bump="true"], .finished-card, .confirm-dialog-card, .game-table, .bot-turn-panel, .die-button[data-highlighted="true"] .die-face { animation: none; }
+  .bot-status::before, .reaction-picker, .reaction-picker button, .reaction-toast, .reaction-face b, .reaction-face i, .reaction-face::before, .reaction-face::after, .score-help-popover, .score-value[data-highlighted="true"], .die-button[data-held="true"]::after, .game-logo-tile[data-bump="true"], .total-score-value[data-bump="true"], .finished-card, .confirm-dialog-card, .game-table, .bot-turn-panel, .die-button[data-highlighted="true"] .die-face { animation: none; }
   .die-button[data-rolling="true"] .die-face { animation: die-fade 80ms ease both; }
   .reaction-toast { animation: reaction-fade 2400ms linear both; }
   .finished-card.finished-celebration, .finished-result-mark, .finished-player-score, .finished-score-number, .finished-particles i { animation: none; }

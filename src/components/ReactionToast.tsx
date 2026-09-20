@@ -11,15 +11,38 @@ type ReactionMood =
   | "sad"
   | "rage"
   | "dead"
+  | "salute"
+  | "party"
+  | "relief";
+
+type ReactionFx =
+  | "laugh"
+  | "wobble"
+  | "party"
+  | "clap"
+  | "relief"
+  | "peek"
+  | "coins"
+  | "smug"
+  | "royal"
+  | "fire"
+  | "mindblown"
+  | "mischief"
+  | "gasp"
+  | "shock"
+  | "tremble"
+  | "sob"
+  | "rage"
+  | "haunt"
   | "salute";
 
 const REACTION_MOODS: Record<BotReactionEmoji, ReactionMood> = {
   "😆": "joy",
   "😂": "joy",
   "🤪": "joy",
-  "🥳": "joy",
+  "🥳": "party",
   "👏": "joy",
-  "😅": "joy",
+  "😅": "relief",
   "🤭": "shy",
   "🤑": "cash",
   "😏": "smug",
@@ -37,6 +60,30 @@ const REACTION_MOODS: Record<BotReactionEmoji, ReactionMood> = {
   "🫡": "salute",
 };
 
+const REACTION_FX: Record<BotReactionEmoji, ReactionFx> = {
+  "😆": "laugh",
+  "😂": "laugh",
+  "🤪": "wobble",
+  "🥳": "party",
+  "👏": "clap",
+  "😅": "relief",
+  "🤭": "peek",
+  "🤑": "coins",
+  "😏": "smug",
+  "😎": "smug",
+  "👑": "royal",
+  "🔥": "fire",
+  "🤯": "mindblown",
+  "😈": "mischief",
+  "😮": "gasp",
+  "😱": "shock",
+  "😨": "tremble",
+  "😭": "sob",
+  "🤬": "rage",
+  "💀": "haunt",
+  "🫡": "salute",
+};
+
 type ReactionToastProps = {
   author: string;
   emoji: BotReactionEmoji;
@@ -47,6 +94,7 @@ export function ReactionToast({ author, emoji }: ReactionToastProps) {
     <div
       className="reaction-toast"
       data-mood={REACTION_MOODS[emoji] ?? "joy"}
+      data-fx={REACTION_FX[emoji] ?? "laugh"}
       role="status"
       aria-live="polite"
       aria-label={`${author} ${emoji}`}
