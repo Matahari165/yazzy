@@ -135,6 +135,14 @@ export function MultiplayerClient({
   // Tour par tour : on reste jouable même si la présence adverse flappe
   // (le serveur accepte les ACTION sans gate). Le bandeau prévient quand même.
   const canAct = Boolean(isMyTurn && isConnected);
+  // Refs miroirs à jour après chaque rendu : le handler de clic reste stable,
+  // GameTable ne recrée plus ses 5 handlers à chaque HOLD.
+  const localStateRef = useRef(localState);
+  const canActRef = useRef(canAct);
+  useEffect(() => {
+    localStateRef.current = localState;
+    canActRef.current = canAct;
+  });
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -213,12 +221,13 @@ export function MultiplayerClient({
   }, [selectedCategory, canAct, isRolling, score, localState, localPlayer, showYatzyBurst, triggerMaxBurst]);
 
   const handleToggleDie = useCallback((index: number) => {
-    if (!canAct) return;
-    if ((localState?.rollNumber ?? 0) === 0) return;
-    const isHeld = localState?.held[index] ?? false;
+    if (!canActRef.current) return;
+    const state = localStateRef.current;
+    if (!state || state.rollNumber === 0) return;
+    const isHeld = state.held[index] ?? false;
     botAudio.playEffect(isHeld ? "release" : "hold");
     toggleHeld(index);
-  }, [canAct, localState, toggleHeld]);
+  }, [toggleHeld]);
 
   useGameKeyboard({
     disabled: status !== "playing" || !canAct,

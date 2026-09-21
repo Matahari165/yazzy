@@ -102,6 +102,13 @@ export function shouldDisplayResponseImmediately(
   return source !== "reaction" || responseVersion <= eventCursor;
 }
 
+export function shouldFollowUpAfterAction(actionType: ClientAction["type"]): boolean {
+  // La réponse ACTION porte déjà la partie autoritaire à jour : un SYNC
+  // immédiat derrière chaque HOLD doublait juste le trafic par clic de dé.
+  // On le garde pour ROLL/SCORE/REMATCH, qui annoncent souvent la suite.
+  return actionType !== "HOLD";
+}
+
 function replayDelay(event: RoomActionEvent): number {
   if (prefersReducedMotion()) return 80;
   if (event.action.type === "ROLL") return REPLAY_ROLL_DELAY_MS;
@@ -216,6 +223,7 @@ export function useMultiplayerGame(
   const actionPendingRef = useRef(false);
   const actionGenerationRef = useRef(0);
   const pendingHoldsRef = useRef<PendingHold[]>([]);
+  const inflightHoldsRef = useRef<Set<Promise<void>>>(new Set());
   const actionQueueRef = useRef<Promise<void>>(Promise.resolve());
   const triggerPollRef = useRef<((delay?: number) => void) | null>(null);
   const [pendingHoldCount, setPendingHoldCount] = useState(0);
@@ -255,6 +263,7 @@ export function useMultiplayerGame(
     }
     replayQueueRef.current = [];
     pendingHoldsRef.current = [];
+    inflightHoldsRef.current.clear();
     actionQueueRef.current = Promise.resolve();
     actionPendingRef.current = false;
     setPendingHoldCount(0);
@@ -537,32 +546,68 @@ export function useMultiplayerGame(
 
     const actionId = crypto.randomUUID();
     const generation = actionGenerationRef.current;
+    // Rôle et jeton vérifiés une fois ici : runAction ci-dessous est une
+    // déclaration hoistée, TypeScript n'y propage pas l'affinement du guard.
+    const activeRole: MultiplayerRole = role;
+    const activeToken: string = token;
     if (isHold) {
       pendingHoldsRef.current.push({ actionId, index: action.index });
       setPendingHoldCount(pendingHoldsRef.current.length);
       setGame((current) => current ? holdActiveDie(current, role, action.index) : current);
-    } else {
-      actionPendingRef.current = true;
-      setPendingAction(action.type);
-      if (action.type === "ROLL") {
-        // Preview locale immédiate : l'animation part sur de nouveaux dés sans
-        // attendre le RTT. Le serveur reste autoritaire et réconcilie à l'arrivée.
-        const previewDie = () => (Math.floor(Math.random() * 6) + 1) as DieValue;
-        setGame((current) => current ? rollActivePlayer(current, role, previewDie) : current);
-      } else if (action.type === "SCORE") {
-        // Score optimiste immédiat : la feuille s'actualise sans attendre le RTT.
-        // Le serveur reste autoritaire et réconcilie à l'arrivée.
-        setGame((current) => current ? scoreActiveCategory(current, role, action.category) : current);
-      }
+      // Clics de dés en parallèle : chaque HOLD part sur son propre RTT au
+      // lieu d'attendre le POST précédent. Les toggles commutent entre eux,
+      // donc l'ordre d'arrivée n'a pas d'importance ; seul l'ordre face aux
+      // ROLL/SCORE compte, garanti par la barrière ci-dessous et côté envoi
+      // des non-HOLD. Sans HOLD en vol, le POST part dès le prochain microtask.
+      const sendHold = () => {
+        if (generation !== actionGenerationRef.current) return;
+        const pending = runAction();
+        inflightHoldsRef.current.add(pending);
+        void pending.then(
+          () => {
+            inflightHoldsRef.current.delete(pending);
+          },
+          () => {
+            inflightHoldsRef.current.delete(pending);
+          },
+        );
+      };
+      void actionQueueRef.current.then(sendHold, sendHold);
+      return;
+    }
+    actionPendingRef.current = true;
+    setPendingAction(action.type);
+    if (action.type === "ROLL") {
+      // Preview locale immédiate : l'animation part sur de nouveaux dés sans
+      // attendre le RTT. Le serveur reste autoritaire et réconcilie à l'arrivée.
+      const previewDie = () => (Math.floor(Math.random() * 6) + 1) as DieValue;
+      setGame((current) => current ? rollActivePlayer(current, role, previewDie) : current);
+    } else if (action.type === "SCORE") {
+      // Score optimiste immédiat : la feuille s'actualise sans attendre le RTT.
+      // Le serveur reste autoritaire et réconcilie à l'arrivée.
+      setGame((current) => current ? scoreActiveCategory(current, role, action.category) : current);
     }
 
+    // Un ROLL/SCORE/REMATCH attend les HOLD en vol : le serveur doit les
+    // avoir appliqués avant de lancer, scorer ou relancer. La boucle
+    // re-vérifie après chaque attente pour les HOLD enfilés juste avant nous
+    // sur la même file (même tick) : l'ordre joueur est toujours préservé.
     actionQueueRef.current = actionQueueRef.current.then(async () => {
+      for (;;) {
+        const awaitedHolds = Array.from(inflightHoldsRef.current);
+        if (awaitedHolds.length === 0) break;
+        await Promise.allSettled(awaitedHolds);
+      }
+      await runAction();
+    });
+
+    async function runAction(): Promise<void> {
       if (generation !== actionGenerationRef.current) return;
       try {
         const response = await sendRoomCommand(roomId, {
           type: "ACTION",
-          role,
-          token,
+          role: activeRole,
+          token: activeToken,
           actionId,
           action,
         });
@@ -575,7 +620,9 @@ export function useMultiplayerGame(
         }
         if (response.ok) {
           applySuccess(response, "action");
-          triggerPollRef.current?.(FAST_FOLLOWUP_POLL_INTERVAL_MS);
+          if (shouldFollowUpAfterAction(action.type)) {
+            triggerPollRef.current?.(FAST_FOLLOWUP_POLL_INTERVAL_MS);
+          }
         } else {
           if (response.code === "OPPONENT_OFFLINE") setOpponentOnline(false);
           else if (response.code === "ROOM_FULL") setRoomFull(true);
@@ -589,7 +636,7 @@ export function useMultiplayerGame(
             actionPendingRef.current = false;
             setPendingAction(null);
           } else {
-            setGame(gameWithPendingHolds(canonicalGameRef.current, role, pendingHoldsRef.current));
+            setGame(gameWithPendingHolds(canonicalGameRef.current, activeRole, pendingHoldsRef.current));
           }
         }
       } catch {
@@ -599,7 +646,7 @@ export function useMultiplayerGame(
             (pending) => pending.actionId !== actionId,
           );
           setPendingHoldCount(pendingHoldsRef.current.length);
-          setGame(gameWithPendingHolds(canonicalGameRef.current, role, pendingHoldsRef.current));
+          setGame(gameWithPendingHolds(canonicalGameRef.current, activeRole, pendingHoldsRef.current));
         } else if (action.type === "ROLL" || action.type === "SCORE") {
           pendingHoldsRef.current = [];
           setPendingHoldCount(0);
@@ -608,7 +655,7 @@ export function useMultiplayerGame(
           actionPendingRef.current = false;
           setPendingAction(null);
         } else {
-          setGame(gameWithPendingHolds(canonicalGameRef.current, role, pendingHoldsRef.current));
+          setGame(gameWithPendingHolds(canonicalGameRef.current, activeRole, pendingHoldsRef.current));
         }
         setIsConnected(false);
         setConnectionError("L’action n’a pas été envoyée. Yazzy va tenter de se reconnecter.");
@@ -618,7 +665,7 @@ export function useMultiplayerGame(
           setPendingAction(null);
         }
       }
-    });
+    }
   }, [applySuccess, roomId]);
 
   const roll = useCallback(() => void dispatch({ type: "ROLL" }), [dispatch]);

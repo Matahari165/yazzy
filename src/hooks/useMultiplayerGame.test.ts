@@ -9,6 +9,7 @@ import {
   multiplayerPollDelay,
   OPPONENT_TURN_POLL_INTERVAL_MS,
   replayCursorAfterResponse,
+  shouldFollowUpAfterAction,
   shouldReplaceCanonicalGame,
   shouldDisplayResponseImmediately,
 } from "./useMultiplayerGame";
@@ -81,6 +82,18 @@ describe("gameWithPendingHolds", () => {
     ]);
 
     expect(projected?.player1?.state.held[1]).toBe(false);
+  });
+});
+
+describe("shouldFollowUpAfterAction", () => {
+  it("ne re-sonde pas derrière un HOLD : la réponse porte déjà la partie", () => {
+    expect(shouldFollowUpAfterAction("HOLD")).toBe(false);
+  });
+
+  it("re-sonde vite après ROLL, SCORE et REMATCH", () => {
+    expect(shouldFollowUpAfterAction("ROLL")).toBe(true);
+    expect(shouldFollowUpAfterAction("SCORE")).toBe(true);
+    expect(shouldFollowUpAfterAction("REMATCH")).toBe(true);
   });
 });
 
