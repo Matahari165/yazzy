@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CATEGORIES, isMaxComboScore, scoreDice, type CategoryId } from "@/domain/yatzy";
+import { CATEGORIES, isMaxComboScore, scoreDice, type CategoryId, type DieValue } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useYazzyGame } from "@/hooks/useYazzyGame";
 import {
@@ -24,12 +24,19 @@ import { totalScore } from "@/domain/yatzy";
 const HUMAN_ROLL_ANIMATION_MS = 360;
 const BOT_REACTION_DURATION_MS = 2_400;
 const HUMAN_REACTION_LEAD_MS = 700;
-const YATZY_BURST_DURATION_MS = 2_300;
+const YATZY_BURST_DURATION_MS = 3_400;
 const MAX_BURST_DURATION_MS = 3_500;
 
 type VisibleBotReaction = {
   id: string;
   emoji: BotReactionEmoji;
+};
+
+type YatzyBurstState = {
+  id: string;
+  author: string;
+  diceValue: DieValue | null;
+  variant: "player" | "opponent";
 };
 
 export function GameBoard() {
@@ -38,7 +45,7 @@ export function GameBoard() {
   const [highlightedPlayerCategory, setHighlightedPlayerCategory] = useState<CategoryId | null>(null);
   const [highlightedOpponentCategory, setHighlightedOpponentCategory] = useState<CategoryId | null>(null);
   const [visibleBotReaction, setVisibleBotReaction] = useState<VisibleBotReaction | null>(null);
-  const [yatzyBurst, setYatzyBurst] = useState<{ id: string; author: string } | null>(null);
+  const [yatzyBurst, setYatzyBurst] = useState<YatzyBurstState | null>(null);
   const [maxBurst, setMaxBurst] = useState<{ category: CategoryId; side: "player" | "opponent"; burstKey: number } | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [isDemonThemeEnabled, setIsDemonThemeEnabled] = useState<boolean | null>(null);
@@ -53,6 +60,7 @@ export function GameBoard() {
   const reactionHistoryRef = useRef(INITIAL_BOT_REACTION_HISTORY);
   const reactionTrackingReadyRef = useRef(false);
   const previousBotScoresRef = useRef(game.bot.scores);
+  const previousBotDiceRef = useRef(game.bot.dice);
   const previousBotRollNumberRef = useRef(game.bot.rollNumber);
   const previousBotHeldRef = useRef(game.bot.held.join(""));
   const botAudioTrackingReadyRef = useRef(false);
@@ -69,15 +77,18 @@ export function GameBoard() {
     }, MAX_BURST_DURATION_MS);
   }, []);
 
-  const showYatzyBurst = useCallback((author: string) => {
-    burstSequenceRef.current += 1;
-    setYatzyBurst({ id: `yatzy-burst-${burstSequenceRef.current}`, author });
-    if (burstTimerRef.current !== null) window.clearTimeout(burstTimerRef.current);
-    burstTimerRef.current = window.setTimeout(() => {
-      burstTimerRef.current = null;
-      setYatzyBurst(null);
-    }, YATZY_BURST_DURATION_MS);
-  }, []);
+  const showYatzyBurst = useCallback(
+    (author: string, diceValue: DieValue | null = null, variant: "player" | "opponent" = "player") => {
+      burstSequenceRef.current += 1;
+      setYatzyBurst({ id: `yatzy-burst-${burstSequenceRef.current}`, author, diceValue, variant });
+      if (burstTimerRef.current !== null) window.clearTimeout(burstTimerRef.current);
+      burstTimerRef.current = window.setTimeout(() => {
+        burstTimerRef.current = null;
+        setYatzyBurst(null);
+      }, YATZY_BURST_DURATION_MS);
+    },
+    [],
+  );
 
   const showBotReaction = useCallback((emoji: BotReactionEmoji, scoredCount: number) => {
     reactionHistoryRef.current = recordBotReaction(reactionHistoryRef.current, scoredCount, emoji);
@@ -129,19 +140,28 @@ export function GameBoard() {
     }
 
     const previousScores = previousBotScoresRef.current;
+    const previousDice = previousBotDiceRef.current;
     const newlyFilledBotCategory = CATEGORIES.find(
       ({ id }) => previousScores[id] === undefined && game.bot.scores[id] !== undefined,
     )?.id;
     previousBotScoresRef.current = game.bot.scores;
+    previousBotDiceRef.current = game.bot.dice;
     if (newlyFilledBotCategory) {
       setHighlightedOpponentCategory(newlyFilledBotCategory);
-      if (!isFinished) botAudio.playEffect("bot");
+      const botPointsPreview = game.bot.scores[newlyFilledBotCategory] ?? 0;
+      const isBotYatzy = newlyFilledBotCategory === "yatzy" && botPointsPreview === 50;
+      if (!isFinished) botAudio.playEffect(isBotYatzy ? "win" : "bot");
     }
 
     const category = newlyFilledBotCategory;
     if (!category) return;
     const points = game.bot.scores[category] ?? 0;
-    if (category === "yatzy" && points === 50) showYatzyBurst("Bot");
+    if (category === "yatzy" && points === 50) {
+      const face = previousDice.length === 5 && previousDice.every((die) => die === previousDice[0])
+        ? previousDice[0]
+        : null;
+      showYatzyBurst("Bot", face, "opponent");
+    }
     if (isMaxComboScore(category, points)) triggerMaxBurst(category, "opponent");
     const scoredCount = Object.keys(game.human.scores).length + Object.keys(game.bot.scores).length;
     const emoji = chooseBotReaction(
@@ -150,7 +170,7 @@ export function GameBoard() {
     );
     if (!emoji) return;
     showBotReaction(emoji, scoredCount);
-  }, [game.bot.scores, game.human.scores, hasLoaded, isFinished, showBotReaction, showYatzyBurst, triggerMaxBurst]);
+  }, [game.bot.scores, game.bot.dice, game.human.scores, hasLoaded, isFinished, showBotReaction, showYatzyBurst, triggerMaxBurst]);
 
   useEffect(() => {
     if (!hasLoaded) return;
@@ -202,8 +222,10 @@ export function GameBoard() {
   const handleScore = (category = selectedCategory) => {
     if (!category || game.activePlayer !== "human" || isRolling) return;
     setHighlightedPlayerCategory(category);
+    const humanPoints = scoreDice(category, game.human.dice);
+    const isHumanYatzy = category === "yatzy" && humanPoints === 50;
     const scoredCount = Object.keys(game.human.scores).length + Object.keys(game.bot.scores).length + 1;
-    if (scoredCount < CATEGORIES.length * 2) botAudio.playEffect("score");
+    if (scoredCount < CATEGORIES.length * 2) botAudio.playEffect(isHumanYatzy ? "win" : "score");
     const emoji = chooseBotReaction(
       {
         actor: "human",
@@ -215,8 +237,11 @@ export function GameBoard() {
       reactionHistoryRef.current,
     );
     if (emoji) showBotReaction(emoji, scoredCount);
-    const humanPoints = scoreDice(category, game.human.dice);
-    if (category === "yatzy" && humanPoints === 50) showYatzyBurst("Toi");
+    if (isHumanYatzy) {
+      const dice = game.human.dice;
+      const face = dice.length === 5 && dice.every((die) => die === dice[0]) ? dice[0] : null;
+      showYatzyBurst("Toi", face, "player");
+    }
     if (isMaxComboScore(category, humanPoints)) triggerMaxBurst(category, "player");
     score(category, emoji ? HUMAN_REACTION_LEAD_MS : 0);
     setSelectedCategory(null);
@@ -316,7 +341,12 @@ export function GameBoard() {
         <ReactionToast key={visibleBotReaction.id} author="Bot" emoji={visibleBotReaction.emoji} />
       ) : null}
       {yatzyBurst ? (
-        <YatzyBurst key={yatzyBurst.id} author={yatzyBurst.author} />
+        <YatzyBurst
+          key={yatzyBurst.id}
+          author={yatzyBurst.author}
+          diceValue={yatzyBurst.diceValue ?? undefined}
+          variant={yatzyBurst.variant}
+        />
       ) : null}
     </main>
   );

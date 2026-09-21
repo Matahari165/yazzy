@@ -99,7 +99,7 @@ export default function PreviewPage() {
           Rejouer l’explosion Yatzy
         </button>
       </header>
-      <YatzyBurst key={burstKey} author="Toi" />
+      <YatzyBurst key={burstKey} author="Toi" diceValue={6} variant="player" />
       <section style={{ width: "min(100%, 720px)", display: "grid", gap: 12 }}>
         <h2 style={{ textAlign: "center", margin: 0 }}>Réactions (21 effets)</h2>
         <style>{`

@@ -10,15 +10,22 @@ import { MultiplayerNameGate } from "@/components/MultiplayerNameGate";
 import { MultiplayerReactions } from "@/components/MultiplayerReactions";
 import { ScoreCard } from "@/components/ScoreCard";
 import type { RoomActionEvent } from "@/domain/multiplayerRoomProtocol";
-import { CATEGORY_BY_ID, isMaxComboScore, scoreDice, totalScore, type CategoryId } from "@/domain/yatzy";
+import { CATEGORY_BY_ID, isMaxComboScore, scoreDice, totalScore, type CategoryId, type DieValue } from "@/domain/yatzy";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 import { botAudio } from "@/lib/botAudio";
 import { readStoredPlayerName, writeStoredPlayerName } from "@/lib/playerNameStorage";
 
 const HUMAN_ROLL_ANIMATION_MS = 300;
-const YATZY_BURST_DURATION_MS = 2_300;
+const YATZY_BURST_DURATION_MS = 3_400;
 const MAX_BURST_DURATION_MS = 3_500;
+
+type YatzyBurstState = {
+  id: string;
+  author: string;
+  diceValue: DieValue | null;
+  variant: "player" | "opponent";
+};
 
 let cachedReducedMotion: boolean | null = null;
 
@@ -82,7 +89,7 @@ export function MultiplayerClient({
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [highlightedPlayerCategory, setHighlightedPlayerCategory] = useState<CategoryId | null>(null);
   const [isRolling, setIsRolling] = useState(false);
-  const [yatzyBurst, setYatzyBurst] = useState<{ id: string; author: string } | null>(null);
+  const [yatzyBurst, setYatzyBurst] = useState<YatzyBurstState | null>(null);
   const [maxBurst, setMaxBurst] = useState<{ category: CategoryId; side: "player" | "opponent"; burstKey: number } | null>(null);
   const [inviteLink, setInviteLink] = useState("");
   const [copyStatus, setCopyStatus] = useState("");
@@ -105,15 +112,30 @@ export function MultiplayerClient({
     }, MAX_BURST_DURATION_MS);
   }, []);
 
-  const showYatzyBurst = useCallback((author: string) => {
-    burstSequenceRef.current += 1;
-    setYatzyBurst({ id: `yatzy-burst-${burstSequenceRef.current}`, author });
-    if (burstTimerRef.current !== null) window.clearTimeout(burstTimerRef.current);
-    burstTimerRef.current = window.setTimeout(() => {
-      burstTimerRef.current = null;
-      setYatzyBurst(null);
-    }, YATZY_BURST_DURATION_MS);
-  }, []);
+  const showYatzyBurst = useCallback(
+    (author: string, diceValue: DieValue | null = null, variant: "player" | "opponent" = "player") => {
+      burstSequenceRef.current += 1;
+      setYatzyBurst({ id: `yatzy-burst-${burstSequenceRef.current}`, author, diceValue, variant });
+      if (burstTimerRef.current !== null) window.clearTimeout(burstTimerRef.current);
+      burstTimerRef.current = window.setTimeout(() => {
+        burstTimerRef.current = null;
+        setYatzyBurst(null);
+      }, YATZY_BURST_DURATION_MS);
+    },
+    [],
+  );
+
+  const resultSoundPlayedRef = useRef(false);
+  useEffect(() => {
+    if (status !== "finished" || !game || !localRole || resultSoundPlayedRef.current) return;
+    resultSoundPlayedRef.current = true;
+    const p1 = game.player1?.state.scores ?? {};
+    const p2 = game.player2?.state.scores ?? {};
+    const localPoints = totalScore(localRole === "player1" ? p1 : p2);
+    const opponentPoints = totalScore(localRole === "player1" ? p2 : p1);
+    const outcome = localPoints === opponentPoints ? "tie" : localPoints > opponentPoints ? "win" : "loss";
+    botAudio.playEffect(outcome);
+  }, [status, game, localRole]);
 
   useEffect(() => {
     applySavedTheme();
@@ -176,7 +198,8 @@ export function MultiplayerClient({
     if (event.action.category === "yatzy" && scored === 50) {
       if (event.actionId !== yatzyCelebratedRef.current) {
         yatzyCelebratedRef.current = event.actionId;
-        showYatzyBurst(opponentPlayer?.name ?? "Ami");
+        botAudio.playEffect("win");
+        showYatzyBurst(opponentPlayer?.name ?? "Ami", null, "opponent");
       }
     }
     if (
@@ -206,11 +229,14 @@ export function MultiplayerClient({
   const handleScore = useCallback((category = selectedCategory) => {
     if (!category || !canAct || isRolling) return;
     setHighlightedPlayerCategory(category);
-    botAudio.playEffect("score");
     if (localState) {
       const localPoints = scoreDice(category, localState.dice);
-      if (category === "yatzy" && localPoints === 50) {
-        showYatzyBurst(localPlayer?.name ?? "Toi");
+      const isYatzy = category === "yatzy" && localPoints === 50;
+      botAudio.playEffect(isYatzy ? "win" : "score");
+      if (isYatzy) {
+        const dice = localState.dice;
+        const face = dice.length === 5 && dice.every((die) => die === dice[0]) ? dice[0] : null;
+        showYatzyBurst(localPlayer?.name ?? "Toi", face, "player");
       }
       if (isMaxComboScore(category, localPoints)) {
         triggerMaxBurst(category, "player");
@@ -375,7 +401,12 @@ export function MultiplayerClient({
         onSendReaction={sendReaction}
       />
       {yatzyBurst ? (
-        <YatzyBurst key={yatzyBurst.id} author={yatzyBurst.author} />
+        <YatzyBurst
+          key={yatzyBurst.id}
+          author={yatzyBurst.author}
+          diceValue={yatzyBurst.diceValue ?? undefined}
+          variant={yatzyBurst.variant}
+        />
       ) : null}
     </>
   );
@@ -437,6 +468,8 @@ const MultiplayerGameView = memo(function MultiplayerGameView({
   onSendReaction: (emoji: Parameters<ReturnType<typeof useMultiplayerGame>["sendReaction"]>[0]) => void;
 }) {
   const rematchRequested = game.rematchReady.includes(localRole);
+  const opponentRole = localRole === "player1" ? "player2" : "player1";
+  const opponentWantsRematch = game.rematchReady.includes(opponentRole) && !rematchRequested;
   const localName = localPlayer.name;
   const opponentName = opponentPlayer.name;
   const highlightedOpponentDie = replayedOpponentEvent?.action.type === "HOLD"
@@ -512,6 +545,7 @@ const MultiplayerGameView = memo(function MultiplayerGameView({
           localRole={localRole}
           onRematch={onRematch}
           rematchRequested={rematchRequested}
+          opponentWantsRematch={opponentWantsRematch}
           localName={localName}
           opponentName={opponentName}
         />

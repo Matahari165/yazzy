@@ -1053,16 +1053,68 @@
   transform: scale(0.96);
 }
 
-/* 9c. Explosion Yatzy à 50 : plein écran voilé, étoiles, aucun cadre. */
+/* 9c. Explosion Yatzy à 50 : plein écran voilé, flash, rayons, anneaux, médaillon commémoratif. */
 .yatzy-burst {
   position: fixed;
   inset: 0;
   z-index: 65;
   display: grid;
   place-items: center;
-  background: rgb(30 27 24 / 30%);
-  animation: yatzy-veil-life 2.2s var(--ease-out) both;
+  padding: 16px;
+  overflow: hidden;
+  background: rgb(30 27 24 / 42%);
+  animation: yatzy-veil-life 3.4s var(--ease-out) both;
   pointer-events: none;
+}
+.yatzy-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(60% 46% at 50% 46%, rgb(246 212 124 / 85%), transparent 70%);
+  opacity: 0;
+  animation: yatzy-flash-life 3.4s var(--ease-out) both;
+}
+.yatzy-rays {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: min(130vmin, 760px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgb(246 212 124 / 22%) 0deg 9deg, transparent 9deg 20deg);
+  opacity: 0;
+  animation: yatzy-rays-spin 3.4s linear both;
+}
+.yatzy-rings {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.yatzy-rings span {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 120px;
+  height: 120px;
+  translate: -50% -50%;
+  border: 3px solid rgb(246 212 124 / 80%);
+  border-radius: 50%;
+  opacity: 0;
+  animation: yatzy-ring-blast 3.4s var(--ease-out) both;
+}
+.yatzy-rings span:nth-child(2) {
+  animation-delay: 0.16s;
+  border-color: rgb(255 255 255 / 70%);
+}
+.yatzy-burst[data-variant="opponent"] .yatzy-rays {
+  background: repeating-conic-gradient(from 0deg, rgb(124 98 214 / 26%) 0deg 9deg, transparent 9deg 20deg);
+}
+.yatzy-burst[data-variant="opponent"] .yatzy-rings span {
+  border-color: rgb(124 98 214 / 80%);
+}
+.yatzy-burst[data-variant="opponent"] .yatzy-rings span:nth-child(2) {
+  border-color: rgb(255 255 255 / 70%);
 }
 .yatzy-burst-confetti {
   position: absolute;
@@ -1090,31 +1142,73 @@
   font-style: normal;
   line-height: 1;
   opacity: 0;
-  animation: yatzy-star-burst 1.6s var(--ease-out) both;
+  animation: yatzy-star-burst 2.4s var(--ease-out) both;
   will-change: transform, opacity;
 }
 .yatzy-burst-splash {
+  position: relative;
   display: grid;
   justify-items: center;
-  gap: 6px;
+  gap: 8px;
+  width: min(92vw, 480px);
   text-align: center;
-  animation: yatzy-splash-in 2.2s var(--ease-emphasized) both;
+  padding: 22px 34px 20px;
+  background: rgb(30 27 24 / 55%);
+  border: 2px solid rgb(246 212 124 / 75%);
+  border-radius: 28px;
+  box-shadow: 0 18px 60px rgb(0 0 0 / 45%), 0 0 44px rgb(246 212 124 / 35%);
+  backdrop-filter: blur(2px);
+  animation: yatzy-splash-in 3.4s var(--ease-emphasized) both;
+}
+.yatzy-burst[data-variant="opponent"] .yatzy-burst-splash {
+  border-color: rgb(124 98 214 / 80%);
+  box-shadow: 0 18px 60px rgb(0 0 0 / 45%), 0 0 44px rgb(124 98 214 / 40%);
+}
+.yatzy-kicker {
+  margin: 0;
+  color: #f6d47c;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.yatzy-burst[data-variant="opponent"] .yatzy-kicker {
+  color: #cfc2f5;
+}
+.yatzy-dice-row {
+  display: flex;
+  gap: 8px;
+  animation: yatzy-dice-row-in 3.4s var(--ease-emphasized) both;
+}
+.yatzy-mini-die {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: #fffdf8;
+  border: 2px solid #3d2f23;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 35%);
+}
+.yatzy-mini-die .die-glyph {
+  width: 30px;
+  height: 30px;
 }
 .yatzy-burst-dice {
   font-size: 64px;
   line-height: 1;
   filter: drop-shadow(0 6px 14px rgb(0 0 0 / 45%));
-  animation: yatzy-dice-spin 2.2s var(--ease-emphasized) both;
+  animation: yatzy-dice-spin 3.4s var(--ease-emphasized) both;
 }
 .yatzy-burst-splash strong {
   color: #f6d47c;
   font-family: var(--font-display);
-  font-size: clamp(54px, 14vw, 84px);
+  font-size: clamp(54px, 14vw, 88px);
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1;
   text-shadow: 0 3px 0 #7a4a12, 0 0 34px rgb(246 212 124 / 90%);
-  animation: yatzy-title-pop 2.2s var(--ease-emphasized) both;
+  animation: yatzy-title-pop 3.4s var(--ease-emphasized) both;
 }
 .yatzy-burst-splash small {
   color: #ffffff;
@@ -1168,6 +1262,57 @@
   font-weight: 700;
   text-wrap: balance;
   animation: finished-tagline-in 500ms 350ms var(--ease-out) both;
+}
+.finished-eyebrow {
+  margin: 0 0 8px;
+  animation: finished-tagline-in 500ms 120ms var(--ease-out) both;
+}
+.finished-verdict {
+  margin: 6px 0 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(18px, 5vw, 24px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  animation: finished-tagline-in 500ms 250ms var(--ease-out) both;
+}
+.finished-stats {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0 0;
+  animation: finished-score-reveal 460ms 480ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+.finished-stat {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+}
+.finished-stat dt {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.finished-stat dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.finished-rematch-hint {
+  margin: 0;
+  color: var(--green-ink);
+  font-size: 14px;
+  font-weight: 800;
+  animation: finished-tagline-in 400ms var(--ease-out) both;
 }
 .finished-hero[data-outcome="win"] .finished-result {
   animation: finished-title-cheer 800ms 100ms var(--ease-emphasized) both;
@@ -1389,12 +1534,16 @@
 @keyframes finished-winner-num-glow { 0%, 100% { text-shadow: 0 0 0 rgb(233 180 76 / 0); transform: scale(1); } 50% { text-shadow: 0 0 24px rgb(233 180 76 / 85%); transform: scale(1.05); } }
 @keyframes finished-winner-grow { 0% { opacity: 0; transform: scale(0); } 55% { opacity: 1; transform: scale(1.09); } 75% { transform: scale(1.01); } 100% { opacity: 1; transform: scale(1.045); } }
 @keyframes finished-loser-shrink { 0% { opacity: 0; transform: scale(1); } 40% { opacity: 1; transform: scale(1); } 100% { opacity: 1; transform: scale(0.94); } }
-@keyframes yatzy-piece-fall { 0% { opacity: 0; transform: translateY(0) rotate(0deg); } 10% { opacity: 1; } 100% { opacity: 0; transform: translateY(112vh) rotate(640deg); } }
-@keyframes yatzy-veil-life { 0% { opacity: 0; } 10% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes yatzy-star-burst { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -140px))) scale(1.1) rotate(40deg); } }
-@keyframes yatzy-splash-in { 0% { opacity: 0; transform: scale(0.6); } 12% { opacity: 1; transform: scale(1.05); } 18% { transform: scale(1); } 82% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.97); } }
-@keyframes yatzy-dice-spin { 0% { transform: rotate(-200deg) scale(0.4); } 30% { transform: rotate(18deg) scale(1.18); } 45% { transform: rotate(0deg) scale(1); } 80% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(24deg) scale(1); } }
-@keyframes yatzy-title-pop { 0% { opacity: 0; transform: scale(0.6); } 14% { opacity: 1; transform: scale(1.12); } 22% { transform: scale(1); } 80% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.96); } }
+@keyframes yatzy-piece-fall { 0% { opacity: 0; transform: translateY(0) rotate(0deg); } 10% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--drift, 0px), 112vh) rotate(640deg); } }
+@keyframes yatzy-veil-life { 0% { opacity: 0; } 8% { opacity: 1; } 84% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes yatzy-flash-life { 0% { opacity: 0; } 6% { opacity: 1; } 22% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes yatzy-rays-spin { 0% { opacity: 0; transform: rotate(0deg) scale(0.7); } 10% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; transform: rotate(120deg) scale(1.05); } }
+@keyframes yatzy-ring-blast { 0% { opacity: 0.9; transform: scale(0.4); } 18% { opacity: 0.8; } 100% { opacity: 0; transform: scale(4.2); } }
+@keyframes yatzy-star-burst { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); } 12% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -140px))) scale(1.1) rotate(40deg); } }
+@keyframes yatzy-splash-in { 0% { opacity: 0; transform: scale(0.6); } 8% { opacity: 1; transform: scale(1.05); } 12% { transform: scale(1); } 86% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.97); } }
+@keyframes yatzy-dice-spin { 0% { transform: rotate(-200deg) scale(0.4); } 20% { transform: rotate(18deg) scale(1.18); } 30% { transform: rotate(0deg) scale(1); } 86% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(24deg) scale(1); } }
+@keyframes yatzy-dice-row-in { 0% { opacity: 0; transform: translateY(10px) scale(0.8); } 10% { opacity: 1; transform: none; } 86% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes yatzy-title-pop { 0% { opacity: 0; transform: scale(0.6); } 9% { opacity: 1; transform: scale(1.12); } 14% { transform: scale(1); } 86% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.96); } }
 @keyframes bot-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 
 /* 12. Mode Boss : accent d'ambiance, surfaces claires partagées. */
@@ -1597,6 +1746,10 @@
   .finished-score-topline { align-items: flex-start; flex-direction: column; }
   .finished-player-name { overflow: visible; font-size: 12px; white-space: normal; }
   .finished-tie-badge { padding-inline: 5px; font-size: 8px; }
+  .finished-stats { grid-template-columns: minmax(0, 1fr); }
+  .yatzy-burst-splash { padding: 18px 20px 16px; }
+  .yatzy-mini-die { width: 38px; height: 38px; }
+  .yatzy-mini-die .die-glyph { width: 26px; height: 26px; }
 }
 
 @media (max-width: 340px) {
@@ -1679,8 +1832,10 @@
   .finished-ambient .finished-cloud { animation: none !important; }
   .finished-celebration .finished-player-score[data-winner="true"],
   .finished-celebration .finished-player-score[data-winner="false"] { animation: none !important; }
-  .yatzy-burst, .yatzy-burst-splash, .yatzy-burst-dice, .yatzy-burst-splash strong { animation: none !important; }
+  .yatzy-burst, .yatzy-burst-splash, .yatzy-burst-dice, .yatzy-burst-splash strong, .yatzy-dice-row, .yatzy-kicker { animation: none !important; }
   .yatzy-burst-confetti i, .yatzy-burst-stars i { display: none !important; }
+  .yatzy-flash, .yatzy-rays, .yatzy-rings { display: none !important; }
+  .finished-stats, .finished-verdict, .finished-rematch-hint, .finished-eyebrow { animation: none !important; }
   .connection-notice { animation: none; }
   .finished-player-score[data-winner="true"] { transform: none; }
 }

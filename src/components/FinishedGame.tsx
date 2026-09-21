@@ -1,8 +1,8 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import type { GameState } from "@/domain/game";
 import type { MultiplayerGameState } from "@/domain/multiplayer";
-import { totalScore } from "@/domain/yatzy";
+import { CATEGORY_BY_ID, totalScore, type CategoryId } from "@/domain/yatzy";
 
 type FinishedGameProps = {
   game: GameState | MultiplayerGameState;
@@ -10,6 +10,7 @@ type FinishedGameProps = {
   localRole?: "player1" | "player2";
   onRematch?: () => void;
   rematchRequested?: boolean;
+  opponentWantsRematch?: boolean;
   localName?: string;
   opponentName?: string;
   onLeave?: () => void;
@@ -86,9 +87,13 @@ function randomOf<T>(items: readonly T[]): T {
 }
 
 function buildPieces(count: number, colors: readonly string[], slow: boolean): ConfettiPiece[] {
-  return Array.from({ length: count }, () => ({
+  return Array.from({ length: count }, (_, index) => ({
     left: Math.random() * 100,
-    delay: Math.random() * (slow ? 2.2 : 1.1),
+    delay: slow
+      ? Math.random() * 2.2
+      : index % 4 === 0
+        ? 1.6 + Math.random() * 1.2
+        : Math.random() * 1.1,
     duration: slow ? 4.5 + Math.random() * 3 : 2.4 + Math.random() * 1.8,
     size: 6 + Math.random() * 7,
     color: randomOf(colors),
@@ -100,8 +105,8 @@ function buildPieces(count: number, colors: readonly string[], slow: boolean): C
 function pickParty(outcome: GameOutcome, isMultiplayer: boolean, opponentLabel: string): Party {
   const fill = (template: string) => template.replaceAll("{o}", opponentLabel);
   if (outcome === "win") {
-    // Deuxième vague : un tiers des confettis retombe plus tard.
-    const pieces = buildPieces(56, randomOf(WIN_PALETTES), false).map((piece, index) =>
+    // Trois vagues : explosion, retombée, pluie tardive.
+    const pieces = buildPieces(90, randomOf(WIN_PALETTES), false).map((piece, index) =>
       index % 3 === 0
         ? { ...piece, delay: 1.6 + Math.random() * 1.2, duration: piece.duration + 1 }
         : piece,
@@ -118,15 +123,58 @@ function pickParty(outcome: GameOutcome, isMultiplayer: boolean, opponentLabel: 
       variant: "rain",
       emoji: randomOf(LOSS_EMOJIS),
       tagline: fill(randomOf(isMultiplayer ? LOSS_TAGLINES_DUO : LOSS_TAGLINES_BOT)),
-      pieces: buildPieces(22, LOSS_COLORS, true),
+      pieces: buildPieces(26, LOSS_COLORS, true),
     };
   }
   return {
     variant: "sway",
     emoji: randomOf(TIE_EMOJIS),
     tagline: randomOf(TIE_TAGLINES),
-    pieces: buildPieces(30, TIE_COLORS, false),
+    pieces: buildPieces(36, TIE_COLORS, false),
   };
+}
+
+function bestHit(scores: Partial<Record<CategoryId, number>>): { label: string; points: number } | null {
+  let best: { label: string; points: number } | null = null;
+  for (const [category, points] of Object.entries(scores)) {
+    if (typeof points !== "number") continue;
+    if (!best || points > best.points) {
+      best = { label: CATEGORY_BY_ID[category as CategoryId]?.label ?? category, points };
+    }
+  }
+  return best;
+}
+
+function countZeros(scores: Partial<Record<CategoryId, number>>): number {
+  return Object.values(scores).filter((points) => points === 0).length;
+}
+
+function useCountUp(target: number, durationMs = 900): number {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    let frame = 0;
+    let start: number | null = null;
+    let reduced = false;
+    try {
+      reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    } catch {
+      reduced = false;
+    }
+    if (reduced || durationMs <= 0) {
+      frame = window.requestAnimationFrame(() => setValue(target));
+      return () => window.cancelAnimationFrame(frame);
+    }
+    const step = (now: number) => {
+      if (start === null) start = now;
+      const progress = Math.min(1, (now - start) / durationMs);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(eased * target));
+      if (progress < 1) frame = window.requestAnimationFrame(step);
+    };
+    frame = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(frame);
+  }, [target, durationMs]);
+  return value;
 }
 
 export function FinishedGame({
@@ -135,6 +183,7 @@ export function FinishedGame({
   localRole,
   onRematch,
   rematchRequested = false,
+  opponentWantsRematch = false,
   localName = "Toi",
   opponentName = "Ami",
   onLeave,
@@ -143,17 +192,21 @@ export function FinishedGame({
 
   let localPoints: number;
   let opponentPoints: number;
+  let localScores: Partial<Record<CategoryId, number>>;
+  let opponentScores: Partial<Record<CategoryId, number>>;
 
   if (isMultiplayer) {
     const p1Scores = game.player1?.state.scores ?? {};
     const p2Scores = game.player2?.state.scores ?? {};
-    localPoints = totalScore(localRole === "player1" ? p1Scores : p2Scores);
-    opponentPoints = totalScore(localRole === "player1" ? p2Scores : p1Scores);
+    localScores = localRole === "player1" ? p1Scores : p2Scores;
+    opponentScores = localRole === "player1" ? p2Scores : p1Scores;
+    localPoints = totalScore(localScores);
+    opponentPoints = totalScore(opponentScores);
   } else {
-    const humanPoints = totalScore(game.human.scores);
-    const botPoints = totalScore(game.bot.scores);
-    localPoints = localPlayerId === "human" ? humanPoints : botPoints;
-    opponentPoints = localPlayerId === "human" ? botPoints : humanPoints;
+    localScores = localPlayerId === "human" ? game.human.scores : game.bot.scores;
+    opponentScores = localPlayerId === "human" ? game.bot.scores : game.human.scores;
+    localPoints = totalScore(localScores);
+    opponentPoints = totalScore(opponentScores);
   }
 
   const isTie = localPoints === opponentPoints;
@@ -163,13 +216,33 @@ export function FinishedGame({
   const opponentLabel = isMultiplayer ? opponentName : "Bot";
   const playerLabel = isMultiplayer ? localName : "Toi";
   const resultTitle = isTie ? "Égalité" : isWinner ? "Victoire" : "Défaite";
+  const gap = Math.abs(localPoints - opponentPoints);
+  const verdict = isTie
+    ? `Égalité à ${localPoints} points`
+    : isWinner
+      ? `Victoire de ${gap} point${gap > 1 ? "s" : ""}`
+      : `Défaite de ${gap} point${gap > 1 ? "s" : ""}`;
 
   const playerIsWinner = isWinner;
   const opponentIsWinner = !isWinner && !isTie;
 
+  const localBest = bestHit(localScores);
+  const localYatzy = localScores.yatzy === 50;
+  const opponentYatzy = opponentScores.yatzy === 50;
+  const localZeros = countZeros(localScores);
+
+  const animatedLocal = useCountUp(localPoints);
+  const animatedOpponent = useCountUp(opponentPoints);
+
   // Tiré au sort une fois à l'ouverture : cet écran ne se monte que côté
   // client une fois la partie chargée, donc pas de divergence serveur/client.
   const [party] = useState<Party>(() => pickParty(outcome, isMultiplayer, opponentLabel));
+
+  const rematchLabel = rematchRequested
+    ? "En attente de ton ami… (1/2)"
+    : opponentWantsRematch
+      ? "Accepter la revanche"
+      : "Revanche";
 
   return (
     <section
@@ -212,10 +285,12 @@ export function FinishedGame({
       </div>
 
       <header className="finished-hero" data-outcome={outcome}>
+        <p className="eyebrow finished-eyebrow">Partie terminée · {isMultiplayer ? "Duo" : "Solo"}</p>
         <div className="finished-party-emoji" aria-hidden="true">{party.emoji}</div>
         <h1 id="finished-title" className="finished-result" tabIndex={-1}>
           {resultTitle}
         </h1>
+        <p className="finished-verdict">{verdict}</p>
         <p className="finished-tagline">{party.tagline}</p>
       </header>
       {outcome === "loss" ? (
@@ -237,7 +312,7 @@ export function FinishedGame({
               <span className="finished-winner-mark" aria-hidden="true">✦</span>
             ) : null}
           </div>
-          <strong className="finished-score-number" data-score={localPoints}>{localPoints}</strong>
+          <strong className="finished-score-number" data-score={localPoints} aria-hidden="true">{animatedLocal}</strong>
         </article>
 
         <article
@@ -254,15 +329,39 @@ export function FinishedGame({
               <span className="finished-winner-mark" aria-hidden="true">✦</span>
             ) : null}
           </div>
-          <strong className="finished-score-number" data-score={opponentPoints}>{opponentPoints}</strong>
+          <strong className="finished-score-number" data-score={opponentPoints} aria-hidden="true">{animatedOpponent}</strong>
         </article>
       </div>
 
+      <dl className="finished-stats" aria-label="Détails de la partie">
+        <div className="finished-stat">
+          <dt>Écart</dt>
+          <dd>{isTie ? "0" : `+${gap}`}</dd>
+        </div>
+        <div className="finished-stat">
+          <dt>Ton meilleur coup</dt>
+          <dd>{localBest ? `${localBest.label} · ${localBest.points}` : "—"}</dd>
+        </div>
+        <div className="finished-stat">
+          <dt>Yatzy</dt>
+          <dd>{localYatzy ? "Réussi 🎲" : opponentYatzy ? `${opponentLabel} l'a eu` : "Personne"}</dd>
+        </div>
+        <div className="finished-stat">
+          <dt>Cases à 0</dt>
+          <dd>{localZeros}</dd>
+        </div>
+      </dl>
+
       <div className="finished-actions">
         {isMultiplayer && onRematch ? (
-          <button className="primary-action" type="button" disabled={rematchRequested} onClick={onRematch}>
-            {rematchRequested ? "En attente…" : "Revanche"}
-          </button>
+          <>
+            <button className="primary-action" type="button" disabled={rematchRequested} onClick={onRematch}>
+              {rematchLabel}
+            </button>
+            {opponentWantsRematch && !rematchRequested ? (
+              <p className="finished-rematch-hint" role="status">Ton ami veut déjà la revanche !</p>
+            ) : null}
+          </>
         ) : (
           <Link className="primary-action" href="/bot" onClick={onLeave}>Rejouer</Link>
         )}
