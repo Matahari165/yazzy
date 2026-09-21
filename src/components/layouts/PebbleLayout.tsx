@@ -1,7 +1,8 @@
 "use client";
 
 import type { LayoutProps } from "./types";
-import { InteractiveDice, SharedMultiplayerPanel } from "./types";
+import { InteractiveDice } from "../InteractiveDice";
+import { SharedMultiplayerPanel } from "../SharedMultiplayerPanel";
 
 export function PebbleLayout(props: LayoutProps) {
   return (

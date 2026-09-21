@@ -1,99 +1,18 @@
-import type { CSSProperties, ReactNode } from "react";
+"use client";
+
 import { useEffect, useRef, useState } from "react";
-import type { DieValue } from "@/domain/yatzy";
-import { DieGlyph } from "../Dice";
 import { PLAYER_NAME_MAX_LENGTH } from "@/domain/playerName";
-import { botAudio } from "@/lib/botAudio";
+import type { LayoutProps } from "./layouts/types";
 
-export interface LayoutProps {
-  theme: string;
-  isMultiplayerOpen: boolean;
-  playerName: string;
-  playerNameError: string;
-  roomCode: string;
-  roomCodeError: string;
-  isDemonThemeEnabled: boolean;
-  onStartBot: () => void;
-  onStartQuiz: () => void;
-  onPlayDuo: () => void;
-  onStartMultiplayer: () => void;
-  onToggleMultiplayer: () => void;
-  onCloseMultiplayer?: () => void;
-  onJoinMultiplayer: (e: React.FormEvent<HTMLFormElement>) => void;
-  onPlayerNameChange: (name: string) => void;
-  onPlayerNameBlur: () => void;
-  onRoomCodeChange: (code: string) => void;
-  onPasteRoomCode: () => void;
-  onToggleDemonTheme: (enabled: boolean) => void;
-}
-
-export function InteractiveDice({
-  className = "hero-dice",
-  dieClassName = "hero-die",
-  faceClassName = "hero-die-face",
-}: {
+export interface SharedMultiplayerPanelProps {
+  props: LayoutProps;
   className?: string;
-  dieClassName?: string;
-  faceClassName?: string;
-}) {
-  const [round, setRound] = useState(0);
-  const [values, setValues] = useState<DieValue[]>([6, 1, 4, 3, 5]);
-  const [bumps, setBumps] = useState<number[]>([0, 0, 0, 0, 0]);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = window.setInterval(() => {
-      setValues(Array.from({ length: 5 }, () => (1 + Math.floor(Math.random() * 6)) as DieValue));
-      setRound((n) => n + 1);
-    }, 8000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  const rerollOne = (index: number) => {
-    botAudio.playDiceClack();
-    setValues((prev) => {
-      let next: DieValue = (1 + Math.floor(Math.random() * 6)) as DieValue;
-      if (prev.length > 1) {
-        while (next === prev[index]) {
-          next = (1 + Math.floor(Math.random() * 6)) as DieValue;
-        }
-      }
-      const copy = [...prev];
-      copy[index] = next;
-      return copy;
-    });
-    setBumps((prev) => {
-      const copy = [...prev];
-      copy[index] += 1;
-      return copy;
-    });
-  };
-
-  return (
-    <div className={className} role="group" aria-label="Cinq dés interactifs">
-      {values.map((value, index) => (
-        <button
-          key={`${round}-${bumps[index]}-${index}`}
-          className={dieClassName}
-          style={{ "--i": index } as CSSProperties}
-          type="button"
-          onClick={() => rerollOne(index)}
-          aria-label={`Dé ${index + 1}, valeur ${value}`}
-        >
-          <DieGlyph value={value} className={faceClassName} />
-        </button>
-      ))}
-    </div>
-  );
 }
 
 export function SharedMultiplayerPanel({
   props,
   className = "multiplayer-options",
-}: {
-  props: LayoutProps;
-  className?: string;
-}) {
+}: SharedMultiplayerPanelProps) {
   const handleClose = props.onCloseMultiplayer ?? props.onToggleMultiplayer;
   const handleCloseRef = useRef(handleClose);
   const modalRef = useRef<HTMLElement>(null);
