@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { GameState } from "@/domain/game";
 import type { MultiplayerGameState } from "@/domain/multiplayer";
 import { CATEGORY_BY_ID, totalScore, type CategoryId } from "@/domain/yatzy";
+import { SoloStats } from "./SoloStats";
 
 type FinishedGameProps = {
   game: GameState | MultiplayerGameState;
@@ -351,6 +352,8 @@ export function FinishedGame({
           <dd>{localZeros}</dd>
         </div>
       </dl>
+
+      {!isMultiplayer ? <details className="solo-stats-disclosure"><summary>Statistiques solo</summary><SoloStats /></details> : null}
 
       <div className="finished-actions">
         {isMultiplayer && onRematch ? (

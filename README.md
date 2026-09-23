@@ -5,12 +5,13 @@ Yazzy est une application web de Yatzy nordique qui transforme chaque choix de s
 ## Ce que le projet démontre
 
 - Une implémentation métier stricte : 14 catégories, trois lancers maximum, scores et probabilités calculés par le même domaine TypeScript.
-- Un bot Expert heuristique : il compare le score attendu et la probabilité de réussite avant de choisir une conservation.
+- Un seul bot Expert : il compare ensemble les dés à garder et les cases libres, estime les scores restants et ajuste ses risques selon la fin de partie.
+- Un historique solo sur chaque appareil : victoires, défaites, égalités, scores et dates. L’export et l’import JSON réunissent les résultats de deux appareils sans compte.
 - Un mode Duo privé par code ou lien, synchronisé par un cache Vercel temporaire, sans compte ni serveur à configurer.
 - Une interface responsive et accessible : mode clair Céramique par défaut, quatre identités visuelles optionnelles, clavier, focus visible, mouvement réduit et PWA.
 - Une séparation lisible entre interface, hooks, domaine métier, serveur et données de quiz.
 
-Le bot Expert est volontairement présenté comme une heuristique, pas comme un joueur optimal.
+Le bot Expert reste une heuristique, pas un joueur optimal. Le thème Démon ne change que la présentation. Les historiques ne se synchronisent pas automatiquement : chacun exporte son fichier depuis « Statistiques solo » et l’autre l’importe pour obtenir le total commun.
 
 ## Choix techniques
 

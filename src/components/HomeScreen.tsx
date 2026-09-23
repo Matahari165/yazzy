@@ -19,6 +19,7 @@ import { readBotDemonTheme, writeBotDemonTheme } from "@/lib/botThemeStorage";
 import { botAudio } from "@/lib/botAudio";
 import { ThemeSwitcher, type UITheme, applySavedTheme, getSavedTheme } from "./ThemeSwitcher";
 import { PebbleLayout, type LayoutProps } from "./layouts";
+import { SoloStats } from "./SoloStats";
 
 export function HomeScreen() {
   const router = useRouter();
@@ -203,6 +204,10 @@ export function HomeScreen() {
     >
       <ThemeSwitcher currentTheme={theme} onSelectTheme={handleSelectTheme} />
       <PebbleLayout {...layoutProps} />
+      <details className="solo-stats-disclosure">
+        <summary>Statistiques solo</summary>
+        <SoloStats />
+      </details>
     </main>
   );
 }

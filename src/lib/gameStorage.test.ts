@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createGame, GAME_STORAGE_KEY, type GameState } from "../domain/game";
 import { CATEGORY_IDS, type CategoryId } from "../domain/yatzy";
 import { readStoredGame, writeStoredGame } from "./gameStorage";
+import { readSoloResults } from "./soloStats";
 
 function createMemoryStorage(): Storage {
   const values = new Map<string, string>();
@@ -59,9 +60,11 @@ describe("stockage de la partie bot", () => {
 
   it("supprime la sauvegarde dès que la partie est terminée", () => {
     localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify(createGame("expert", "human")));
-
-    expect(writeStoredGame(finishedGame())).toBe(true);
+    const finished = finishedGame();
+    expect(writeStoredGame(finished)).toBe(true);
+    expect(writeStoredGame(finished)).toBe(true);
     expect(localStorage.getItem(GAME_STORAGE_KEY)).toBeNull();
+    expect(readSoloResults()).toHaveLength(1);
   });
 
   it("nettoie une ancienne sauvegarde terminée à la lecture", () => {
@@ -69,5 +72,6 @@ describe("stockage de la partie bot", () => {
 
     expect(readStoredGame()).toBeNull();
     expect(localStorage.getItem(GAME_STORAGE_KEY)).toBeNull();
+    expect(readSoloResults()).toHaveLength(1);
   });
 });

@@ -419,3 +419,30 @@ h3 { font-size: 18px; line-height: 1.2; }
 @media (prefers-reduced-motion: reduce) {
   .waiting-status i { animation: none; }
 }
+
+.solo-stats-disclosure {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 560px);
+  margin: 14px auto 0;
+  color: var(--ink);
+}
+.solo-stats-disclosure > summary {
+  width: fit-content;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.solo-stats-disclosure > summary:focus-visible,
+.solo-stats-actions button:focus-visible { outline: 3px solid var(--blue, #276ca5); outline-offset: 3px; }
+.solo-stats { padding: 14px; border: 2px solid currentColor; border-radius: 14px; background: var(--page); }
+.solo-stats p { margin: 4px 0; }
+.solo-stats-detail { opacity: .75; }
+.solo-stats-help { margin-top: 10px !important; font-size: .9rem; color: var(--ink-soft); }
+.solo-stats-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.solo-stats-actions button { min-height: 44px; padding: 8px 12px; border: 1px solid currentColor; border-radius: 8px; color: inherit; background: transparent; cursor: pointer; font: inherit; }
+.solo-stats-message { margin-top: 8px !important; font-weight: 700; }

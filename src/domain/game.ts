@@ -30,6 +30,7 @@ export type BotTurnState = {
 
 export type GameState = {
   version: typeof GAME_VERSION;
+  gameId?: string;
   mode: "bot";
   botLevel: BotLevel;
   activePlayer: PlayerId;
@@ -54,6 +55,7 @@ export function createGame(
 ): GameState {
   return {
     version: GAME_VERSION,
+    gameId: crypto.randomUUID(),
     mode: "bot",
     botLevel,
     activePlayer: startingPlayer,
@@ -117,6 +119,7 @@ export function isStoredGame(value: unknown): value is GameState {
   ));
   return (
     game.version === GAME_VERSION &&
+    (game.gameId === undefined || (typeof game.gameId === "string" && /^[a-f0-9-]{36}$/i.test(game.gameId))) &&
     game.mode === "bot" &&
     game.botLevel === "expert" &&
     (game.activePlayer === "human" || game.activePlayer === "bot") &&
