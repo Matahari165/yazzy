@@ -1,77 +1,168 @@
-import { evaluateCategory, type CategoryEvaluation } from "../probability";
-import { CATEGORY_BY_ID, CATEGORY_IDS, type CategoryId, type DiceCounts } from "../yatzy";
-import { chooseFirstOpenCategory, evaluateOpenCategories } from "./utils";
+import { GENERAL_PROBABILITIES } from "../generalProbabilities";
+import { rollOutcomes } from "../probability";
+import {
+  CATEGORY_IDS, countDice, countsToDice, scoreDice,
+  type CategoryId, type DiceCounts,
+} from "../yatzy";
+import { chooseFirstOpenCategory } from "./utils";
 import type { BotDecisionContext, BotPolicy } from "./types";
 
-const baselineCache = new Map<CategoryId, number>();
+type Decision = { category: CategoryId; hold: DiceCounts };
+type Forecast = { value: number; variance: number };
+const EMPTY_HOLD: DiceCounts = [0, 0, 0, 0, 0, 0];
+const holdCache = new Map<string, DiceCounts[]>();
+let lastDecision: { key: string; result: Decision } | null = null;
 
-function freshTurnExpectedScore(category: CategoryId): number {
-  const cached = baselineCache.get(category);
-  if (cached !== undefined) return cached;
+// Approximation de la valeur d'un tour frais. Les probabilités sont exactes ;
+// le gain moyen d'une combinaison non fixe reste une estimation prudente.
+const AVERAGE_SUCCESS_SCORE: Readonly<Record<CategoryId, number>> = {
+  ones: 3, twos: 6, threes: 9, fours: 12, fives: 15, sixes: 18,
+  pair: 10, twoPairs: 16, threeOfAKind: 12, fourOfAKind: 17,
+  smallStraight: 15, largeStraight: 20, fullHouse: 20, yatzy: 50,
+};
+const UPPER_VALUE: Partial<Record<CategoryId, number>> = {
+  ones: 1, twos: 2, threes: 3, fours: 4, fives: 5, sixes: 6,
+};
+const FRESH_VALUE = Object.fromEntries(CATEGORY_IDS.map((category) => [
+  category,
+  UPPER_VALUE[category]
+    ? 5 * UPPER_VALUE[category] * (1 - (5 / 6) ** 3)
+    : GENERAL_PROBABILITIES[category] * AVERAGE_SUCCESS_SCORE[category],
+])) as Record<CategoryId, number>;
 
-  const baseline = evaluateCategory(category, [], 3).expectedScore;
-  baselineCache.set(category, baseline);
-  return baseline;
+function openCategories(scores: BotDecisionContext["scores"]): CategoryId[] {
+  return CATEGORY_IDS.filter((category) => scores[category] === undefined);
 }
 
-/**
- * Estime la valeur globale de la décision : les points attendus maintenant,
- * moins ce que la case aurait normalement rapporté lors d'un futur tour frais.
- * Puis adapte le risque à l'écart de score, surtout en fin de partie.
- */
-function expertValue(context: BotDecisionContext, evaluation: CategoryEvaluation): number {
-  const definition = CATEGORY_BY_ID[evaluation.category];
-  const baseline = freshTurnExpectedScore(evaluation.category);
-  const openCount = CATEGORY_IDS.filter((category) => context.scores[category] === undefined).length;
-  const scoreGap = context.opponentScore - context.ownScore;
-  const endgameWeight = 1 + (CATEGORY_IDS.length - openCount) / CATEGORY_IDS.length;
-  const pressure = Math.max(-1, Math.min(1, scoreGap / Math.max(12, openCount * 6))) * endgameWeight;
-  const opportunityAdjustedValue = evaluation.expectedScore - baseline;
-  let value = evaluation.expectedScore + opportunityAdjustedValue;
+function forecast(categories: CategoryId[], skill = 1): Forecast {
+  return categories.reduce((total, category) => {
+    const probability = GENERAL_PROBABILITIES[category];
+    const average = AVERAGE_SUCCESS_SCORE[category] * skill;
+    const upper = UPPER_VALUE[category];
+    const perDieChance = 1 - (5 / 6) ** 3;
+    return {
+      value: total.value + FRESH_VALUE[category] * skill,
+      variance: total.variance + (upper
+        ? 5 * perDieChance * (1 - perDieChance) * (upper * skill) ** 2
+        : probability * (1 - probability) * average ** 2),
+    };
+  }, { value: 0, variance: 0 });
+}
 
-  if (pressure > 0) {
-    const upside = Math.max(0, definition.maximumScore - evaluation.expectedScore);
-    value += pressure * Math.min(6, upside / 7);
-  } else if (pressure < 0) {
-    const security = evaluation.currentScore > 0 ? evaluation.currentScore : evaluation.expectedScore * evaluation.successProbability;
-    value += -pressure * Math.min(5, security / 6);
-  }
+function opponentSkill(context: BotDecisionContext): number {
+  const scored = CATEGORY_IDS.filter((category) => context.opponentScores[category] !== undefined);
+  if (!scored.length) return 1;
+  const expected = scored.reduce((sum, category) => sum + FRESH_VALUE[category], 0);
+  const actual = scored.reduce((sum, category) => sum + (context.opponentScores[category] ?? 0), 0);
+  // Quatre tours fictifs évitent qu'un seul bon jet ne domine la prévision.
+  const prior = 4 * CATEGORY_IDS.reduce((sum, category) => sum + FRESH_VALUE[category], 0) / CATEGORY_IDS.length;
+  return Math.max(0.7, Math.min(1.4, (actual + prior) / (expected + prior)));
+}
 
-  if (definition.fixedScore) {
-    if (evaluation.currentScore === definition.fixedScore) {
-      value += 4 + evaluation.successProbability * 4 + Math.max(0, -pressure) * 2;
-    } else if (openCount > 4) {
-      value -= (1 - evaluation.successProbability) * (3 + Math.max(0, -pressure));
-    } else {
-      value -= Math.max(0, 2 - Math.max(0, pressure) * 2);
+function possibleHolds(counts: DiceCounts): DiceCounts[] {
+  const key = counts.join("");
+  const cached = holdCache.get(key);
+  if (cached) return cached;
+  const holds: DiceCounts[] = [];
+  const current = [0, 0, 0, 0, 0, 0];
+  const visit = (face: number) => {
+    if (face === 6) {
+      holds.push([...current] as unknown as DiceCounts);
+      return;
     }
+    for (let n = 0; n <= counts[face]; n += 1) {
+      current[face] = n;
+      visit(face + 1);
+    }
+  };
+  visit(0);
+  holdCache.set(key, holds);
+  return holds;
+}
+
+function addCounts(left: DiceCounts, right: DiceCounts): DiceCounts {
+  return left.map((count, index) => count + right[index]) as unknown as DiceCounts;
+}
+
+function terminalChoice(context: BotDecisionContext, counts: DiceCounts, open: CategoryId[]): {
+  category: CategoryId; utility: number;
+} {
+  const dice = countsToDice(counts);
+  const theirOpen = openCategories(context.opponentScores);
+  const theirFuture = forecast(theirOpen, opponentSkill(context));
+  const endingSoon = open.length <= 4;
+  let best = { category: open[0], utility: -Infinity };
+
+  for (const category of open) {
+    const ourFuture = forecast(open.filter((candidate) => candidate !== category));
+    const points = scoreDice(category, dice);
+    const margin = context.ownScore + points + ourFuture.value
+      - context.opponentScore - theirFuture.value;
+    const uncertainty = Math.sqrt(ourFuture.variance + theirFuture.variance);
+    const winChance = uncertainty < 0.01
+      ? margin > 0 ? 1 : margin < 0 ? 0 : 0.5
+      : 1 / (1 + Math.exp(-margin / Math.max(2, uncertainty * 0.62)));
+    const utility = margin + (endingSoon ? 65 : 10) * winChance;
+    if (utility > best.utility + 1e-9) best = { category, utility };
   }
-
-  return value;
+  return best;
 }
 
-function pickCategory(context: BotDecisionContext): CategoryId {
-  const open = CATEGORY_IDS.filter((category) => context.scores[category] === undefined);
-  if (!open.length || context.dice.length !== 5) return chooseFirstOpenCategory(context.scores);
+function choose(context: BotDecisionContext): Decision {
+  const open = openCategories(context.scores);
+  if (!open.length || context.dice.length !== 5) {
+    return { category: chooseFirstOpenCategory(context.scores), hold: EMPTY_HOLD };
+  }
+  const key = [context.dice.join(""), context.remainingRolls, context.ownScore, context.opponentScore,
+    ...CATEGORY_IDS.map((category) => `${context.scores[category] ?? "_"}:${context.opponentScores[category] ?? "_"}`),
+  ].join("|");
+  if (lastDecision?.key === key) return lastDecision.result;
 
-  const evaluations = evaluateOpenCategories(context);
-  return evaluations.reduce((best, candidate) =>
-    expertValue(context, candidate) > expertValue(context, best) + 1e-9 ? candidate : best,
-  evaluations[0]).category;
-}
+  const solved = new Map<string, number>();
+  const endChoices = new Map<string, ReturnType<typeof terminalChoice>>();
+  const getEnd = (counts: DiceCounts) => {
+    const diceKey = counts.join("");
+    let choice = endChoices.get(diceKey);
+    if (!choice) {
+      choice = terminalChoice(context, counts, open);
+      endChoices.set(diceKey, choice);
+    }
+    return choice;
+  };
+  const solve = (counts: DiceCounts, remaining: number): { value: number; hold: DiceCounts } => {
+    if (remaining === 0) return { value: getEnd(counts).utility, hold: counts };
+    const stateKey = `${counts.join("")}:${remaining}`;
+    const cached = solved.get(stateKey);
+    if (cached !== undefined) return { value: cached, hold: counts };
+    let bestValue = -Infinity;
+    let bestHold = counts;
+    for (const hold of possibleHolds(counts)) {
+      const rerolled = 5 - hold.reduce((sum, count) => sum + count, 0);
+      let expected = 0;
+      for (const outcome of rollOutcomes(rerolled)) {
+        expected += outcome.probability * solve(addCounts(hold, outcome.counts), remaining - 1).value;
+      }
+      if (expected > bestValue + 1e-9) {
+        bestValue = expected;
+        bestHold = hold;
+      }
+    }
+    solved.set(stateKey, bestValue);
+    return { value: bestValue, hold: bestHold };
+  };
 
-function pickHold(context: BotDecisionContext, category: CategoryId): DiceCounts {
-  return context.dice.length === 5
-    ? evaluateCategory(category, context.dice, context.remainingRolls).bestHoldForExpectedScore
-    : [0, 0, 0, 0, 0, 0];
+  const counts = countDice(context.dice);
+  const result = { category: getEnd(counts).category, hold: solve(counts, context.remainingRolls).hold };
+  lastDecision = { key, result };
+  return result;
 }
 
 export const expertPolicy: BotPolicy = {
   level: "expert",
   label: "Expert",
-  description: "Réévalue ses choix après chaque lancer, protège la valeur future des cases et adapte le risque au score.",
+  description: "Compare les dés et les cases ensemble, prévoit les scores restants et adapte le risque à la victoire.",
   precision: "heuristic",
   reassessAfterRoll: true,
-  pickCategory,
-  pickHold,
+  pickCategory: (context) => choose(context).category,
+  pickHold: (context) => choose(context).hold,
 };

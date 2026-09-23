@@ -8,6 +8,7 @@ export function contextForBot(game: GameState): BotDecisionContext {
     rollNumber: game.bot.rollNumber,
     remainingRolls: Math.max(0, 3 - game.bot.rollNumber),
     scores: game.bot.scores,
+    opponentScores: game.human.scores,
     ownScore: totalScore(game.bot.scores),
     opponentScore: totalScore(game.human.scores),
   };

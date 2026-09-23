@@ -7,6 +7,7 @@ export type BotDecisionContext = {
   rollNumber: number;
   remainingRolls: number;
   scores: Partial<Record<CategoryId, number>>;
+  opponentScores: Partial<Record<CategoryId, number>>;
   ownScore: number;
   opponentScore: number;
 };
