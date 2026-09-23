@@ -219,7 +219,7 @@ export function MultiplayerClient({
   }, [replayedOpponentEvent, opponentPlayer, showYatzyBurst, triggerMaxBurst]);
 
   const handleRoll = useCallback(() => {
-    if (!canAct || isRolling || !localState || localState.rollNumber >= 3) return;
+    if (!canAct || isRolling || pendingAction !== null || !localState || localState.rollNumber >= 3) return;
     if (localState.rollNumber > 0 && localState.held.every(Boolean)) return;
     botAudio.playEffect("dice");
     roll();
@@ -230,10 +230,10 @@ export function MultiplayerClient({
       rollTimerRef.current = null;
       setIsRolling(false);
     }, duration);
-  }, [canAct, isRolling, localState, roll]);
+  }, [canAct, isRolling, localState, pendingAction, roll]);
 
   const handleScore = useCallback((category = selectedCategory) => {
-    if (!category || !canAct || isRolling) return;
+    if (!category || !canAct || isRolling || pendingAction !== null) return;
     setHighlightedPlayerCategory(category);
     if (localState) {
       const localPoints = scoreDice(category, localState.dice);
@@ -250,7 +250,7 @@ export function MultiplayerClient({
     }
     score(category);
     setSelectedCategory(null);
-  }, [selectedCategory, canAct, isRolling, score, localState, localPlayer, showYatzyBurst, triggerMaxBurst]);
+  }, [selectedCategory, canAct, isRolling, pendingAction, score, localState, localPlayer, showYatzyBurst, triggerMaxBurst]);
 
   const handleToggleDie = useCallback((index: number) => {
     if (!canActRef.current) return;
@@ -262,9 +262,9 @@ export function MultiplayerClient({
   }, [toggleHeld]);
 
   useGameKeyboard({
-    disabled: status !== "playing" || !canAct,
-    canRoll: Boolean(localState && localState.rollNumber < 3 && !localState.held.every(Boolean) && !isRolling),
-    canScore: selectedCategory !== null && !isRolling,
+    disabled: status !== "playing" || !canAct || pendingAction !== null,
+    canRoll: Boolean(localState && localState.rollNumber < 3 && !localState.held.every(Boolean) && !isRolling && pendingAction === null),
+    canScore: selectedCategory !== null && !isRolling && pendingAction === null,
     onRoll: handleRoll,
     onScore: handleScore,
     onToggleDie: handleToggleDie,
@@ -614,7 +614,7 @@ const MultiplayerGameView = memo(function MultiplayerGameView({
             dice={localState.dice}
             opponentDice={opponentState.dice}
             selected={canAct ? selectedCategory : null}
-            canSelect={canAct && localState.rollNumber > 0 && !isRolling}
+            canSelect={canAct && localState.rollNumber > 0 && !isRolling && pendingAction === null}
             isReadOnly={!canAct}
             activeColumn={isMyTurn ? "player" : "opponent"}
             highlightedPlayerCategory={highlightedPlayerCategory}
@@ -631,10 +631,11 @@ const MultiplayerGameView = memo(function MultiplayerGameView({
             rollNumber={isMyTurn ? localState.rollNumber : opponentState.rollNumber}
             selectedCategory={isMyTurn ? selectedCategory : null}
             animationSeed={animationSeed}
-            isRolling={isMyTurn ? isRolling : isReplayingOpponentRoll}
-            isDisabled={!canAct}
-            isRollDisabled={false}
+            isRolling={isMyTurn ? isRolling || pendingAction === "ROLL" : isReplayingOpponentRoll}
+            isDisabled={!canAct || pendingAction !== null}
+            isRollDisabled={pendingAction !== null}
             isObserver={!isMyTurn}
+            concealPipsWhileRolling={isMyTurn ? isRolling || pendingAction === "ROLL" : isReplayingOpponentRoll}
             highlightedDieIndex={!isMyTurn ? highlightedOpponentDie : null}
             label={isMyTurn ? `Les dés de ${localName}` : `Les dés de ${opponentName}`}
             trailingControl={reactionsControl}

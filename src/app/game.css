@@ -1361,6 +1361,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+.finished-stat-icon { display: none; }
 .finished-stat dd {
   margin: 0;
   color: var(--ink);
@@ -1964,6 +1965,280 @@
     border: 0;
     box-shadow: none;
   }
+}
+
+/* Résultat sur iPhone : une seule scène, sans défilement ni bandeau décoratif. */
+@media (max-width: 760px) and (orientation: portrait) {
+  body:has(.finished-celebration),
+  .game-shell:has(.finished-celebration[data-outcome]) {
+    background: #1e1e22;
+  }
+  .game-shell:has(.finished-celebration) {
+    padding: max(10px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
+  }
+  .game-shell:has(.finished-celebration) .game-header,
+  .game-shell:has(.finished-celebration) .multiplayer-game-header {
+    width: 100%;
+    flex: none;
+    margin-bottom: 0;
+    color: #f9f6f1;
+    background: transparent;
+  }
+  .game-shell:has(.finished-celebration) .game-logo,
+  .game-shell:has(.finished-celebration) .sound-toggle,
+  .game-shell:has(.finished-celebration) .quit-link {
+    color: #f9f6f1;
+  }
+  .game-shell:has(.finished-celebration) .multiplayer-game-header .game-logo { display: inline-flex; }
+  .game-shell:has(.finished-celebration) .multiplayer-total-summary { display: none; }
+  .game-shell:has(.finished-celebration) .quit-link {
+    border-color: #515159;
+    background: #27282d;
+  }
+  .finished-card.finished-celebration,
+  .finished-card[data-game-mode="duo"].finished-celebration {
+    width: 100%;
+    max-width: none;
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: 10px 0 0;
+    display: flex;
+    justify-content: center;
+    gap: clamp(9px, 1.8dvh, 16px);
+    overflow: hidden;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #f9f6f1;
+  }
+  .finished-card.finished-celebration[data-outcome] { background: transparent; }
+  .finished-celebration > :not(.finished-confetti) { width: 100%; }
+  .finished-confetti { z-index: 0; height: 42%; }
+  .finished-hero,
+  .finished-card[data-game-mode="duo"] .finished-hero {
+    margin: 0;
+    gap: 3px;
+  }
+  .finished-party-emoji,
+  .finished-card[data-game-mode="duo"] .finished-party-emoji {
+    width: 90px;
+    height: 90px;
+    margin: 0 auto 4px;
+    display: grid;
+    place-items: center;
+    font-size: 68px;
+    filter: drop-shadow(0 8px 16px rgb(238 172 64 / 26%));
+  }
+  .finished-hero[data-outcome="loss"] .finished-party-emoji { filter: none; }
+  .finished-result,
+  .finished-card[data-game-mode="duo"] .finished-result {
+    color: #f9f6f1;
+    font-size: clamp(34px, 10vw, 42px);
+    line-height: 1.02;
+    animation: none;
+  }
+  .finished-hero[data-outcome="win"] .finished-result,
+  .finished-hero[data-outcome="loss"] .finished-result,
+  .finished-hero[data-outcome="tie"] .finished-result { color: #f9f6f1; animation: none; }
+  .finished-verdict,
+  .finished-card[data-game-mode="duo"] .finished-verdict {
+    margin: 2px 0 0;
+    color: #eee9e3;
+    font-family: var(--font-jakarta), sans-serif;
+    font-size: clamp(17px, 5vw, 20px);
+    line-height: 1.2;
+  }
+  .finished-tagline {
+    margin: 0;
+    color: #bebdc3;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .finished-scoreboard,
+  .finished-card[data-game-mode="duo"] .finished-scoreboard {
+    gap: 10px;
+    margin: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .finished-player-score,
+  .finished-player-score:nth-child(2),
+  .finished-card[data-game-mode="duo"] .finished-player-score,
+  .finished-card[data-game-mode="duo"] .finished-player-score:nth-child(2) {
+    min-height: 122px;
+    gap: 2px;
+    padding: 11px 7px;
+    border: 1.5px solid #648db0;
+    border-radius: 20px;
+    background: #23374b;
+    box-shadow: none;
+    transform: none;
+    animation: none;
+  }
+  .finished-player-score[data-score-column="opponent"],
+  .finished-card[data-game-mode="duo"] .finished-player-score[data-score-column="opponent"] {
+    border-color: #a75e5d;
+    background: #3c282b;
+  }
+  .finished-player-score[data-score-column="player"],
+  .finished-card[data-game-mode="duo"] .finished-player-score[data-score-column="player"] {
+    border-color: #648db0;
+    background: #23374b;
+  }
+  .finished-card[data-game-mode="duo"] .finished-player-score[data-winner="true"],
+  .finished-card[data-game-mode="duo"] .finished-player-score[data-score-column="opponent"][data-winner="true"] {
+    background: #3c282b;
+  }
+  .finished-card[data-game-mode="duo"] .finished-player-score[data-score-column="player"][data-winner="true"] { background: #23374b; }
+  .finished-score-topline,
+  .finished-card[data-game-mode="duo"] .finished-score-topline { flex-direction: row; justify-content: center; }
+  .finished-player-name,
+  .finished-card[data-game-mode="duo"] .finished-player-name {
+    overflow: hidden;
+    color: #b9d0e5;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .finished-player-score[data-score-column="player"] .finished-player-name { color: #b9d0e5; }
+  .finished-player-score[data-score-column="opponent"] .finished-player-name { color: #e1a5a2; }
+  .finished-winner-mark { color: #f9c968; }
+  .finished-score-number,
+  .finished-card[data-game-mode="duo"] .finished-score-number {
+    color: #fff;
+    font-size: clamp(43px, 12vw, 54px);
+    animation: none !important;
+  }
+  .finished-score-status {
+    min-height: 16px;
+    color: #f9c968;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .finished-celebration:not([data-outcome="tie"]) .finished-player-score[data-winner] {
+    transform: none;
+    animation: none;
+  }
+  .finished-stats,
+  .finished-card[data-game-mode="duo"] .finished-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin: 0;
+    animation: none;
+  }
+  .finished-card .solo-stats-disclosure { display: none; }
+  .finished-stat,
+  .finished-card[data-game-mode="duo"] .finished-stat {
+    min-width: 0;
+    min-height: 86px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 3px;
+    border: 1px solid #3b3c43;
+    border-radius: 15px;
+    background: #27282d;
+  }
+  .finished-stat-icon { display: block; margin-bottom: 4px; color: #f6c56b; font-size: 20px; line-height: 1; }
+  .finished-stat:first-child .finished-stat-icon { color: #76be78; }
+  .finished-stat:nth-child(3) .finished-stat-icon { color: #d0d4dc; }
+  .finished-stat:nth-child(4) .finished-stat-icon { color: #c3c4cb; }
+  .finished-stat dt,
+  .finished-card[data-game-mode="duo"] .finished-stat dt {
+    color: #b9b8bf;
+    font-size: 9px;
+    line-height: 1.05;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .finished-stat dd,
+  .finished-card[data-game-mode="duo"] .finished-stat dd {
+    color: #f9f6f1;
+    font-size: 12px;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+  .finished-actions,
+  .finished-card[data-game-mode="duo"] .finished-actions {
+    max-width: none;
+    gap: 8px;
+    margin: 0;
+  }
+  .finished-actions .primary-action,
+  .finished-card[data-game-mode="duo"] .finished-actions .primary-action {
+    min-height: 54px;
+    gap: 10px;
+    border-radius: 17px;
+    background: #f9c968;
+    color: #1e1e22;
+    font-size: 18px;
+    box-shadow: none;
+  }
+  .finished-actions .primary-action:disabled { opacity: .65; }
+  .finished-actions .secondary-action,
+  .finished-card[data-game-mode="duo"] .finished-actions .secondary-action {
+    min-height: 48px;
+    gap: 10px;
+    border: 1px solid #515159;
+    border-radius: 17px;
+    background: #27282d;
+    color: #f9f6f1;
+    font-size: 16px;
+    box-shadow: none;
+  }
+  .finished-actions .primary-action span,
+  .finished-actions .secondary-action span { font-size: 20px; line-height: 1; }
+  .finished-card[data-game-mode="duo"] .duo-rivalry {
+    padding: 5px 8px;
+    border: 0;
+    border-radius: 12px;
+    background: #27282d;
+    color: #f9f6f1;
+  }
+  .finished-card[data-game-mode="duo"] .duo-rivalry-score { font-size: 12px; }
+  .finished-card[data-game-mode="duo"] .duo-rivalry-score strong { font-size: 18px; }
+  .finished-card[data-game-mode="duo"] .duo-series-best { color: #b9b8bf; }
+  .finished-card[data-game-mode="duo"] .duo-series-option {
+    min-height: 40px;
+    border-color: #515159;
+    background: transparent;
+    color: #f9f6f1;
+    font-size: 12px;
+  }
+  .finished-rematch-hint { color: #f9c968; font-size: 12px; }
+  .finished-actions a:focus-visible,
+  .finished-actions button:focus-visible,
+  .game-shell:has(.finished-celebration) .game-header a:focus-visible,
+  .game-shell:has(.finished-celebration) .game-header button:focus-visible {
+    outline: 3px solid #f9c968;
+    outline-offset: 3px;
+  }
+}
+
+@media (max-width: 360px) and (orientation: portrait) {
+  .finished-party-emoji { height: 68px; font-size: 54px; }
+  .finished-stat { min-height: 78px; }
+  .finished-stat dt { font-size: 8px; }
+}
+
+@media (max-width: 760px) and (max-height: 700px) and (orientation: portrait) {
+  .finished-card.finished-celebration,
+  .finished-card[data-game-mode="duo"].finished-celebration { gap: 6px; }
+  .finished-party-emoji,
+  .finished-card[data-game-mode="duo"] .finished-party-emoji { width: 72px; height: 72px; font-size: 55px; }
+  .finished-player-score,
+  .finished-player-score:nth-child(2),
+  .finished-card[data-game-mode="duo"] .finished-player-score,
+  .finished-card[data-game-mode="duo"] .finished-player-score:nth-child(2) { min-height: 106px; }
+  .finished-stat,
+  .finished-card[data-game-mode="duo"] .finished-stat { min-height: 76px; }
 }
 
 /* 14. Reduced-motion */

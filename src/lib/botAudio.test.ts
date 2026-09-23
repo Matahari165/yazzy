@@ -3,7 +3,7 @@ import { botAudio, readSoundEnabled, writeSoundEnabled } from "./botAudio";
 
 describe("botAudio", () => {
   it("reste optionnel lorsque les API du navigateur sont absentes", () => {
-    expect(readSoundEnabled()).toBe(true);
+    expect(readSoundEnabled()).toBe(false);
     expect(() => writeSoundEnabled(false)).not.toThrow();
     expect(() => botAudio.startGame()).not.toThrow();
     expect(() => botAudio.startGame(true)).not.toThrow();

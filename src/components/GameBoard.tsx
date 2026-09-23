@@ -49,7 +49,7 @@ export function GameBoard() {
   const [maxBurst, setMaxBurst] = useState<{ category: CategoryId; side: "player" | "opponent"; burstKey: number } | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [isDemonThemeEnabled, setIsDemonThemeEnabled] = useState<boolean | null>(null);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const rollTimerRef = useRef<number | null>(null);
   const reactionTimerRef = useRef<number | null>(null);
   const burstTimerRef = useRef<number | null>(null);

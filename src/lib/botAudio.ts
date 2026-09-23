@@ -25,9 +25,9 @@ type AudioWindow = Window & typeof globalThis & {
 
 export function readSoundEnabled() {
   try {
-    return window.localStorage.getItem(SOUND_ENABLED_KEY) !== "off";
+    return window.localStorage.getItem(SOUND_ENABLED_KEY) === "on";
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -50,7 +50,7 @@ class BotAudioEngine {
   private demonFadeTimer: number | null = null;
   private wantsMusic = false;
   private isUnlockingMusic = false;
-  private enabled = true;
+  private enabled = false;
   private unlockListenersAttached = false;
 
   constructor() {

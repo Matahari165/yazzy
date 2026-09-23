@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   holdActiveDie,
-  rollActivePlayer,
   scoreActiveCategory,
   type MultiplayerGameState,
   type MultiplayerRole,
@@ -18,7 +17,7 @@ import {
   type RoomSuccess,
 } from "../domain/multiplayerRoomProtocol";
 import type { ClientAction } from "../domain/protocol";
-import type { CategoryId, DieValue } from "../domain/yatzy";
+import type { CategoryId } from "../domain/yatzy";
 
 const PLAYER_TOKEN_PREFIX = "yazzy.multiplayer.token.v2.";
 export const FOREGROUND_POLL_INTERVAL_MS = 800;
@@ -577,13 +576,8 @@ export function useMultiplayerGame(
     }
     actionPendingRef.current = true;
     setPendingAction(action.type);
-    if (action.type === "ROLL") {
-      // Preview locale immédiate : l'animation part sur de nouveaux dés sans
-      // attendre le RTT. Le serveur reste autoritaire et réconcilie à l'arrivée.
-      const previewDie = () => (Math.floor(Math.random() * 6) + 1) as DieValue;
-      setGame((current) => current ? rollActivePlayer(current, role, previewDie) : current);
-    } else if (action.type === "SCORE") {
-      // Score optimiste immédiat : la feuille s'actualise sans attendre le RTT.
+    if (action.type === "SCORE") {
+      // Le score reste optimiste : la feuille s'actualise sans attendre le RTT.
       // Le serveur reste autoritaire et réconcilie à l'arrivée.
       setGame((current) => current ? scoreActiveCategory(current, role, action.category) : current);
     }

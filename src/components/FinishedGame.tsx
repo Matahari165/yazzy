@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import Link from "next/link";
 import type { GameState } from "@/domain/game";
 import type { MultiplayerGameState } from "@/domain/multiplayer";
@@ -160,34 +160,6 @@ function countZeros(scores: Partial<Record<CategoryId, number>>): number {
   return Object.values(scores).filter((points) => points === 0).length;
 }
 
-function useCountUp(target: number, durationMs = 900): number {
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    let frame = 0;
-    let start: number | null = null;
-    let reduced = false;
-    try {
-      reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    } catch {
-      reduced = false;
-    }
-    if (reduced || durationMs <= 0) {
-      frame = window.requestAnimationFrame(() => setValue(target));
-      return () => window.cancelAnimationFrame(frame);
-    }
-    const step = (now: number) => {
-      if (start === null) start = now;
-      const progress = Math.min(1, (now - start) / durationMs);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(eased * target));
-      if (progress < 1) frame = window.requestAnimationFrame(step);
-    };
-    frame = window.requestAnimationFrame(step);
-    return () => window.cancelAnimationFrame(frame);
-  }, [target, durationMs]);
-  return value;
-}
-
 export function FinishedGame({
   game,
   localPlayerId = "human",
@@ -249,9 +221,6 @@ export function FinishedGame({
   const opponentYatzy = opponentScores.yatzy === 50;
   const localZeros = countZeros(localScores);
 
-  const animatedLocal = useCountUp(localPoints);
-  const animatedOpponent = useCountUp(opponentPoints);
-
   const partyKey = isMultiplayer
     ? `${game.roomId}:${game.rematchCount}:${localRole}:${outcome}`
     : `${game.gameId ?? "ancienne-partie"}:${localPoints}:${opponentPoints}:${outcome}`;
@@ -273,19 +242,13 @@ export function FinishedGame({
       data-game-mode={mode}
       data-outcome={outcome}
     >
-      <div className="finished-ambient" data-outcome={outcome} aria-hidden="true">
-        <span className="finished-rays" />
-        <span className="finished-rain" />
-        <span className="finished-cloud" />
-        <span className="finished-cloud" />
-      </div>
       <div
         className="finished-confetti"
         data-variant={party.variant}
         data-outcome={outcome}
         aria-hidden="true"
       >
-        {party.pieces.map((piece, index) => (
+        {party.pieces.slice(0, outcome === "win" ? 24 : 0).map((piece, index) => (
           <i
             key={index}
             style={
@@ -305,17 +268,13 @@ export function FinishedGame({
       </div>
 
       <header className="finished-hero" data-outcome={outcome}>
-        {!isMultiplayer ? <p className="eyebrow finished-eyebrow">Partie terminée · Solo</p> : null}
-        <div className="finished-party-emoji" aria-hidden="true">{party.emoji}</div>
+        <div className="finished-party-emoji" aria-hidden="true">{outcome === "win" ? "🏆" : outcome === "loss" ? "🎲" : "🤝"}</div>
         <h1 id="finished-title" className="finished-result" tabIndex={-1}>
-          {resultTitle}
+          {resultTitle}{outcome === "win" ? " !" : ""}
         </h1>
         <p className="finished-verdict">{verdict}</p>
-        {!isMultiplayer ? <p className="finished-tagline">{party.tagline}</p> : null}
+        {!isMultiplayer ? <p className="finished-tagline">{outcome === "win" ? "Le bot demande sa revanche." : outcome === "loss" ? "La revanche t’attend." : "On refait une partie ?"}</p> : null}
       </header>
-      {!isMultiplayer && outcome === "loss" ? (
-        <p className="finished-taunt" aria-hidden="true">STRIP ! STRIP ! STRIP !</p>
-      ) : null}
 
       <div className="finished-scoreboard" role="list" aria-label="Scores finaux">
         <article
@@ -332,7 +291,8 @@ export function FinishedGame({
               <span className="finished-winner-mark" aria-hidden="true">✦</span>
             ) : null}
           </div>
-          <strong className="finished-score-number" data-score={localPoints} aria-hidden="true">{animatedLocal}</strong>
+          <strong className="finished-score-number" data-score={localPoints} aria-hidden="true">{localPoints}</strong>
+          {playerIsWinner ? <span className="finished-score-status">Gagnant</span> : null}
         </article>
 
         <article
@@ -349,7 +309,8 @@ export function FinishedGame({
               <span className="finished-winner-mark" aria-hidden="true">✦</span>
             ) : null}
           </div>
-          <strong className="finished-score-number" data-score={opponentPoints} aria-hidden="true">{animatedOpponent}</strong>
+          <strong className="finished-score-number" data-score={opponentPoints} aria-hidden="true">{opponentPoints}</strong>
+          {opponentIsWinner ? <span className="finished-score-status">Gagnant</span> : null}
         </article>
       </div>
 
@@ -372,19 +333,19 @@ export function FinishedGame({
 
       <dl className="finished-stats" aria-label="Détails de la partie">
         <div className="finished-stat">
-          <dt>Écart</dt>
-          <dd>{isTie ? "0" : `+${gap}`}</dd>
+          <dt><span className="finished-stat-icon" aria-hidden="true">↗</span>Écart</dt>
+          <dd>{isTie ? "0" : isWinner ? `+${gap}` : `−${gap}`}</dd>
         </div>
         <div className="finished-stat">
-          <dt>Ton meilleur coup</dt>
+          <dt><span className="finished-stat-icon" aria-hidden="true">★</span>Meilleur coup</dt>
           <dd>{localBest ? `${localBest.label} · ${localBest.points}` : "—"}</dd>
         </div>
         <div className="finished-stat">
-          <dt>Yatzy</dt>
-          <dd>{localYatzy ? "Réussi 🎲" : opponentYatzy ? `${opponentLabel} l'a eu` : "Personne"}</dd>
+          <dt><span className="finished-stat-icon" aria-hidden="true">⚄</span>Yatzy</dt>
+          <dd>{localYatzy ? "Réussi" : opponentYatzy ? `${opponentLabel} l’a eu` : "Aucun"}</dd>
         </div>
         <div className="finished-stat">
-          <dt>Cases à 0</dt>
+          <dt><span className="finished-stat-icon" aria-hidden="true">▦</span>Cases à 0</dt>
           <dd>{localZeros}</dd>
         </div>
       </dl>
@@ -409,9 +370,9 @@ export function FinishedGame({
             ) : null}
           </>
         ) : (
-          <Link className="primary-action" href="/bot" onClick={onLeave}>Rejouer</Link>
+          <Link className="primary-action" href="/bot" onClick={onLeave}><span aria-hidden="true">▶</span> Rejouer</Link>
         )}
-        <Link className="secondary-action" href="/" onClick={onLeave}>Accueil</Link>
+        <Link className="secondary-action" href="/" onClick={onLeave}><span aria-hidden="true">⌂</span> Accueil</Link>
       </div>
     </section>
   );

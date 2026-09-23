@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { notFound } from "next/navigation";
 import { FinishedGame } from "@/components/FinishedGame";
+import { GameHeader } from "@/components/GameHeader";
 import { ReactionToast } from "@/components/ReactionToast";
 import { ScoreCard } from "@/components/ScoreCard";
 import { YatzyBurst } from "@/components/YatzyBurst";
@@ -46,6 +47,7 @@ const SECTIONS: { title: string; node: React.ReactNode }[] = [
         localName="JoA"
         opponentName="JoB"
         onRematch={() => {}}
+        onSetSeries={() => {}}
       />
     ),
   },
@@ -58,6 +60,7 @@ const SECTIONS: { title: string; node: React.ReactNode }[] = [
         localName="JoA"
         opponentName="JoB"
         onRematch={() => {}}
+        onSetSeries={() => {}}
       />
     ),
   },
@@ -70,6 +73,7 @@ const SECTIONS: { title: string; node: React.ReactNode }[] = [
         localName="JoA"
         opponentName="JoB"
         onRematch={() => {}}
+        onSetSeries={() => {}}
       />
     ),
   },
@@ -77,7 +81,23 @@ const SECTIONS: { title: string; node: React.ReactNode }[] = [
 
 export default function PreviewPage() {
   const [burstKey, setBurstKey] = useState(1);
+  const resultPreview = useSyncExternalStore(
+    () => () => {},
+    () => {
+      const query = new URLSearchParams(window.location.search).get("result");
+      const requested = Number(query);
+      return query !== null && Number.isInteger(requested) && requested >= 0 && requested < SECTIONS.length ? requested : -1;
+    },
+    () => -2,
+  );
   if (process.env.NODE_ENV === "production") return notFound();
+  if (resultPreview === -2) return null;
+  if (resultPreview >= 0) {
+    return <main className="game-shell" id="main-content">
+      <GameHeader soundEnabled={false} onToggleSound={() => {}} onQuit={() => {}} />
+      {SECTIONS[resultPreview].node}
+    </main>;
+  }
 
   return (
     <main

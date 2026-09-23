@@ -10,11 +10,19 @@ const PIPS: Record<DieValue, number[]> = {
   6: [0, 2, 3, 5, 6, 8],
 };
 
-export const DieGlyph = memo(function DieGlyph({ value, className = "" }: { value: DieValue; className?: string }) {
+export const DieGlyph = memo(function DieGlyph({
+  value,
+  className = "",
+  concealPips = false,
+}: {
+  value: DieValue;
+  className?: string;
+  concealPips?: boolean;
+}) {
   return (
     <span className={`die-glyph ${className}`.trim()} aria-hidden="true">
       {Array.from({ length: 9 }, (_, pip) => (
-        <span className="pip" data-visible={PIPS[value].includes(pip)} key={pip} />
+        <span className="pip" data-visible={!concealPips && PIPS[value].includes(pip)} key={pip} />
       ))}
     </span>
   );
@@ -28,6 +36,7 @@ type DiceProps = {
   finalResult?: boolean;
   rolling: boolean;
   rollAnimationStyle?: CSSProperties;
+  concealPipsWhileRolling?: boolean;
   index: number;
   onToggle: () => void;
 };
@@ -40,9 +49,12 @@ export const Dice = memo(function Dice({
   finalResult = false,
   rolling,
   rollAnimationStyle,
+  concealPipsWhileRolling = false,
   index,
   onToggle,
 }: DiceProps) {
+  const concealPips = concealPipsWhileRolling && rolling && !held;
+
   return (
     <button
       type="button"
@@ -53,11 +65,13 @@ export const Dice = memo(function Dice({
       style={rollAnimationStyle}
       aria-pressed={held}
       aria-keyshortcuts={`Alt+${index + 1}`}
-      aria-label={`Dé ${index + 1} : ${value}, ${finalResult ? "résultat final" : held ? "gardé" : "à relancer"}`}
+      aria-label={concealPips
+        ? `Dé ${index + 1} : lancement en cours`
+        : `Dé ${index + 1} : ${value}, ${finalResult ? "résultat final" : held ? "gardé" : "à relancer"}`}
       disabled={disabled}
       onClick={onToggle}
     >
-      <DieGlyph value={value} className="die-face" />
+      <DieGlyph value={value} className="die-face" concealPips={concealPips} />
     </button>
   );
 });

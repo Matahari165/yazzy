@@ -12,6 +12,7 @@ type DiceTrayProps = {
   rolling: boolean;
   disabled: boolean;
   finalResult?: boolean;
+  concealPipsWhileRolling?: boolean;
   label: string;
   /** Ton du cadre : "player" (tes dés) ou "opponent" (dés du bot). */
   tone?: "player" | "opponent";
@@ -27,6 +28,7 @@ function DiceTray({
   rolling,
   disabled,
   finalResult,
+  concealPipsWhileRolling = false,
   label,
   tone = "player",
   onToggle,
@@ -72,6 +74,7 @@ function DiceTray({
               finalResult={finalResult ?? rollNumber >= 3}
               rolling={rolling}
               rollAnimationStyle={trayStyles[index]}
+              concealPipsWhileRolling={concealPipsWhileRolling}
               onToggle={toggleHandlers[index]}
             />
           ))
@@ -90,6 +93,7 @@ type GameTableProps = {
   isDisabled?: boolean;
   isRollDisabled?: boolean;
   isObserver?: boolean;
+  concealPipsWhileRolling?: boolean;
   highlightedDieIndex?: number | null;
   label?: string;
   trailingControl?: ReactNode;
@@ -107,6 +111,7 @@ export const GameTable = memo(function GameTable({
   isDisabled = false,
   isRollDisabled = false,
   isObserver = false,
+  concealPipsWhileRolling = false,
   highlightedDieIndex = null,
   label = "Tes cinq dés",
   trailingControl,
@@ -139,6 +144,7 @@ export const GameTable = memo(function GameTable({
         animationSeed={animationSeed}
         rolling={isRolling}
         disabled={isDisabled}
+        concealPipsWhileRolling={concealPipsWhileRolling}
         label={label}
         tone={isObserver ? "opponent" : "player"}
         onToggle={onToggleDie}
