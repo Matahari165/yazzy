@@ -746,6 +746,41 @@
 .reaction-picker button:nth-child(10) { --i: 9; }
 .reaction-picker button:nth-child(n+11) { --i: 10; }
 .reaction-picker button:hover { background: var(--surface-muted); }
+.reaction-picker .reaction-more {
+  grid-column: 2 / -1;
+  width: auto;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+  background: var(--surface-muted);
+}
+.reaction-suggestions {
+  position: absolute;
+  z-index: 29;
+  right: 0;
+  bottom: calc(100% + 8px);
+  display: flex;
+  gap: 3px;
+  padding: 6px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 10px 24px rgb(30 27 24 / 14%);
+  animation: reaction-picker-enter 180ms var(--ease-out) both;
+}
+.reaction-suggestions button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 23px;
+  cursor: pointer;
+}
+.reaction-suggestions button:hover { background: var(--surface-muted); }
+.reaction-suggestions button:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
 .reaction-phrase {
   grid-column: 1 / -1;
   width: auto !important;
@@ -851,6 +886,32 @@
 .multiplayer-game-header .game-logo { font-size: 19px; }
 .multiplayer-total-summary { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 48px 48px; align-items: center; gap: 8px; flex: 1; margin-left: auto; }
 .multiplayer-total-summary .total-label { padding-left: 2px; }
+.multiplayer-total-summary .total-label { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.duo-total-history { color: var(--ink-soft); font-size: 11px; font-weight: 700; }
+.duo-total-score { position: relative; }
+.duo-total-score[data-lead-burst="true"] {
+  animation: duo-lead-burst 1.5s var(--ease-out) both;
+}
+.duo-total-score[data-lead-burst="true"]::after {
+  content: "";
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: 1px;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: duo-lead-underline 1.5s var(--ease-out) both;
+}
+@keyframes duo-lead-burst {
+  0%, 100% { transform: scale(1); }
+  22% { transform: scale(1.16); }
+  48% { transform: scale(1.04); }
+}
+@keyframes duo-lead-underline {
+  0%, 100% { opacity: 0; transform: scaleX(0.3); }
+  20%, 65% { opacity: 1; transform: scaleX(1); }
+}
 .multiplayer-quit-link {
   width: 44px;
   min-width: 44px;
@@ -1815,13 +1876,103 @@
   .score-card { display: flex; flex-direction: column; }
 }
 
+/* Duo : le résultat reste un duel lisible, même sur un petit écran. */
+.finished-card[data-game-mode="duo"] .finished-hero { margin-bottom: 20px; }
+.finished-card[data-game-mode="duo"] .finished-scoreboard {
+  gap: 0;
+  margin-bottom: 18px;
+  overflow: hidden;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 22px;
+  background: var(--surface);
+}
+.finished-card[data-game-mode="duo"] .finished-player-score,
+.finished-card[data-game-mode="duo"] .finished-player-score:nth-child(2) {
+  gap: 6px;
+  padding: 17px 10px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.finished-card[data-game-mode="duo"] .finished-player-score:nth-child(2) {
+  border-left: 1.5px solid var(--line);
+}
+.finished-card[data-game-mode="duo"] .finished-player-score[data-winner="true"] {
+  background: var(--player-soft);
+}
+.finished-card[data-game-mode="duo"] .finished-player-score[data-score-column="opponent"][data-winner="true"] {
+  background: var(--opponent-soft);
+}
+.finished-card[data-game-mode="duo"] .finished-stats { margin-top: 14px; }
+.finished-card[data-game-mode="duo"] .finished-actions { margin-top: 20px; }
+.duo-rivalry {
+  display: grid;
+  gap: 5px;
+  padding: 10px 14px;
+  border-top: 1.5px solid var(--line);
+  border-bottom: 1.5px solid var(--line);
+  color: var(--ink);
+}
+.duo-rivalry-score { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 700; }
+.duo-rivalry-score strong { font-family: var(--font-display); font-size: 24px; font-variant-numeric: tabular-nums; line-height: 1; }
+.duo-rivalry-score strong span { padding-inline: 4px; color: var(--ink-soft); }
+.duo-series-winner { margin: 0; color: var(--green-ink); font-size: 15px; font-weight: 800; }
+.duo-series-best { margin: 0; color: var(--ink-soft); font-size: 12px; font-weight: 700; }
+.duo-series-option {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.duo-series-option:hover { background: var(--surface-muted); }
+.duo-series-option:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.duo-series-option[aria-pressed="true"] { border-color: var(--player); color: var(--player); background: var(--player-soft); }
+.waiting-series-option { display: block; width: 100%; margin: 14px auto 12px; }
+
+@media (max-width: 430px) {
+  .finished-card[data-game-mode="duo"].finished-celebration {
+    justify-content: safe center;
+    padding: 14px 16px max(18px, env(safe-area-inset-bottom));
+  }
+  .finished-card[data-game-mode="duo"] .finished-hero { margin-bottom: 16px; }
+  .finished-card[data-game-mode="duo"] .finished-party-emoji { font-size: 42px; }
+  .finished-card[data-game-mode="duo"] .finished-result { font-size: 38px; }
+  .finished-card[data-game-mode="duo"] .finished-verdict { font-size: 16px; }
+  .finished-card[data-game-mode="duo"] .finished-scoreboard { margin-bottom: 12px; }
+  .finished-card[data-game-mode="duo"] .finished-player-score,
+  .finished-card[data-game-mode="duo"] .finished-player-score:nth-child(2) { padding: 12px 8px; }
+  .finished-card[data-game-mode="duo"] .finished-score-topline { flex-direction: row; justify-content: center; }
+  .finished-card[data-game-mode="duo"] .finished-player-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+  .finished-card[data-game-mode="duo"] .finished-score-number { font-size: 42px; }
+  .finished-card[data-game-mode="duo"] .duo-rivalry { padding: 8px 10px; }
+  .finished-card[data-game-mode="duo"] .duo-rivalry-score strong { font-size: 22px; }
+  .finished-card[data-game-mode="duo"] .finished-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+  .finished-card[data-game-mode="duo"] .finished-stat { padding: 7px 9px; }
+  .finished-card[data-game-mode="duo"] .finished-stat dt { font-size: 10px; }
+  .finished-card[data-game-mode="duo"] .finished-stat dd { font-size: 13px; }
+  .finished-card[data-game-mode="duo"] .finished-actions { gap: 4px; margin-top: 16px; }
+  .finished-card[data-game-mode="duo"] .finished-actions .primary-action { min-height: 52px; font-size: 17px; }
+  .finished-card[data-game-mode="duo"] .finished-actions .secondary-action {
+    min-height: 44px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+}
+
 /* 14. Reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 80ms !important; transition-duration: 80ms !important; }
   .game-logo-tile { transition: none; }
   .die-button { transition: none; }
   .score-value-direct:hover { transform: none; }
-  .bot-status::before, .reaction-picker, .reaction-picker button, .reaction-toast, .reaction-face b, .reaction-face i, .reaction-face::before, .reaction-face::after, .score-help-popover, .score-value[data-highlighted="true"], .score-value[data-max="true"], .score-max-burst i, .die-button[data-held="true"]::after, .game-logo-tile[data-bump="true"], .total-score-value[data-bump="true"], .finished-card, .confirm-dialog-card, .game-table, .bot-turn-panel, .die-button[data-highlighted="true"] .die-face { animation: none; }
+  .bot-status::before, .reaction-picker, .reaction-picker button, .reaction-suggestions, .reaction-toast, .reaction-face b, .reaction-face i, .reaction-face::before, .reaction-face::after, .score-help-popover, .score-value[data-highlighted="true"], .score-value[data-max="true"], .score-max-burst i, .die-button[data-held="true"]::after, .game-logo-tile[data-bump="true"], .total-score-value[data-bump="true"], .duo-total-score[data-lead-burst="true"], .duo-total-score[data-lead-burst="true"]::after, .finished-card, .confirm-dialog-card, .game-table, .bot-turn-panel, .die-button[data-highlighted="true"] .die-face { animation: none; }
   .die-button[data-rolling="true"] .die-face { animation: die-fade 80ms ease both; }
   .reaction-toast { animation: reaction-fade 2400ms linear both; }
   .finished-card.finished-celebration, .finished-result-mark, .finished-player-score, .finished-score-number, .finished-particles i { animation: none; }

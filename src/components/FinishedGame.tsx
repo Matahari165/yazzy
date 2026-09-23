@@ -10,6 +10,7 @@ type FinishedGameProps = {
   localPlayerId?: "human" | "bot";
   localRole?: "player1" | "player2";
   onRematch?: () => void;
+  onSetSeries?: (enabled: boolean) => void;
   rematchRequested?: boolean;
   opponentWantsRematch?: boolean;
   localName?: string;
@@ -83,55 +84,64 @@ const LOSS_TAGLINES_BOT = [
   "Secoue plus fort la prochaine fois !",
 ];
 
-function randomOf<T>(items: readonly T[]): T {
-  return items[Math.floor(Math.random() * items.length)];
+function seededRandom(key: string): () => number {
+  let seed = 2166136261;
+  for (const character of key) seed = Math.imul(seed ^ character.charCodeAt(0), 16777619);
+  return () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
 }
 
-function buildPieces(count: number, colors: readonly string[], slow: boolean): ConfettiPiece[] {
+function randomOf<T>(items: readonly T[], random: () => number): T {
+  return items[Math.floor(random() * items.length)];
+}
+
+function buildPieces(count: number, colors: readonly string[], slow: boolean, random: () => number): ConfettiPiece[] {
   return Array.from({ length: count }, (_, index) => ({
-    left: Math.random() * 100,
+    left: random() * 100,
     delay: slow
-      ? Math.random() * 2.2
+      ? random() * 2.2
       : index % 4 === 0
-        ? 1.6 + Math.random() * 1.2
-        : Math.random() * 1.1,
-    duration: slow ? 4.5 + Math.random() * 3 : 2.4 + Math.random() * 1.8,
-    size: 6 + Math.random() * 7,
-    color: randomOf(colors),
-    round: Math.random() < 0.35,
-    drift: (Math.random() - 0.5) * 260,
+        ? 1.6 + random() * 1.2
+        : random() * 1.1,
+    duration: slow ? 4.5 + random() * 3 : 2.4 + random() * 1.8,
+    size: 6 + random() * 7,
+    color: randomOf(colors, random),
+    round: random() < 0.35,
+    drift: (random() - 0.5) * 260,
   }));
 }
 
-function pickParty(outcome: GameOutcome, isMultiplayer: boolean, opponentLabel: string): Party {
+function pickParty(outcome: GameOutcome, isMultiplayer: boolean, opponentLabel: string, random: () => number): Party {
   const fill = (template: string) => template.replaceAll("{o}", opponentLabel);
   if (outcome === "win") {
     // Trois vagues : explosion, retombée, pluie tardive.
-    const pieces = buildPieces(90, randomOf(WIN_PALETTES), false).map((piece, index) =>
+    const pieces = buildPieces(90, randomOf(WIN_PALETTES, random), false, random).map((piece, index) =>
       index % 3 === 0
-        ? { ...piece, delay: 1.6 + Math.random() * 1.2, duration: piece.duration + 1 }
+        ? { ...piece, delay: 1.6 + random() * 1.2, duration: piece.duration + 1 }
         : piece,
     );
     return {
-      variant: randomOf(PARTY_VARIANTS),
-      emoji: randomOf(WIN_EMOJIS),
-      tagline: fill(randomOf(isMultiplayer ? WIN_TAGLINES_DUO : WIN_TAGLINES_BOT)),
+      variant: randomOf(PARTY_VARIANTS, random),
+      emoji: randomOf(WIN_EMOJIS, random),
+      tagline: fill(randomOf(isMultiplayer ? WIN_TAGLINES_DUO : WIN_TAGLINES_BOT, random)),
       pieces,
     };
   }
   if (outcome === "loss") {
     return {
       variant: "rain",
-      emoji: randomOf(LOSS_EMOJIS),
-      tagline: fill(randomOf(isMultiplayer ? LOSS_TAGLINES_DUO : LOSS_TAGLINES_BOT)),
-      pieces: buildPieces(26, LOSS_COLORS, true),
+      emoji: randomOf(LOSS_EMOJIS, random),
+      tagline: fill(randomOf(isMultiplayer ? LOSS_TAGLINES_DUO : LOSS_TAGLINES_BOT, random)),
+      pieces: buildPieces(26, LOSS_COLORS, true, random),
     };
   }
   return {
     variant: "sway",
-    emoji: randomOf(TIE_EMOJIS),
-    tagline: randomOf(TIE_TAGLINES),
-    pieces: buildPieces(36, TIE_COLORS, false),
+    emoji: randomOf(TIE_EMOJIS, random),
+    tagline: randomOf(TIE_TAGLINES, random),
+    pieces: buildPieces(36, TIE_COLORS, false, random),
   };
 }
 
@@ -183,6 +193,7 @@ export function FinishedGame({
   localPlayerId = "human",
   localRole,
   onRematch,
+  onSetSeries,
   rematchRequested = false,
   opponentWantsRematch = false,
   localName = "Toi",
@@ -216,13 +227,19 @@ export function FinishedGame({
   const mode = isMultiplayer ? "duo" : "bot";
   const opponentLabel = isMultiplayer ? opponentName : "Bot";
   const playerLabel = isMultiplayer ? localName : "Toi";
+  const localDuelWins = isMultiplayer && localRole ? game.duelWins[localRole] : 0;
+  const opponentDuelWins = isMultiplayer && localRole ? game.duelWins[localRole === "player1" ? "player2" : "player1"] : 0;
+  const localSeriesWins = isMultiplayer && localRole ? game.series.wins[localRole] : 0;
+  const opponentSeriesWins = isMultiplayer && localRole ? game.series.wins[localRole === "player1" ? "player2" : "player1"] : 0;
+  const seriesWinner = isMultiplayer ? game.series.winner : null;
+  const seriesBest = isMultiplayer ? game.series.bestMove : null;
   const resultTitle = isTie ? "Égalité" : isWinner ? "Victoire" : "Défaite";
   const gap = Math.abs(localPoints - opponentPoints);
   const verdict = isTie
     ? `Égalité à ${localPoints} points`
     : isWinner
-      ? `Victoire de ${gap} point${gap > 1 ? "s" : ""}`
-      : `Défaite de ${gap} point${gap > 1 ? "s" : ""}`;
+      ? `${isMultiplayer ? "+" : "Victoire de "}${gap} point${gap > 1 ? "s" : ""}`
+      : `${isMultiplayer ? "−" : "Défaite de "}${gap} point${gap > 1 ? "s" : ""}`;
 
   const playerIsWinner = isWinner;
   const opponentIsWinner = !isWinner && !isTie;
@@ -235,15 +252,17 @@ export function FinishedGame({
   const animatedLocal = useCountUp(localPoints);
   const animatedOpponent = useCountUp(opponentPoints);
 
-  // Tiré au sort une fois à l'ouverture : cet écran ne se monte que côté
-  // client une fois la partie chargée, donc pas de divergence serveur/client.
-  const [party] = useState<Party>(() => pickParty(outcome, isMultiplayer, opponentLabel));
+  const partyKey = isMultiplayer
+    ? `${game.roomId}:${game.rematchCount}:${localRole}:${outcome}`
+    : `${game.gameId ?? "ancienne-partie"}:${localPoints}:${opponentPoints}:${outcome}`;
+  const [party] = useState<Party>(() => pickParty(outcome, isMultiplayer, opponentLabel, seededRandom(partyKey)));
 
+  const startingNewSeries = isMultiplayer && game.series.enabled && game.series.bestMove === null;
   const rematchLabel = rematchRequested
     ? "En attente de ton ami… (1/2)"
     : opponentWantsRematch
-      ? "Accepter la revanche"
-      : "Revanche";
+      ? startingNewSeries ? "Accepter la série" : "Accepter la revanche"
+      : startingNewSeries ? "Lancer la série" : "Revanche";
 
   return (
     <section
@@ -286,15 +305,15 @@ export function FinishedGame({
       </div>
 
       <header className="finished-hero" data-outcome={outcome}>
-        <p className="eyebrow finished-eyebrow">Partie terminée · {isMultiplayer ? "Duo" : "Solo"}</p>
+        {!isMultiplayer ? <p className="eyebrow finished-eyebrow">Partie terminée · Solo</p> : null}
         <div className="finished-party-emoji" aria-hidden="true">{party.emoji}</div>
         <h1 id="finished-title" className="finished-result" tabIndex={-1}>
           {resultTitle}
         </h1>
         <p className="finished-verdict">{verdict}</p>
-        <p className="finished-tagline">{party.tagline}</p>
+        {!isMultiplayer ? <p className="finished-tagline">{party.tagline}</p> : null}
       </header>
-      {outcome === "loss" ? (
+      {!isMultiplayer && outcome === "loss" ? (
         <p className="finished-taunt" aria-hidden="true">STRIP ! STRIP ! STRIP !</p>
       ) : null}
 
@@ -334,6 +353,23 @@ export function FinishedGame({
         </article>
       </div>
 
+      {isMultiplayer ? (
+        <section className="duo-rivalry" aria-label={game.series.enabled ? "Série" : "Duel"}>
+          <div className="duo-rivalry-score">
+            <span>{game.series.enabled ? "Série · premier à 3" : "Vos parties"}</span>
+            <strong aria-label={`${playerLabel} ${game.series.enabled ? localSeriesWins : localDuelWins} victoires, ${opponentLabel} ${game.series.enabled ? opponentSeriesWins : opponentDuelWins} victoires`}>
+              {game.series.enabled ? localSeriesWins : localDuelWins}<span aria-hidden="true">–</span>{game.series.enabled ? opponentSeriesWins : opponentDuelWins}
+            </strong>
+          </div>
+          {seriesWinner ? (
+            <p className="duo-series-winner">{seriesWinner === localRole ? "Tu remportes la série" : `${opponentLabel} remporte la série`}</p>
+          ) : null}
+          {seriesWinner && seriesBest ? (
+            <p className="duo-series-best">Coup de la série · {seriesBest.playerName} · {CATEGORY_BY_ID[seriesBest.category].label} {seriesBest.points}</p>
+          ) : null}
+        </section>
+      ) : null}
+
       <dl className="finished-stats" aria-label="Détails de la partie">
         <div className="finished-stat">
           <dt>Écart</dt>
@@ -358,11 +394,18 @@ export function FinishedGame({
       <div className="finished-actions">
         {isMultiplayer && onRematch ? (
           <>
-            <button className="primary-action" type="button" disabled={rematchRequested} onClick={onRematch}>
-              {rematchLabel}
-            </button>
+            {seriesWinner && onSetSeries ? (
+              <button className="primary-action" type="button" onClick={() => onSetSeries(true)}>Nouvelle série</button>
+            ) : (
+              <button className="primary-action" type="button" disabled={rematchRequested} onClick={onRematch}>
+                {rematchLabel}
+              </button>
+            )}
             {opponentWantsRematch && !rematchRequested ? (
               <p className="finished-rematch-hint" role="status">Ton ami veut déjà la revanche !</p>
+            ) : null}
+            {!game.series.enabled && onSetSeries ? (
+              <button className="duo-series-option" type="button" onClick={() => onSetSeries(true)}>Jouer en série · premier à 3</button>
             ) : null}
           </>
         ) : (

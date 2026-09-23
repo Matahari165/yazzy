@@ -149,6 +149,22 @@ describe("service de salon privé", () => {
     }
   });
 
+  it("persiste le mode série dans le salon et le restitue à l'invité", async () => {
+    const store = new MemoryRoomStore();
+    await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN, playerName: "Alice" }, 1_000);
+    const enabled = await command(store, {
+      type: "ACTION", role: "player1", token: HOST_TOKEN,
+      actionId: ACTION_ID, action: { type: "SET_SERIES", enabled: true },
+    }, 1_001);
+    const joined = await command(store, { type: "CONNECT", role: "player2", token: GUEST_TOKEN, playerName: "Bob" }, 1_002);
+    expect(enabled.body).toMatchObject({ ok: true, game: { series: { enabled: true, targetWins: 3 } } });
+    expect(joined.body).toMatchObject({ ok: true, game: {
+      rematchCount: 0,
+      series: { enabled: true, wins: { player1: 0, player2: 0 }, winner: null, bestMove: null },
+    } });
+    expect(store.room?.game.series.enabled).toBe(true);
+  });
+
   it("restitue dans l’ordre chaque étape manquée entre deux synchronisations", async () => {
     const store = new MemoryRoomStore();
     await command(store, { type: "CONNECT", role: "player1", token: HOST_TOKEN, playerName: "Alice" }, 1_000);

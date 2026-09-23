@@ -1,5 +1,5 @@
 import { getCache } from "@vercel/functions";
-import { isMultiplayerGameState } from "@/domain/multiplayer";
+import { freshDuoSeries, isMultiplayerGameState, type MultiplayerGameState } from "@/domain/multiplayer";
 import type { MultiplayerRole } from "@/domain/multiplayer";
 import {
   isPlayerToken,
@@ -53,10 +53,18 @@ function reactionKey(roomId: string): string {
 function normalizeStoredRoom(value: unknown): StoredRoom | null {
   if (!value || typeof value !== "object") return null;
   const room = value as Partial<StoredRoom>;
+  // Rooms created before series support remain usable until their normal expiry.
+  const normalizeGame = (game: MultiplayerGameState): MultiplayerGameState => ({
+    ...game,
+    rematchCount: game.rematchCount ?? 0,
+    duelWins: game.duelWins ?? { player1: 0, player2: 0 },
+    series: game.series ?? freshDuoSeries(),
+  });
+  const game = room.game && typeof room.game === "object" && normalizeGame(room.game);
   const actionEvents = room.actionEvents ?? [];
   const actionEventFloorVersion = room.actionEventFloorVersion ?? -1;
   if (
-    !isMultiplayerGameState(room.game) ||
+    !isMultiplayerGameState(game) ||
     !isPlayerToken(room.hostToken) ||
     (room.guestToken !== null && !isPlayerToken(room.guestToken)) ||
     !Number.isInteger(room.version) ||
@@ -74,7 +82,8 @@ function normalizeStoredRoom(value: unknown): StoredRoom | null {
     actionEvents.length > MAX_ROOM_ACTION_EVENTS ||
     !actionEvents.every(
       (event, index) =>
-        isRoomActionEvent(event) &&
+        event && typeof event === "object" && event.game &&
+        isRoomActionEvent({ ...event, game: normalizeGame(event.game) }) &&
         event.version <= room.version! &&
         event.game.roomId === room.game!.roomId &&
         (index === 0 || actionEvents[index - 1].version < event.version),
@@ -85,12 +94,12 @@ function normalizeStoredRoom(value: unknown): StoredRoom | null {
   }
 
   return {
-    game: room.game,
+    game: game!,
     hostToken: room.hostToken,
     guestToken: room.guestToken,
     version: room.version!,
     lastActionIds: room.lastActionIds,
-    actionEvents,
+    actionEvents: actionEvents.map((event) => ({ ...event, game: normalizeGame(event.game) })),
     actionEventFloorVersion,
   };
 }

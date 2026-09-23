@@ -34,8 +34,12 @@ const REACTION_LABELS: Record<ReactionEmoji, string> = {
   "😅": "Ouf",
 };
 
+const FAVORITE_EMOJIS: readonly ReactionEmoji[] = ["😂", "😱", "👏", "🤭", "🔥"];
+const OTHER_EMOJIS = REACTION_EMOJIS.filter((emoji) => !FAVORITE_EMOJIS.includes(emoji));
+
 type MultiplayerReactionsProps = {
   disabled: boolean;
+  momentKey?: string | null;
   latestReaction: RoomReaction | null;
   localRole: MultiplayerRole;
   localName: string;
@@ -45,6 +49,7 @@ type MultiplayerReactionsProps = {
 
 export function MultiplayerReactions({
   disabled,
+  momentKey,
   latestReaction,
   localRole,
   localName,
@@ -52,6 +57,8 @@ export function MultiplayerReactions({
   onSend,
 }: MultiplayerReactionsProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [visibleReaction, setVisibleReaction] = useState<RoomReaction | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -59,6 +66,20 @@ export function MultiplayerReactions({
   const optimisticEmojiRef = useRef<ReactionEmoji | null>(null);
   const optimisticTextRef = useRef<string | null>(null);
   const hideTimerRef = useRef<number | null>(null);
+  const suggestionsTimerRef = useRef<number | null>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const lastMomentRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!momentKey || momentKey === lastMomentRef.current) return;
+    lastMomentRef.current = momentKey;
+    if (suggestionsTimerRef.current !== null) window.clearTimeout(suggestionsTimerRef.current);
+    setShowSuggestions(true);
+    suggestionsTimerRef.current = window.setTimeout(() => {
+      suggestionsTimerRef.current = null;
+      if (!suggestionsRef.current?.contains(document.activeElement)) setShowSuggestions(false);
+    }, 2_500);
+  }, [momentKey]);
 
   const showReaction = useCallback((reaction: RoomReaction) => {
     setVisibleReaction(reaction);
@@ -80,6 +101,8 @@ export function MultiplayerReactions({
     showReaction(optimisticReaction);
     onSend(emoji, text);
     setIsOpen(false);
+    setShowAll(false);
+    setShowSuggestions(false);
     triggerRef.current?.focus();
   }, [localRole, onSend, showReaction]);
 
@@ -119,6 +142,7 @@ export function MultiplayerReactions({
 
   useEffect(() => () => {
     if (hideTimerRef.current !== null) window.clearTimeout(hideTimerRef.current);
+    if (suggestionsTimerRef.current !== null) window.clearTimeout(suggestionsTimerRef.current);
   }, []);
 
   const reactionAuthor = visibleReaction?.role === localRole ? localName : opponentName;
@@ -133,23 +157,33 @@ export function MultiplayerReactions({
         aria-expanded={isOpen}
         aria-controls="reaction-picker"
         disabled={disabled}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => {
+          setShowSuggestions(false);
+          setIsOpen((open) => !open);
+        }}
       >
         <span aria-hidden="true">😂</span>
       </button>
+      {showSuggestions && !disabled && !isOpen ? (
+        <div
+          className="reaction-suggestions"
+          role="group"
+          aria-label="Réagir au coup"
+          ref={suggestionsRef}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setShowSuggestions(false);
+          }}
+        >
+          {FAVORITE_EMOJIS.map((emoji) => (
+            <button key={emoji} type="button" aria-label={REACTION_LABELS[emoji]} onClick={() => sendPreset(emoji)}>
+              {emoji}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {isOpen ? (
         <div id="reaction-picker" className="reaction-picker" role="group" aria-label="Réactions rapides">
-          <button
-            key="strip-phrase"
-            type="button"
-            className="reaction-phrase"
-            aria-label={`Envoyer : ${STRIP_PHRASE}`}
-            onClick={() => sendPreset(STRIP_EMOJI, STRIP_PHRASE)}
-          >
-            <span aria-hidden="true">{STRIP_EMOJI}</span>
-            <span aria-hidden="true">{STRIP_PHRASE}</span>
-          </button>
-          {REACTION_EMOJIS.map((emoji) => (
+          {FAVORITE_EMOJIS.map((emoji) => (
             <button
               key={emoji}
               type="button"
@@ -159,6 +193,27 @@ export function MultiplayerReactions({
               <span aria-hidden="true">{emoji}</span>
             </button>
           ))}
+          <button className="reaction-more" type="button" aria-expanded={showAll} onClick={() => setShowAll((all) => !all)}>
+            {showAll ? "Moins" : "Tous"}
+          </button>
+          {showAll ? (
+            <>
+              <button
+                type="button"
+                className="reaction-phrase"
+                aria-label={`Envoyer : ${STRIP_PHRASE}`}
+                onClick={() => sendPreset(STRIP_EMOJI, STRIP_PHRASE)}
+              >
+                <span aria-hidden="true">{STRIP_EMOJI}</span>
+                <span aria-hidden="true">{STRIP_PHRASE}</span>
+              </button>
+              {OTHER_EMOJIS.map((emoji) => (
+                <button key={emoji} type="button" aria-label={REACTION_LABELS[emoji]} onClick={() => sendPreset(emoji)}>
+                  <span aria-hidden="true">{emoji}</span>
+                </button>
+              ))}
+            </>
+          ) : null}
         </div>
       ) : null}
       {visibleReaction ? (

@@ -5,6 +5,7 @@ import {
   requestRematch,
   rollActivePlayer,
   scoreActiveCategory,
+  setDuoSeries,
   startRematch,
   type MultiplayerGameState,
   type MultiplayerRole,
@@ -62,6 +63,9 @@ export function applyPlayerAction(
   rollDie: () => DieValue,
   pickStartingPlayer?: () => MultiplayerRole,
 ): MultiplayerGameState {
+  if (action.type === "SET_SERIES") {
+    return setDuoSeries(game, action.enabled);
+  }
   if (action.type === "REMATCH") {
     const readyGame = requestRematch(game, role);
     return readyGame.rematchReady.length === 2

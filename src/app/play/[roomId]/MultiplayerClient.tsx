@@ -53,6 +53,11 @@ function replayAnnouncement(event: RoomActionEvent, opponentName: string): strin
   if (event.action.type === "SCORE") {
     return `${opponentName} inscrit ${CATEGORY_BY_ID[event.action.category].label}.`;
   }
+  if (event.action.type === "SET_SERIES") {
+    return event.action.enabled
+      ? `${opponentName} lance une série au premier à trois victoires.`
+      : `${opponentName} arrête la série.`;
+  }
   return `${opponentName} propose une nouvelle partie.`;
 }
 
@@ -75,6 +80,7 @@ export function MultiplayerClient({
     toggleHeld,
     score,
     rematch,
+    setSeries,
     reconnect,
     isMyTurn,
     localPlayer,
@@ -352,6 +358,16 @@ export function MultiplayerClient({
             <label className="sr-only" htmlFor="invite-link">Lien de partie</label>
             <input id="invite-link" type="text" readOnly value={inviteLink} onFocus={(event) => event.currentTarget.select()} />
           </div>
+          {game ? (
+            <button
+              className="duo-series-option waiting-series-option"
+              type="button"
+              aria-pressed={game.series.enabled}
+              onClick={() => setSeries(!game.series.enabled)}
+            >
+              {game.series.enabled ? "Série au premier à 3 activée" : "Jouer une série au premier à 3"}
+            </button>
+          ) : null}
           {copyStatus ? <p className="copy-status" role="status">{copyStatus}</p> : null}
           {connectionError ? (
             <div className="multiplayer-state-actions" role="alert">
@@ -398,6 +414,7 @@ export function MultiplayerClient({
         onScore={handleScore}
         onToggleDie={handleToggleDie}
         onRematch={rematch}
+        onSetSeries={setSeries}
         onSendReaction={sendReaction}
       />
       {yatzyBurst ? (
@@ -438,6 +455,7 @@ const MultiplayerGameView = memo(function MultiplayerGameView({
   onScore,
   onToggleDie,
   onRematch,
+  onSetSeries,
   onSendReaction,
 }: {
   game: NonNullable<ReturnType<typeof useMultiplayerGame>["game"]>;
@@ -465,6 +483,7 @@ const MultiplayerGameView = memo(function MultiplayerGameView({
   onScore: (category?: CategoryId | null) => void;
   onToggleDie: (index: number) => void;
   onRematch: () => void;
+  onSetSeries: (enabled: boolean) => void;
   onSendReaction: (emoji: Parameters<ReturnType<typeof useMultiplayerGame>["sendReaction"]>[0]) => void;
 }) {
   const rematchRequested = game.rematchReady.includes(localRole);
@@ -480,19 +499,52 @@ const MultiplayerGameView = memo(function MultiplayerGameView({
     : null;
   const localTotal = useMemo(() => totalScore(localState.scores), [localState.scores]);
   const opponentTotal = useMemo(() => totalScore(opponentState.scores), [opponentState.scores]);
+  const [leadMoment, setLeadMoment] = useState<"player" | "opponent" | null>(null);
+  const lastScoreRef = useRef({
+    localTotal,
+    opponentTotal,
+    filled: Object.keys(localState.scores).length + Object.keys(opponentState.scores).length,
+    status,
+  });
+  const leadTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const previous = lastScoreRef.current;
+    const filled = Object.keys(localState.scores).length + Object.keys(opponentState.scores).length;
+    lastScoreRef.current = { localTotal, opponentTotal, filled, status };
+    if (previous.status !== "playing" || filled !== previous.filled + 1) return;
+
+    const previousLeader = Math.sign(previous.localTotal - previous.opponentTotal);
+    const nextLeader = Math.sign(localTotal - opponentTotal);
+    if (nextLeader === 0 || nextLeader === previousLeader) return;
+    if (leadTimerRef.current !== null) window.clearTimeout(leadTimerRef.current);
+    setLeadMoment(nextLeader > 0 ? "player" : "opponent");
+    leadTimerRef.current = window.setTimeout(() => {
+      leadTimerRef.current = null;
+      setLeadMoment(null);
+    }, 1_500);
+  }, [localState.scores, opponentState.scores, localTotal, opponentTotal, status]);
+
+  useEffect(() => () => {
+    if (leadTimerRef.current !== null) window.clearTimeout(leadTimerRef.current);
+  }, []);
   const animationSeed = isMyTurn
     ? game.turn * 20 + 5 + localState.rollNumber
     : (replayedOpponentEvent?.version ?? game.turn * 20 + 10 + opponentState.rollNumber);
+  const reactionMomentKey = leadMoment
+    ? `lead-${game.turn}-${leadMoment}`
+    : maxBurst ? `max-${maxBurst.burstKey}` : null;
   const reactionsControl = useMemo(() => (
     <MultiplayerReactions
       disabled={!isConnected || !opponentOnline}
+      momentKey={reactionMomentKey}
       latestReaction={latestReaction}
       localRole={localRole}
       localName={localName}
       opponentName={opponentName}
       onSend={onSendReaction}
     />
-  ), [isConnected, opponentOnline, latestReaction, localRole, localName, opponentName, onSendReaction]);
+  ), [isConnected, opponentOnline, reactionMomentKey, latestReaction, localRole, localName, opponentName, onSendReaction]);
   const connectionNotice = !isConnected
     ? "Ta connexion est interrompue. Reconnexion en cours…"
     : !opponentOnline
@@ -504,9 +556,9 @@ const MultiplayerGameView = memo(function MultiplayerGameView({
       <header className="game-header multiplayer-game-header">
         <Link className="game-logo" href="/">YAZZY</Link>
         <div className="multiplayer-total-summary" aria-label={`Total : ${localName} ${localTotal}, ${opponentName} ${opponentTotal}`}>
-          <span className="total-label">Total</span>
-          <strong className="score-value total-score-value" aria-hidden="true">{localTotal}</strong>
-          <strong className="score-value score-value-bot" aria-hidden="true">{opponentTotal}</strong>
+          <span className="total-label">Total{game.rematchCount > 0 || game.series.enabled ? <small className="duo-total-history">{game.series.enabled ? "Série" : "Duel"} {game.series.enabled ? game.series.wins[localRole] : game.duelWins[localRole]}–{game.series.enabled ? game.series.wins[opponentRole] : game.duelWins[opponentRole]}</small> : null}</span>
+          <strong className="score-value total-score-value duo-total-score" data-lead-burst={leadMoment === "player"} aria-hidden="true">{localTotal}</strong>
+          <strong className="score-value score-value-bot duo-total-score" data-lead-burst={leadMoment === "opponent"} aria-hidden="true">{opponentTotal}</strong>
         </div>
         <Link
           className="quit-link multiplayer-quit-link"
@@ -532,6 +584,7 @@ const MultiplayerGameView = memo(function MultiplayerGameView({
 
       {connectionNotice ? <p className="connection-notice" role="status">{connectionNotice}</p> : null}
       <p className="sr-only" role="status" aria-live="polite">
+        {leadMoment ? `${leadMoment === "player" ? localName : opponentName} prend la tête. ` : ""}
         {replayGapDetected
           ? "Certaines étapes n’ont pas pu être rejouées. La partie est maintenant synchronisée."
           : replayedOpponentEvent
@@ -544,6 +597,7 @@ const MultiplayerGameView = memo(function MultiplayerGameView({
           game={game}
           localRole={localRole}
           onRematch={onRematch}
+          onSetSeries={onSetSeries}
           rematchRequested={rematchRequested}
           opponentWantsRematch={opponentWantsRematch}
           localName={localName}

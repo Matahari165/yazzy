@@ -6,7 +6,8 @@ export type ClientAction =
   | { type: "ROLL" }
   | { type: "HOLD"; index: number }
   | { type: "SCORE"; category: CategoryId }
-  | { type: "REMATCH" };
+  | { type: "REMATCH" }
+  | { type: "SET_SERIES"; enabled: boolean };
 
 export function parseClientActionValue(data: unknown): ClientAction | null {
   if (!data || typeof data !== "object" || !("type" in data) || typeof data.type !== "string") {
@@ -17,6 +18,11 @@ export function parseClientActionValue(data: unknown): ClientAction | null {
     case "ROLL":
     case "REMATCH":
       return { type: data.type };
+    case "SET_SERIES":
+      if ("enabled" in data && typeof data.enabled === "boolean") {
+        return { type: "SET_SERIES", enabled: data.enabled };
+      }
+      break;
     case "HOLD":
       if ("index" in data && Number.isInteger(data.index) && Number(data.index) >= 0 && Number(data.index) < 5) {
         return { type: "HOLD", index: Number(data.index) };

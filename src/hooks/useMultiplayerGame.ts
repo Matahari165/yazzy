@@ -676,6 +676,9 @@ export function useMultiplayerGame(
     void dispatch({ type: "SCORE", category });
   }, [dispatch]);
   const rematch = useCallback(() => void dispatch({ type: "REMATCH" }), [dispatch]);
+  const setSeries = useCallback((enabled: boolean) => {
+    void dispatch({ type: "SET_SERIES", enabled });
+  }, [dispatch]);
   const sendReaction = useCallback(async (emoji: ReactionEmoji, text?: string) => {
     const role = roleRef.current;
     const token = tokenRef.current;
@@ -730,6 +733,7 @@ export function useMultiplayerGame(
     toggleHeld,
     score,
     rematch,
+    setSeries,
     sendReaction,
     reconnect,
     isMyTurn,

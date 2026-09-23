@@ -3,12 +3,28 @@ import {
   type DieValue,
   isValidCategoryScore,
   scoreDice,
+  totalScore,
   CATEGORY_IDS,
 } from "./yatzy";
 import { isPlayerName } from "./playerName";
 import { flipFairCoin } from "../lib/random";
 
 export type MultiplayerRole = "player1" | "player2";
+export type DuoSeries = {
+  enabled: boolean;
+  targetWins: 3;
+  wins: Record<MultiplayerRole, number>;
+  winner: MultiplayerRole | null;
+  bestMove: { role: MultiplayerRole; playerName: string; category: CategoryId; points: number } | null;
+};
+
+export const freshDuoSeries = (): DuoSeries => ({
+  enabled: false,
+  targetWins: 3,
+  wins: { player1: 0, player2: 0 },
+  winner: null,
+  bestMove: null,
+});
 
 export type MultiplayerPlayerState = {
   dice: DieValue[];
@@ -32,6 +48,9 @@ export type MultiplayerGameState = {
   activePlayer: MultiplayerRole;
   turn: number;
   rematchReady: MultiplayerRole[];
+  rematchCount: number;
+  duelWins: Record<MultiplayerRole, number>;
+  series: DuoSeries;
 };
 
 const emptyHeld = (): boolean[] => [false, false, false, false, false];
@@ -63,6 +82,9 @@ export function createMultiplayerGame(
     activePlayer: startingPlayer,
     turn: 1,
     rematchReady: [],
+    rematchCount: 0,
+    duelWins: { player1: 0, player2: 0 },
+    series: freshDuoSeries(),
   };
 }
 
@@ -178,7 +200,29 @@ export function isMultiplayerGameState(value: unknown): value is MultiplayerGame
       game.turn! <= CATEGORY_IDS.length + 1 &&
       Array.isArray(game.rematchReady) &&
       game.rematchReady.every((role) => role === "player1" || role === "player2") &&
-      new Set(game.rematchReady).size === game.rematchReady.length,
+      new Set(game.rematchReady).size === game.rematchReady.length &&
+      Number.isInteger(game.rematchCount) &&
+      game.rematchCount! >= 0 &&
+      Number.isInteger(game.duelWins?.player1) &&
+      Number.isInteger(game.duelWins?.player2) &&
+      game.duelWins!.player1 >= 0 &&
+      game.duelWins!.player2 >= 0 &&
+      !!game.series &&
+      typeof game.series.enabled === "boolean" &&
+      game.series.targetWins === 3 &&
+      Number.isInteger(game.series.wins?.player1) &&
+      Number.isInteger(game.series.wins?.player2) &&
+      game.series.wins.player1 >= 0 &&
+      game.series.wins.player2 >= 0 &&
+      (game.series.bestMove === null ||
+        (!!game.series.bestMove &&
+        (game.series.bestMove.role === "player1" || game.series.bestMove.role === "player2") &&
+        isPlayerName(game.series.bestMove.playerName) &&
+        isCategoryId(game.series.bestMove.category) &&
+        isValidCategoryScore(game.series.bestMove.category, game.series.bestMove.points))) &&
+      (game.series.winner === null ||
+        (game.series.winner === "player1" || game.series.winner === "player2") &&
+        game.series.wins[game.series.winner] >= 3),
   );
 }
 
@@ -242,7 +286,16 @@ export function scoreActiveCategory(
   const state = scoreCategory(player.state, category);
   if (state === player.state) return game;
 
-  let next = switchTurn({ ...game, [role]: { ...player, state } });
+  const points = state.scores[category]!;
+  const bestMove = game.series.enabled &&
+    (game.series.bestMove === null || points > game.series.bestMove.points)
+    ? { role, playerName: player.name, category, points }
+    : game.series.bestMove;
+  let next = switchTurn({
+    ...game,
+    [role]: { ...player, state },
+    series: bestMove === game.series.bestMove ? game.series : { ...game.series, bestMove },
+  });
   const nextRole = next.activePlayer;
   const nextPlayer = next[nextRole]!;
   next = {
@@ -253,14 +306,33 @@ export function scoreActiveCategory(
     },
   };
 
-  return isGameFinished(next) ? { ...next, status: "finished" } : next;
+  if (!isGameFinished(next)) return next;
+  const first = totalScore(next.player1!.state.scores);
+  const second = totalScore(next.player2!.state.scores);
+  const winner = first === second ? null : first > second ? "player1" : "player2";
+  if (!winner) return { ...next, status: "finished" };
+  const duelWins = { ...next.duelWins, [winner]: next.duelWins[winner] + 1 };
+  if (!next.series.enabled) return { ...next, status: "finished", duelWins };
+  const wins = { ...next.series.wins, [winner]: next.series.wins[winner] + 1 };
+  return {
+    ...next,
+    status: "finished",
+    duelWins,
+    series: { ...next.series, wins, winner: wins[winner] >= 3 ? winner : null },
+  };
+}
+
+export function setDuoSeries(game: MultiplayerGameState, enabled: boolean): MultiplayerGameState {
+  if (game.status !== "waiting" && game.status !== "finished") return game;
+  if (game.series.enabled === enabled && !(enabled && game.series.winner)) return game;
+  return { ...game, series: { ...freshDuoSeries(), enabled }, rematchReady: [] };
 }
 
 export function requestRematch(
   game: MultiplayerGameState,
   role: MultiplayerRole,
 ): MultiplayerGameState {
-  if (game.status !== "finished" || game.rematchReady.includes(role)) return game;
+  if (game.status !== "finished" || game.series.winner || game.rematchReady.includes(role)) return game;
   return { ...game, rematchReady: [...game.rematchReady, role] };
 }
 
@@ -268,12 +340,15 @@ export function startRematch(
   game: MultiplayerGameState,
   startingPlayer: MultiplayerRole = randomMultiplayerRole(),
 ): MultiplayerGameState {
-  if (!game.player1 || !game.player2 || game.rematchReady.length !== 2) return game;
+  if (!game.player1 || !game.player2 || game.status !== "finished" || game.series.winner || game.rematchReady.length !== 2) return game;
 
   return {
     ...createMultiplayerGame(game.roomId, startingPlayer),
     status: "playing",
     player1: { ...game.player1, state: freshPlayerState() },
     player2: { ...game.player2, state: freshPlayerState() },
+    rematchCount: game.rematchCount + 1,
+    duelWins: game.duelWins,
+    series: game.series,
   };
 }
