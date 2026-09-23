@@ -565,6 +565,9 @@
     die-roll var(--motion-dice-roll) var(--ease-emphasized) var(--roll-delay, 0ms) both,
     die-land 180ms var(--ease-out) calc(var(--roll-delay, 0ms) + var(--motion-dice-roll)) both;
 }
+.game-shell:has(.multiplayer-game-header) .die-button[data-rolling="true"] .die-face {
+  animation: die-roll 220ms var(--ease-out) var(--roll-delay, 0ms) both;
+}
 
 .die-button[data-highlighted="true"] .die-face {
   animation: opponent-die-choice var(--motion-emphasis) var(--ease-out);

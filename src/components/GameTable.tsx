@@ -125,7 +125,7 @@ export const GameTable = memo(function GameTable({
   // anciennes faces. Ici chaque clic varie l'animation en <50ms.
   const animationSeed = (animationSeedProp ?? 0) + localAnimationSeed;
   const canRoll = rollNumber < 3 && !(rollNumber > 0 && heldCount === 5) && !isRolling && !isDisabled && !isRollDisabled;
-  const actionLabel = rollNumber === 0 ? "Lancer" : "Relancer";
+  const actionLabel = isRolling ? "Lancement…" : rollNumber === 0 ? "Lancer" : "Relancer";
   const usedRolls = Math.min(rollNumber, 3);
   const remainingRolls = 3 - usedRolls;
   const canShowRollButton = (usedRolls < 3 && heldCount < 5) || isRolling;

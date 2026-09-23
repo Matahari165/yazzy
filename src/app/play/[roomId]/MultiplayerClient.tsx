@@ -16,7 +16,7 @@ import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 import { botAudio } from "@/lib/botAudio";
 import { readStoredPlayerName, writeStoredPlayerName } from "@/lib/playerNameStorage";
 
-const HUMAN_ROLL_ANIMATION_MS = 300;
+const HUMAN_ROLL_ANIMATION_MS = 220;
 const YATZY_BURST_DURATION_MS = 3_400;
 const MAX_BURST_DURATION_MS = 3_500;
 
