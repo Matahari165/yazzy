@@ -8,9 +8,9 @@
 ## Autonomie, délégation et coordination
 
 - L’agent principal reste responsable du périmètre, des décisions finales, de la cohérence, de la vérification et de la synthèse.
-- Pour chaque tâche non triviale, évalue les sous-tâches qui bénéficient réellement d’une analyse, recherche, implémentation ou vérification séparée. Si une délégation apporte une valeur claire, utilise au moins un sous-agent **GPT-5.6 Luna `high`**.
-- Utilise **Luna `xhigh`** pour une difficulté élevée, un diagnostic ambigu, une revue critique ou une vérification indépendante. Utilise deux, trois ou quatre sous-agents lorsque plusieurs lots sont réellement indépendants et que cela accélère le travail ou améliore la preuve.
-- Ne délègue pas une tâche triviale, strictement séquentielle ou trop petite pour justifier le coût de coordination. Chaque sous-agent reçoit un périmètre de fichiers et une preuve attendue.
+- Pour toute tâche non triviale, utilise au moins un sous-agent pour une analyse, une recherche, une implémentation ou une vérification indépendante. Chaque sous-agent reçoit un périmètre clair et une preuve attendue.
+- Par défaut, lance les sous-agents avec **GPT-6 Luna** et un effort **`xhigh`**. Pour une tâche vraiment complexe, tu peux choisir **GPT-6 Sol** avec un effort **`low`**.
+- Ne délègue pas une tâche triviale, strictement séquentielle ou trop petite pour justifier le coût de coordination. Utilise plusieurs sous-agents lorsque plusieurs lots sont réellement indépendants et que cela accélère le travail ou améliore la preuve.
 - Les agents coordonnent eux-mêmes dépendances, fichiers réservés, conflits, sauvegardes et reprise après blocage. Ils ne demandent pas à l’utilisateur d’organiser leur travail.
 
 ## Git et sauvegardes
