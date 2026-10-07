@@ -18,13 +18,14 @@ import {
 } from "../domain/multiplayerRoomProtocol";
 import type { ClientAction } from "../domain/protocol";
 import type { CategoryId } from "../domain/yatzy";
+import { createMultiplayerPollLoop } from "./multiplayerPollLoop";
 
 const PLAYER_TOKEN_PREFIX = "yazzy.multiplayer.token.v2.";
 export const FOREGROUND_POLL_INTERVAL_MS = 800;
 export const ACTIVE_TURN_POLL_INTERVAL_MS = 1_000;
 export const OPPONENT_TURN_POLL_INTERVAL_MS = 250;
 export const BACKGROUND_POLL_INTERVAL_MS = 4_000;
-export const MAX_POLL_INTERVAL_MS = 4_000;
+export const MAX_POLL_INTERVAL_MS = 30_000;
 export const FAST_FOLLOWUP_POLL_INTERVAL_MS = 120;
 const REQUEST_TIMEOUT_MS = 8_000;
 const MAX_SILENT_FAILURES = 3;
@@ -63,6 +64,12 @@ export function multiplayerPollDelay(
     baseInterval * (2 ** consecutiveFailures),
     MAX_POLL_INTERVAL_MS,
   );
+}
+
+export function shouldRetryRoomFailure(failure: RoomFailure): boolean {
+  // Erreurs de service/réseau transitoires peuvent guérir seules. Un salon
+  // expiré ou un jeton refusé ne changera pas en resondant en boucle.
+  return failure.code === "SERVICE_UNAVAILABLE";
 }
 
 export function shouldReplaceCanonicalGame(
@@ -129,6 +136,7 @@ function prefersReducedMotion(): boolean {
 }
 
 function pollJitter(delay: number): number {
+  if (delay <= 0) return 0;
   // ±15% pour éviter que les deux clients ne se synchronisent en rafale.
   const jitter = 0.85 + Math.random() * 0.3;
   return Math.max(60, Math.round(delay * jitter));
@@ -355,7 +363,6 @@ export function useMultiplayerGame(
     if (!playerName) return;
 
     let cancelled = false;
-    let pollTimer: number | null = null;
     let consecutiveFailures = 0;
     let emptyOpponentSyncs = 0;
     const initialRole: MultiplayerRole | undefined = isHost === true ? "player1" : isHost === false ? "player2" : undefined;
@@ -364,37 +371,9 @@ export function useMultiplayerGame(
     tokenRef.current = token;
     resetReplay();
 
-    const schedulePoll = (overrideDelay?: number) => {
-      if (!cancelled) {
-        const activeRole = roleRef.current;
-        if (!activeRole) return;
-        const currentGame = canonicalGameRef.current;
-        const turn = currentGame?.status !== "playing"
-          ? "neutral"
-          : currentGame.activePlayer === activeRole
-            ? "active"
-            : "opponent";
-        let baseDelay = overrideDelay
-          ?? multiplayerPollDelay(document.visibilityState === "hidden", consecutiveFailures, turn);
-        // Tour adverse idle : backoff doux après ~2s sans évènement (8 SYNC vides
-        // à 250ms). On reste réactif grâce au fast-followup dès qu'un event arrive.
-        if (overrideDelay === undefined && turn === "opponent" && consecutiveFailures === 0) {
-          if (emptyOpponentSyncs >= 16) baseDelay = Math.max(baseDelay, 700);
-          else if (emptyOpponentSyncs >= 8) baseDelay = Math.max(baseDelay, 500);
-        }
-        pollTimer = window.setTimeout(
-          () => {
-            pollTimer = null;
-            void poll();
-          },
-          pollJitter(baseDelay),
-        );
-      }
-    };
-
-    const poll = async () => {
+    const poll = async (): Promise<number | null | undefined> => {
       const activeRole = roleRef.current;
-      if (!activeRole) return;
+      if (!activeRole || cancelled) return null;
       let followUpDelay: number | undefined;
       try {
         const response = await sendRoomCommand(roomId, {
@@ -404,7 +383,7 @@ export function useMultiplayerGame(
           playerName,
           afterVersion: eventCursorRef.current,
         });
-        if (cancelled) return;
+        if (cancelled) return null;
         if (response.ok) {
           consecutiveFailures = 0;
           const hadEvents = response.events.length > 0;
@@ -424,6 +403,12 @@ export function useMultiplayerGame(
             emptyOpponentSyncs = 0;
           }
         } else {
+          if (!shouldRetryRoomFailure(response)) {
+            setIsConnected(false);
+            setOpponentOnline(false);
+            setConnectionError(connectionMessage(response));
+            return null;
+          }
           consecutiveFailures += 1;
           if (consecutiveFailures >= MAX_SILENT_FAILURES) {
             setIsConnected(false);
@@ -431,7 +416,7 @@ export function useMultiplayerGame(
           }
         }
       } catch {
-        if (cancelled) return;
+        if (cancelled) return null;
         consecutiveFailures += 1;
         if (consecutiveFailures >= MAX_SILENT_FAILURES) {
           setIsConnected(false);
@@ -439,8 +424,39 @@ export function useMultiplayerGame(
           setConnectionError("La connexion au salon est interrompue. Yazzy essaie de la rétablir.");
         }
       }
-      schedulePoll(followUpDelay);
+      return followUpDelay;
     };
+
+    const getPollDelay = () => {
+      const activeRole = roleRef.current;
+      if (!activeRole) return BACKGROUND_POLL_INTERVAL_MS;
+      const currentGame = canonicalGameRef.current;
+      const turn = currentGame?.status !== "playing"
+        ? "neutral"
+        : currentGame.activePlayer === activeRole
+          ? "active"
+          : "opponent";
+      let baseDelay = multiplayerPollDelay(
+        document.visibilityState !== "visible",
+        consecutiveFailures,
+        turn,
+      );
+      // Pendant le tour adverse, on accélère les premières réponses puis on
+      // espace les SYNC vides. Une nouvelle action adverse réactive le suivi.
+      if (turn === "opponent" && consecutiveFailures === 0) {
+        if (emptyOpponentSyncs >= 16) baseDelay = Math.max(baseDelay, 700);
+        else if (emptyOpponentSyncs >= 8) baseDelay = Math.max(baseDelay, 500);
+      }
+      return baseDelay;
+    };
+
+    const pollLoop = createMultiplayerPollLoop({
+      poll,
+      getDelay: getPollDelay,
+      isOnline: () => typeof navigator === "undefined" || navigator.onLine !== false,
+      isVisible: () => document.visibilityState === "visible",
+      jitter: pollJitter,
+    });
 
     const connect = async (attempt = 0): Promise<void> => {
       try {
@@ -454,7 +470,7 @@ export function useMultiplayerGame(
         if (response.ok) {
           roleRef.current = response.yourRole;
           applySuccess(response, "connect");
-          schedulePoll();
+          pollLoop.start();
           return;
         }
         if (
@@ -476,22 +492,15 @@ export function useMultiplayerGame(
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState !== "visible" || pollTimer === null) return;
-      window.clearTimeout(pollTimer);
-      pollTimer = window.setTimeout(() => {
-        pollTimer = null;
-        void poll();
-      }, 0);
+      pollLoop.visibilityChanged(document.visibilityState === "visible");
     };
+
+    const handleOnline = () => pollLoop.online();
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("online", handleOnline);
 
-    triggerPollRef.current = (delay?: number) => {
-      if (cancelled) return;
-      if (pollTimer !== null) window.clearTimeout(pollTimer);
-      pollTimer = null;
-      schedulePoll(delay);
-    };
+    triggerPollRef.current = (delay?: number) => pollLoop.request(delay);
 
     const startTimer = window.setTimeout(() => {
       setGame(null);
@@ -507,8 +516,9 @@ export function useMultiplayerGame(
       cancelled = true;
       triggerPollRef.current = null;
       window.clearTimeout(startTimer);
-      if (pollTimer !== null) window.clearTimeout(pollTimer);
+      pollLoop.stop();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("online", handleOnline);
       resetReplay();
     };
   }, [
